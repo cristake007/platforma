@@ -1,2 +1,3 @@
+# Direct deployment overlay installed by Dockerfile.
 -r requirements.txt
 gunicorn==23.0.0

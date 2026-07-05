@@ -1,5 +1,7 @@
-# Direct base/runtime requirements used by Docker. This is not yet a
-# resolver-generated transitive lock; see requirements.in for the compile command.
+# Direct base/runtime dependencies.
+# Compile when pip-tools is available:
+#   python -m piptools compile requirements.in --output-file requirements.txt
+
 Django==6.0.6
 psycopg[binary]==3.3.4
 django-tailwind==4.5.0
