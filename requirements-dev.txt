@@ -1,0 +1,4 @@
+-r requirements.txt
+django-browser-reload==1.21.0
+pylint==4.0.6
+pylint-django==2.7.0

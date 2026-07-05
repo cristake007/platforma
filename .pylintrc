@@ -1,0 +1,12 @@
+[MAIN]
+load-plugins=pylint_django
+django-settings-module=platforma_tuvtk.settings
+ignore=migrations
+
+[MESSAGES CONTROL]
+# Start with actionable errors and warnings. Convention and refactor findings can
+# be enabled incrementally after the existing codebase has a stable lint baseline.
+disable=C,R
+
+[FORMAT]
+max-line-length=100

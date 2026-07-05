@@ -1,0 +1,17 @@
+.venv/
+node_modules/
+__pycache__/
+*.py[cod]
+.bootstrap_icons_cache/
+.playwright-mcp/
+test-results/
+playwright-report/
+tmp/
+db.sqlite3
+.env
+.postgresql/
+media/
+private_media/
+staticfiles/
+theme/static/css/dist/
+repomix-output.*

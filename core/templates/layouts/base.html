@@ -1,0 +1,101 @@
+{% load static tailwind_tags optional_browser_reload %}
+<!DOCTYPE html>
+<html lang="ro" data-theme="tuvtk">
+<head>
+    <title>{% block title %}Platforma TUVTK{% endblock %}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'bootstrap_icons/css/bootstrap_icons.css' %}">
+    {% tailwind_css %}
+    {% block page_styles %}{% endblock %}
+</head>
+<body class="h-dvh overflow-hidden">
+    <div class="ops-shell flex h-full min-h-0 flex-col">
+        <header class="ops-topbar shrink-0">
+            <div class="flex h-full items-center gap-3 px-4 sm:px-5 lg:pl-2 lg:pr-6">
+                <div class="flex min-w-0 items-center gap-3">
+                    <label for="ops-sidebar" class="drawer-button ops-sidebar-toggle" aria-label="Comută bara laterală" title="Comută bara laterală">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7h16M4 12h16M4 17h16" />
+                        </svg>
+                    </label>
+                    <a href="{% url 'dashboard:index' %}" class="flex min-w-0 items-center gap-3">
+                        <img src="{% static 'images/logo.svg' %}" class="ops-logo" alt="Sigla Platforma TUVTK">
+                        <div class="min-w-0 leading-tight">
+                            <p class="truncate text-sm font-semibold text-base-content">{{ app_name }}</p>
+                            <p class="truncate text-[11px] uppercase tracking-[0.18em] text-muted">{{ app_tagline }}</p>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="ml-auto flex items-center gap-2">
+                    <div class="ops-header-chip hidden sm:inline-flex">
+                        <span class="inline-block h-2 w-2 rounded-full bg-primary"></span>
+                        Mediu local
+                    </div>
+                    <details class="ops-user-flyout relative" data-user-flyout>
+                        <summary class="ops-user-trigger" data-user-flyout-trigger aria-label="Deschide meniul utilizatorului" title="Meniu utilizator" aria-haspopup="menu" aria-controls="ops-user-menu" aria-expanded="false">
+                            <span class="ops-avatar-frame relative shrink-0">
+                                <span class="avatar{% if not user_avatar_url %} avatar-placeholder{% endif %}">
+                                    <span class="ops-avatar">
+                                    {% if user_avatar_url %}
+                                        <img src="{{ user_avatar_url }}" class="object-cover" alt="{{ user_display_name }}">
+                                    {% else %}
+                                        <span aria-hidden="true">{{ user_initials }}</span>
+                                    {% endif %}
+                                    </span>
+                                </span>
+                                <span class="ops-avatar-status" aria-hidden="true"></span>
+                            </span>
+                        </summary>
+                        <ul id="ops-user-menu" class="menu ops-user-menu absolute right-0 z-[60] mt-2 w-64 border p-0" data-user-flyout-panel role="menu">
+                            {% if request.user.is_staff %}
+                                <li role="none">
+                                    <a href="{% url 'admin:index' %}" role="menuitem">
+                                        <span class="ops-user-menu-icon" aria-hidden="true">
+                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M12 3.75a2.25 2.25 0 0 1 2.122 1.5h2.628A2.25 2.25 0 0 1 19 7.5v9a2.25 2.25 0 0 1-2.25 2.25h-9A2.25 2.25 0 0 1 5.5 16.5v-9a2.25 2.25 0 0 1 2.25-2.25h2.128A2.25 2.25 0 0 1 12 3.75Z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M9.75 5.25h4.5v2.5h-4.5v-2.5ZM9 12h6M9 15.5h4" />
+                                            </svg>
+                                        </span>
+                                        <span class="ops-user-menu-label">Administrare Django</span>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            <li class="ops-user-logout">
+                                <form method="post" action="{% url 'logout' %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="w-full cursor-pointer text-left" role="menuitem">
+                                        <span class="ops-user-menu-icon" aria-hidden="true">
+                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M14.25 8.25V6A2.25 2.25 0 0 0 12 3.75H6.75A2.25 2.25 0 0 0 4.5 6v12a2.25 2.25 0 0 0 2.25 2.25H12A2.25 2.25 0 0 0 14.25 18v-2.25M10.5 12h9m0 0-3-3m3 3-3 3" />
+                                            </svg>
+                                        </span>
+                                        <span class="ops-user-menu-label">Deconectare</span>
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </details>
+                </div>
+            </div>
+        </header>
+
+        <div class="drawer h-full min-h-0 flex-1 lg:drawer-open">
+            <input id="ops-sidebar" type="checkbox" class="drawer-toggle">
+            <div class="drawer-content h-full min-h-0 overflow-hidden">
+                <main class="ops-scrollbar h-full overflow-y-auto">
+                    <div class="mx-auto w-full max-w-[1600px] px-4 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-5">
+                        {% block content %}{% endblock %}
+                    </div>
+                </main>
+            </div>
+            {% include "includes/sidebar.html" %}
+        </div>
+    </div>
+    <script src="{% static 'js/sidebar.js' %}" defer></script>
+    <script src="{% static 'js/user_menu.js' %}" defer></script>
+    {% block page_scripts %}{% endblock %}
+    {% optional_browser_reload_script %}
+</body>
+</html>

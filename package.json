@@ -1,0 +1,10 @@
+{
+  "name": "platforma-tuvtk-tools",
+  "private": true,
+  "scripts": {
+    "repomix": "repomix"
+  },
+  "devDependencies": {
+    "repomix": "^1.16.0"
+  }
+}

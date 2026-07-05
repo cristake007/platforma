@@ -1,0 +1,137 @@
+# compose.yaml
+
+Generated: `2026-07-05T21:21:12`
+
+## Scope
+
+- Real source file: `compose.yaml`
+- App: none
+- Role: `source`
+- Size: 3838 bytes
+- Source SHA-256: `5790e30dc9dea51b751eb9491b0a88e6faa0dfb789f2e988a54295824c30d0a4`
+
+## Codex usage
+
+Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
+
+## Source
+
+```yaml
+name: tuvtk
+
+x-app-base: &app-base
+  image: tuvtk-app:${TUVTK_IMAGE_TAG:-local}
+  build:
+    context: .
+    target: runtime
+  environment: &app-environment
+    DJANGO_DEPLOYMENT_MODE: container
+    DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY is required}
+    DJANGO_DEBUG: "false"
+    DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:?DJANGO_ALLOWED_HOSTS is required}
+    DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:?DJANGO_CSRF_TRUSTED_ORIGINS is required}
+    DJANGO_TRUST_PROXY_HEADERS: "true"
+    DJANGO_USE_X_FORWARDED_HOST: "true"
+    DJANGO_SECURE_SSL_REDIRECT: "false"
+    DJANGO_SESSION_COOKIE_SECURE: "false"
+    DJANGO_CSRF_COOKIE_SECURE: "false"
+    DJANGO_STATIC_ROOT: /app/staticfiles
+    DJANGO_MEDIA_ROOT: /app/media
+    DJANGO_PRIVATE_MEDIA_ROOT: /app/private_media
+    POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+    POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    POSTGRES_HOST: db
+    POSTGRES_PORT: "5432"
+    POSTGRES_CONN_MAX_AGE: ${POSTGRES_CONN_MAX_AGE:-60}
+    POSTGRES_CONN_HEALTH_CHECKS: "true"
+    GUNICORN_WORKERS: ${GUNICORN_WORKERS:-2}
+    GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-900}
+  volumes: &app-volumes
+    - type: bind
+      source: ${TUVTK_DATA_DIR:?TUVTK_DATA_DIR is required}/media
+      target: /app/media
+    - type: bind
+      source: ${TUVTK_DATA_DIR:?TUVTK_DATA_DIR is required}/private-media
+      target: /app/private_media
+    - type: bind
+      source: ${TUVTK_DATA_DIR:?TUVTK_DATA_DIR is required}/static
+      target: /app/staticfiles
+  depends_on:
+    db:
+      condition: service_healthy
+
+services:
+  db:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - type: bind
+        source: ${TUVTK_DATA_DIR:?TUVTK_DATA_DIR is required}/postgres
+        target: /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 10s
+    restart: unless-stopped
+
+  init:
+    <<: *app-base
+    command:
+      - /bin/sh
+      - -ec
+      - python manage.py migrate --noinput && python manage.py collectstatic --noinput
+    restart: "no"
+
+  web:
+    <<: *app-base
+    command: ["/app/docker/start-web.sh"]
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import socket; connection = socket.create_connection(('127.0.0.1', 8000), 3); connection.close()
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.28-alpine
+    environment:
+      TUVTK_PUBLIC_HOST: ${TUVTK_PUBLIC_HOST:?TUVTK_PUBLIC_HOST is required}
+      NGINX_PROXY_TIMEOUT: ${NGINX_PROXY_TIMEOUT:-900s}
+      NGINX_ENVSUBST_FILTER: ^(TUVTK_PUBLIC_HOST|NGINX_PROXY_TIMEOUT)$$
+    ports:
+      - ${TUVTK_HTTP_PORT:-80}:80
+    volumes:
+      - type: bind
+        source: ./docker/nginx.conf.template
+        target: /etc/nginx/templates/default.conf.template
+        read_only: true
+      - type: bind
+        source: ${TUVTK_DATA_DIR:?TUVTK_DATA_DIR is required}/static
+        target: /srv/static
+        read_only: true
+      - type: bind
+        source: ${TUVTK_DATA_DIR:?TUVTK_DATA_DIR is required}/media
+        target: /srv/media
+        read_only: true
+    depends_on:
+      web:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1/nginx-health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+```

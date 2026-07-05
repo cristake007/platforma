@@ -1,0 +1,149 @@
+# apps/planificator/templates/planificator/word_converter.html
+
+Generated: `2026-07-05T21:21:12`
+
+## Scope
+
+- Real source file: `apps/planificator/templates/planificator/word_converter.html`
+- App: `planificator`
+- App guide: `codex-context/apps/planificator.md`
+- Role: `template`
+- Size: 8099 bytes
+- Source SHA-256: `62be1ec0dddf8db802b05faed32bb0f5061130cdb8f7d36a4d49450d6b55557d`
+
+## Codex usage
+
+Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
+
+## Source
+
+```html
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}Convertor Word | Platforma TUVTK{% endblock %}
+
+{% block content %}
+    <section class="mx-auto w-full min-w-0 max-w-[1360px] space-y-5">
+        <div class="space-y-2">
+            <div class="breadcrumbs p-0 text-sm text-muted">
+                <ul>
+                    <li>Planificator</li>
+                    <li>Convertor Word</li>
+                </ul>
+            </div>
+            <div>
+                <h1 class="ops-title text-2xl font-bold sm:text-[2rem]">Convertor planificare Word</h1>
+                <p class="mt-1 max-w-3xl text-sm leading-6 text-muted">
+                    Potrivește cursurile din documentul Word cu programul generat, verifică sugestiile și completează primele trei perioade într-o copie nouă a documentului.
+                </p>
+            </div>
+        </div>
+
+        <div id="word-converter-error" class="alert alert-error hidden py-2 text-sm" role="alert" aria-live="assertive"></div>
+        <div id="word-converter-success" class="alert alert-success hidden py-2 text-sm" role="status" aria-live="polite"></div>
+
+        <form
+            id="word-converter-form"
+            method="post"
+            enctype="multipart/form-data"
+            class="card card-border border-base-300 bg-base-100 shadow-none"
+            data-preview-url="{% url 'planificator:word_match_preview' %}"
+            data-generate-url="{% url 'planificator:word_match_generate' %}"
+            data-download-filename="planificare_cursuri_actualizata.docx"
+            novalidate
+        >
+            {% csrf_token %}
+            <div class="card-body gap-5 p-4 sm:p-5">
+                <div class="flex flex-col justify-between gap-2 border-b border-base-300 pb-3 sm:flex-row sm:items-start">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Fișiere sursă</p>
+                        <h2 class="mt-1 text-lg font-semibold text-base-content">Pregătește potrivirile</h2>
+                        <p class="mt-1 text-sm text-muted">Documentul Word trebuie să aibă titlul cursului în prima coloană și perioadele în coloanele 4–6.</p>
+                    </div>
+                    <span class="badge badge-outline badge-sm self-start whitespace-nowrap">Maximum 20 MB / fișier</span>
+                </div>
+
+                <div class="grid gap-4 md:grid-cols-2">
+                    <fieldset class="fieldset min-w-0 rounded-field border border-base-300 bg-base-200 p-3">
+                        <label class="fieldset-legend" for="{{ form.word_file.id_for_label }}">{{ form.word_file.label }}</label>
+                        {{ form.word_file }}
+                        <div class="flex min-w-0 items-center gap-2">
+                            <button id="word-file-select" type="button" class="btn btn-outline btn-primary btn-sm shrink-0">Alege DOCX</button>
+                            <span id="word-file-name" class="min-w-0 truncate text-sm text-muted">Niciun fișier selectat</span>
+                        </div>
+                        <p class="label block whitespace-normal break-words text-xs leading-5 text-muted">Format acceptat: DOCX.</p>
+                        <p id="word-file-error" class="label hidden text-error" role="alert"></p>
+                    </fieldset>
+                    <fieldset class="fieldset min-w-0 rounded-field border border-base-300 bg-base-200 p-3">
+                        <label class="fieldset-legend" for="{{ form.schedule_file.id_for_label }}">{{ form.schedule_file.label }}</label>
+                        {{ form.schedule_file }}
+                        <div class="flex min-w-0 items-center gap-2">
+                            <button id="schedule-file-select" type="button" class="btn btn-outline btn-primary btn-sm shrink-0">Alege CSV/XLSX</button>
+                            <span id="schedule-file-name" class="min-w-0 truncate text-sm text-muted">Niciun fișier selectat</span>
+                        </div>
+                        <p class="label block whitespace-normal break-words text-xs leading-5 text-muted">Formate acceptate: CSV sau XLSX, cu Title și coloane lunare.</p>
+                        <p id="schedule-file-error" class="label hidden text-error" role="alert"></p>
+                    </fieldset>
+                </div>
+
+                <div class="flex flex-col-reverse justify-between gap-3 border-t border-base-300 pt-4 sm:flex-row sm:items-center">
+                    <p class="text-xs leading-5 text-muted">Fișierele sunt procesate doar pentru această previzualizare și nu sunt salvate în istoric.</p>
+                    <button id="word-preview-button" type="submit" class="btn btn-outline btn-primary btn-sm">
+                        Previzualizează potrivirile
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <section id="word-match-preview" class="card card-border hidden min-w-0 max-w-full overflow-hidden border-base-300 bg-base-100 shadow-none" aria-labelledby="word-match-preview-title">
+            <div class="card-body min-w-0 gap-0 p-0">
+                <div class="flex flex-col justify-between gap-3 p-4 sm:flex-row sm:items-center sm:p-5">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Verificare</p>
+                        <h2 id="word-match-preview-title" class="mt-1 text-lg font-semibold text-base-content">Potriviri propuse</h2>
+                        <p id="word-match-summary" class="mt-1 text-sm text-muted" aria-live="polite"></p>
+                    </div>
+                    <button id="word-generate-button" type="button" class="btn btn-primary btn-sm self-start sm:self-auto">
+                        Generează documentul Word
+                    </button>
+                </div>
+
+                <p class="border-t border-base-300 bg-base-200 px-4 py-2 text-xs text-muted sm:hidden">Glisează orizontal pentru a vedea toate coloanele.</p>
+                <div class="ops-word-match-scroll ops-scrollbar w-full min-w-0 max-w-full overflow-x-scroll overflow-y-auto border-t border-base-300" tabindex="0" aria-label="Tabel cu potrivirile cursurilor; glisează orizontal pentru toate coloanele">
+                    <table class="ops-word-match-table table table-fixed table-zebra table-sm">
+                        <colgroup>
+                            <col class="w-[14.75rem]">
+                            <col class="w-28">
+                            <col class="w-80">
+                            <col class="w-[22rem]">
+                            <col class="w-40">
+                        </colgroup>
+                        <thead>
+                            <tr class="bg-base-200">
+                                <th scope="col">Curs în documentul Word</th>
+                                <th scope="col">Stare</th>
+                                <th scope="col">Rând selectat din program</th>
+                                <th scope="col">Sugestii</th>
+                                <th scope="col" class="ops-word-match-periods">Perioade completate</th>
+                            </tr>
+                        </thead>
+                        <tbody id="word-match-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </section>
+
+    <div id="word-converter-loading" class="fixed inset-0 z-[70] hidden items-center justify-center bg-base-content/20 p-4" role="status" aria-live="polite">
+        <div class="flex items-center gap-3 rounded-field border border-base-300 bg-base-100 px-4 py-3 shadow-lg">
+            <span class="loading loading-spinner loading-md text-primary" aria-hidden="true"></span>
+            <span id="word-converter-loading-text" class="text-sm font-medium">Se procesează fișierele…</span>
+        </div>
+    </div>
+{% endblock %}
+
+{% block page_scripts %}
+    <script src="{% static 'planificator/word_converter.js' %}" defer></script>
+{% endblock %}
+```

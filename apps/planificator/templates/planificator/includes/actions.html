@@ -1,0 +1,21 @@
+<div class="card-actions items-center justify-between gap-3 border-t border-base-300 bg-base-200 p-4">
+    <p class="text-xs font-semibold text-base-content">
+        <span id="ops-month-count-summary">{{ selected_month_count }}</span> luni ·
+        <span id="ops-holiday-count">{{ holiday_count }}</span> zile nelucrătoare · variație
+        <span id="ops-randomness-summary">{{ form.randomness.value }}</span>/10
+    </p>
+    <button type="submit" id="ops-preview-submit" class="btn btn-outline btn-primary btn-sm">Generează programul</button>
+</div>
+
+{% if generation_error %}
+    <div class="p-4 pt-0">
+        <div class="alert alert-error" role="alert">
+            <div>
+                <p class="font-semibold">{{ generation_error }}</p>
+                {% for month, courses in unscheduled_courses.items %}
+                    <p class="mt-1 text-sm">Luna {{ month }}: {{ courses|join:", " }}</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endif %}

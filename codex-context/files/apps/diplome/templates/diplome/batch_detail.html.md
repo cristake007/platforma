@@ -1,0 +1,127 @@
+# apps/diplome/templates/diplome/batch_detail.html
+
+Generated: `2026-07-05T21:21:12`
+
+## Scope
+
+- Real source file: `apps/diplome/templates/diplome/batch_detail.html`
+- App: `diplome`
+- App guide: `codex-context/apps/diplome.md`
+- Role: `template`
+- Size: 6509 bytes
+- Source SHA-256: `2b090e4b76c6929b258546a9f73f5fa2fe9a66a68cc3396eab8c3e424c369294`
+
+## Codex usage
+
+Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
+
+## Source
+
+```html
+{% extends "layouts/base.html" %}
+
+{% block title %}Lot diplome | Platforma TUVTK{% endblock %}
+
+{% block content %}
+<section class="mx-auto w-full max-w-7xl space-y-6">
+    <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div class="space-y-2">
+            <div class="breadcrumbs p-0 text-sm text-muted">
+                <ul><li>Diplome</li><li><a href="{% url 'diplome:history_index' %}">Istoric</a></li><li>Detalii lot</li></ul>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold text-primary">{{ batch.participant_list_display_name }}</h1>
+                <p class="mt-1 text-sm text-muted">Template: {{ batch.template_display_name }}</p>
+            </div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            {% if batch.status == 'pending' %}
+                <form method="post" action="{% url 'diplome:batch_resume' batch.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary btn-sm">Reia generarea</button>
+                </form>
+            {% endif %}
+            <a href="{% url 'diplome:history_index' %}" class="btn btn-outline btn-primary btn-sm">Înapoi la istoric</a>
+            {% if batch.success_count %}<a href="{% url 'diplome:batch_zip_download' batch.pk %}" class="btn btn-primary btn-sm">Descarcă ZIP</a>{% endif %}
+        </div>
+    </header>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert {% if message.tags == 'error' %}alert-error{% elif message.tags == 'warning' %}alert-warning{% else %}alert-success{% endif %} py-2 text-sm" role="{% if message.tags == 'error' %}alert{% else %}status{% endif %}"><span>{{ message }}</span></div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="border border-base-300 bg-base-100 p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-muted">Status</p>
+            <p class="mt-2 font-semibold text-base-content">{{ batch.get_status_display }}</p>
+        </div>
+        <div class="border border-base-300 bg-base-100 p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-muted">Total</p>
+            <p class="mt-2 text-xl font-bold text-base-content">{{ batch.total_count }}</p>
+        </div>
+        <div class="border border-success/40 bg-success/10 p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-muted">Generate</p>
+            <p class="mt-2 text-xl font-bold text-success">{{ batch.success_count }}</p>
+        </div>
+        <div class="border border-error/40 bg-error/10 p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-muted">Eșuate</p>
+            <p class="mt-2 text-xl font-bold text-error">{{ batch.failed_count }}</p>
+        </div>
+    </div>
+
+    <dl class="grid gap-3 border border-base-300 bg-base-100 p-4 text-sm sm:grid-cols-3">
+        <div><dt class="text-xs text-muted">Creat</dt><dd class="mt-1 text-base-content">{{ batch.created_at|date:"d.m.Y H:i" }}</dd></div>
+        <div><dt class="text-xs text-muted">Început</dt><dd class="mt-1 text-base-content">{% if batch.started_at %}{{ batch.started_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</dd></div>
+        <div><dt class="text-xs text-muted">Finalizat</dt><dd class="mt-1 text-base-content">{% if batch.completed_at %}{{ batch.completed_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</dd></div>
+    </dl>
+
+    {% if batch.error_summary %}
+        <section class="border border-warning/40 bg-warning/10 p-4" aria-labelledby="batch-errors-title">
+            <h2 id="batch-errors-title" class="font-semibold text-base-content">Erori de generare</h2>
+            <ul class="mt-2 space-y-1 text-sm text-muted">
+                {% for error in batch.error_summary %}
+                    <li>{% if error.participant_name %}<span class="font-medium text-base-content">{{ error.participant_name }}</span>{% if error.certificate_number %} ({{ error.certificate_number }}){% endif %}: {% endif %}{{ error.message }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+    {% endif %}
+
+    <section class="space-y-3" aria-labelledby="generated-pdfs-title">
+        <h2 id="generated-pdfs-title" class="text-lg font-semibold text-primary">Fișiere PDF generate</h2>
+        <div class="overflow-x-auto border border-base-300 bg-base-100">
+            <table class="table table-xs">
+                <thead><tr><th>Participant</th><th>Număr certificat</th><th>Status</th><th>Creat</th><th class="text-right">Acțiuni</th></tr></thead>
+                <tbody>
+                    {% for diploma in generated_diplomas %}
+                        <tr>
+                            <td class="font-medium text-base-content">{{ diploma.participant_name }}</td>
+                            <td>{{ diploma.certificate_number }}</td>
+                            <td><span class="badge badge-success badge-sm">Disponibil</span></td>
+                            <td class="whitespace-nowrap">{{ diploma.created_at|date:"d.m.Y H:i" }}</td>
+                            <td>
+                                <div class="flex justify-end">
+                                    <a
+                                        href="{% url 'diplome:generation_download' diploma.pk %}"
+                                        class="btn btn-square btn-ghost btn-xs text-success hover:bg-success/10"
+                                        aria-label="Descarcă diploma PDF"
+                                        title="Descarcă diploma PDF"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 3.75v11.5m0 0 4-4m-4 4-4-4M5 19.25h14" />
+                                        </svg>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="5" class="py-10 text-center text-muted">Nu a fost generat niciun fișier PDF.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</section>
+{% endblock %}
+```

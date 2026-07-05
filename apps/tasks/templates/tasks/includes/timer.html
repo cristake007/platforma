@@ -1,0 +1,11 @@
+<span
+    class="inline-flex items-center gap-1.5 rounded-field border border-base-300 px-2 py-1 text-xs font-semibold tabular-nums"
+    data-task-timer
+    data-start-at="{% if task.start_at %}{{ task.start_at|date:'c' }}{% else %}{{ task.created_at|date:'c' }}{% endif %}"
+    data-due-at="{{ task.due_at|date:'c' }}"
+    data-completed-at="{% if task.completed_at %}{{ task.completed_at|date:'c' }}{% endif %}"
+>
+    <span aria-hidden="true">◷</span>
+    <span data-timer-label>{% if task.completed_at %}Finalizat{% else %}Se calculează…{% endif %}</span>
+</span>
+
