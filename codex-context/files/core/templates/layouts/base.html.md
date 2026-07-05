@@ -1,14 +1,14 @@
 # core/templates/layouts/base.html
 
-Generated: `2026-07-05T21:21:12`
+Generated: `2026-07-05T22:30:50`
 
 ## Scope
 
 - Real source file: `core/templates/layouts/base.html`
 - App: none
 - Role: `template`
-- Size: 6659 bytes
-- Source SHA-256: `e8ed763d99fa0eb8a926e5bf6b4d94e9705197c835b7d66f2f07ffd063c03660`
+- Size: 6893 bytes
+- Source SHA-256: `d085b9f4797912b5cf1f3c22bccfa03aee3ee098f12ecd0e7dc9f2a60d72acb4`
 
 ## Codex usage
 
@@ -101,7 +101,13 @@ Use this context only when the task directly touches this file or requires this 
         </header>
 
         <div class="drawer h-full min-h-0 flex-1 lg:drawer-open">
-            <input id="ops-sidebar" type="checkbox" class="drawer-toggle">
+            <input
+                id="ops-sidebar"
+                type="checkbox"
+                class="drawer-toggle"
+                data-sidebar-start-collapsed="{% block sidebar_start_collapsed %}false{% endblock %}"
+            >
+            <script src="{% static 'js/sidebar_state.js' %}"></script>
             <div class="drawer-content h-full min-h-0 overflow-hidden">
                 <main class="ops-scrollbar h-full overflow-y-auto">
                     <div class="mx-auto w-full max-w-[1600px] px-4 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-5">

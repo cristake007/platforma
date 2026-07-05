@@ -218,6 +218,7 @@ stop_postgres.bat
 theme/__init__.py
 theme/apps.py
 theme/static/js/sidebar.js
+theme/static/js/sidebar_state.js
 theme/static/js/user_menu.js
 theme/static_src/.gitignore
 theme/static_src/package.json

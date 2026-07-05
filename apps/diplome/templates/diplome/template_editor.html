@@ -2,6 +2,7 @@
 {% load static %}
 
 {% block title %}Editor {{ diploma_template.name }} | Platforma TUVTK{% endblock %}
+{% block sidebar_start_collapsed %}true{% endblock %}
 
 {% block page_styles %}
 <link rel="stylesheet" href="{% static 'diplome/template_editor.css' %}">
@@ -11,7 +12,6 @@
 <section
     id="diploma-editor"
     class="diploma-editor"
-    data-sidebar-start-collapsed="true"
     data-save-url="{% url 'diplome:template_editor' diploma_template.pk %}"
     data-preview-url="{% url 'diplome:template_preview' diploma_template.pk %}"
     data-template-list-url="{% url 'diplome:template_list' %}"

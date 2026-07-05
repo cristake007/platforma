@@ -40,6 +40,18 @@ class DashboardViewTests(TestCase):
         self.assertNotContains(response, 'ops-flyout-heading')
         self.assertNotContains(response, 'ops-submenu is-drawer-close:hidden')
 
+    def test_sidebar_state_is_restored_before_drawer_markup_renders(self):
+        response = self.client.get(reverse('dashboard:index'))
+
+        self.assertContains(response, 'data-sidebar-start-collapsed="false"')
+        self.assertContains(response, 'js/sidebar_state.js')
+        content = response.content.decode()
+        toggle_position = content.index('id="ops-sidebar"')
+        initializer_position = content.index('js/sidebar_state.js')
+        drawer_content_position = content.index('class="drawer-content')
+        self.assertLess(toggle_position, initializer_position)
+        self.assertLess(initializer_position, drawer_content_position)
+
     def test_anonymous_user_is_redirected_to_login(self):
         self.client.logout()
 

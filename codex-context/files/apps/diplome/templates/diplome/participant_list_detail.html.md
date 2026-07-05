@@ -1,6 +1,6 @@
 # apps/diplome/templates/diplome/participant_list_detail.html
 
-Generated: `2026-07-05T21:21:12`
+Generated: `2026-07-05T22:30:50`
 
 ## Scope
 

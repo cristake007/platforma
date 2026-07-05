@@ -1,6 +1,6 @@
 # App context: tasks
 
-Generated: `2026-07-05T21:21:12`
+Generated: `2026-07-05T22:30:50`
 
 Local instructions: `apps/tasks/AGENTS.md`. They define app contracts and the smallest workflow-specific file set.
 

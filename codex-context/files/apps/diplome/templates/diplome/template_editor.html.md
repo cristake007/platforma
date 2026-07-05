@@ -1,6 +1,6 @@
 # apps/diplome/templates/diplome/template_editor.html
 
-Generated: `2026-07-05T21:21:12`
+Generated: `2026-07-05T22:30:50`
 
 ## Scope
 
@@ -8,8 +8,8 @@ Generated: `2026-07-05T21:21:12`
 - App: `diplome`
 - App guide: `codex-context/apps/diplome.md`
 - Role: `template`
-- Size: 24740 bytes
-- Source SHA-256: `dada9f172c148285c2ad705a03c3b3279d22b3317fbbdc30c7ef23f14da45d65`
+- Size: 24754 bytes
+- Source SHA-256: `bc6d3444fd9fe4eca400136fa3478948cd9641453620af3462408fac1fbb61a7`
 
 ## Codex usage
 
@@ -22,6 +22,7 @@ Use this context only when the task directly touches this file or requires this 
 {% load static %}
 
 {% block title %}Editor {{ diploma_template.name }} | Platforma TUVTK{% endblock %}
+{% block sidebar_start_collapsed %}true{% endblock %}
 
 {% block page_styles %}
 <link rel="stylesheet" href="{% static 'diplome/template_editor.css' %}">
@@ -31,7 +32,6 @@ Use this context only when the task directly touches this file or requires this 
 <section
     id="diploma-editor"
     class="diploma-editor"
-    data-sidebar-start-collapsed="true"
     data-save-url="{% url 'diplome:template_editor' diploma_template.pk %}"
     data-preview-url="{% url 'diplome:template_preview' diploma_template.pk %}"
     data-template-list-url="{% url 'diplome:template_list' %}"

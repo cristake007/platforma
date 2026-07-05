@@ -1,6 +1,6 @@
 # apps/diplome/migrations/0005_participant_import_mapping.py
 
-Generated: `2026-07-05T21:21:12`
+Generated: `2026-07-05T22:30:50`
 
 ## Scope
 

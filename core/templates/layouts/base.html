@@ -82,7 +82,13 @@
         </header>
 
         <div class="drawer h-full min-h-0 flex-1 lg:drawer-open">
-            <input id="ops-sidebar" type="checkbox" class="drawer-toggle">
+            <input
+                id="ops-sidebar"
+                type="checkbox"
+                class="drawer-toggle"
+                data-sidebar-start-collapsed="{% block sidebar_start_collapsed %}false{% endblock %}"
+            >
+            <script src="{% static 'js/sidebar_state.js' %}"></script>
             <div class="drawer-content h-full min-h-0 overflow-hidden">
                 <main class="ops-scrollbar h-full overflow-y-auto">
                     <div class="mx-auto w-full max-w-[1600px] px-4 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-5">

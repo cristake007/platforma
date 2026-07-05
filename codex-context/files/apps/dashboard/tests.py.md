@@ -1,6 +1,6 @@
 # apps/dashboard/tests.py
 
-Generated: `2026-07-05T21:21:12`
+Generated: `2026-07-05T22:30:50`
 
 ## Scope
 
@@ -8,8 +8,8 @@ Generated: `2026-07-05T21:21:12`
 - App: `dashboard`
 - App guide: `codex-context/apps/dashboard.md`
 - Role: `test`
-- Size: 2214 bytes
-- Source SHA-256: `1d7712b9e4ecdf5eef36f0f7d697f4d33c1dfa5515161b61a4017ec66b9822cd`
+- Size: 2872 bytes
+- Source SHA-256: `76af3eb6bacd6aa3dc997cbed075ff503c175687e14c9052706c80743ebc89aa`
 
 ## Codex usage
 
@@ -59,6 +59,18 @@ class DashboardViewTests(TestCase):
         self.assertContains(response, 'class="ops-submenu-label"', count=2)
         self.assertNotContains(response, 'ops-flyout-heading')
         self.assertNotContains(response, 'ops-submenu is-drawer-close:hidden')
+
+    def test_sidebar_state_is_restored_before_drawer_markup_renders(self):
+        response = self.client.get(reverse('dashboard:index'))
+
+        self.assertContains(response, 'data-sidebar-start-collapsed="false"')
+        self.assertContains(response, 'js/sidebar_state.js')
+        content = response.content.decode()
+        toggle_position = content.index('id="ops-sidebar"')
+        initializer_position = content.index('js/sidebar_state.js')
+        drawer_content_position = content.index('class="drawer-content')
+        self.assertLess(toggle_position, initializer_position)
+        self.assertLess(initializer_position, drawer_content_position)
 
     def test_anonymous_user_is_redirected_to_login(self):
         self.client.logout()

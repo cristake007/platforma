@@ -1,6 +1,6 @@
 # apps/diplome/templates/diplome/template_preview.html
 
-Generated: `2026-07-05T21:21:12`
+Generated: `2026-07-05T22:30:50`
 
 ## Scope
 
@@ -8,8 +8,8 @@ Generated: `2026-07-05T21:21:12`
 - App: `diplome`
 - App guide: `codex-context/apps/diplome.md`
 - Role: `template`
-- Size: 1559 bytes
-- Source SHA-256: `8ac16dea92aaa51307a08702cb8da63079ff83cb51dce0b96226f77280f1ee80`
+- Size: 1577 bytes
+- Source SHA-256: `101d4ab945a312b352961ff2f5e55e2d40c115649561701bf2a64618b4ae1e49`
 
 ## Codex usage
 
@@ -22,13 +22,14 @@ Use this context only when the task directly touches this file or requires this 
 {% load static %}
 
 {% block title %}Preview {{ diploma_template.name }} | Platforma TUVTK{% endblock %}
+{% block sidebar_start_collapsed %}true{% endblock %}
 
 {% block page_styles %}
 <link rel="stylesheet" href="{% static 'diplome/template_editor.css' %}">
 {% endblock %}
 
 {% block content %}
-<section id="diploma-preview" class="diploma-preview-page" data-sidebar-start-collapsed="true">
+<section id="diploma-preview" class="diploma-preview-page">
     <header class="preview-heading">
         <div>
             <div class="breadcrumbs p-0 text-xs text-muted">

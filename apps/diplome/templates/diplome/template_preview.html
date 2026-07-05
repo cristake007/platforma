@@ -2,13 +2,14 @@
 {% load static %}
 
 {% block title %}Preview {{ diploma_template.name }} | Platforma TUVTK{% endblock %}
+{% block sidebar_start_collapsed %}true{% endblock %}
 
 {% block page_styles %}
 <link rel="stylesheet" href="{% static 'diplome/template_editor.css' %}">
 {% endblock %}
 
 {% block content %}
-<section id="diploma-preview" class="diploma-preview-page" data-sidebar-start-collapsed="true">
+<section id="diploma-preview" class="diploma-preview-page">
     <header class="preview-heading">
         <div>
             <div class="breadcrumbs p-0 text-xs text-muted">
