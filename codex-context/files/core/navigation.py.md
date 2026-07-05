@@ -1,27 +1,20 @@
-# core/navigation.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `core/navigation.py`
 
-## Scope
-
-- Real source file: `core/navigation.py`
-- App: none
-- Role: `core`
-- Size: 5504 bytes
-- Source SHA-256: `45760ef880d3ae88e74976672db1fb9dac3c36a7bb6c489c838554b8b80388c4`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 5.5 KB
 
 ```python
 NAVIGATION = (
     {
         "label": "Overview",
         "items": (
-            {"label": "Dashboard", "icon": "grid-1x2-fill", "url_name": "dashboard:index"},
+            {
+                "label": "Dashboard",
+                "icon": "grid-1x2-fill",
+                "url_name": "dashboard:index",
+                "htmx": True,
+            },
             {
                 "label": "Task-uri",
                 "icon": "list-task",
@@ -72,6 +65,7 @@ NAVIGATION = (
                     {
                         "label": "Istoric",
                         "url_name": "planificator:istoric",
+                        "htmx": True,
                         "permission": "planificator.use_course_planning",
                         "active_url_names": (
                             "planificator:istoric",

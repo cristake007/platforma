@@ -1,21 +1,8 @@
-# apps/planificator/presentation.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/presentation.py`
 
-## Scope
-
-- Real source file: `apps/planificator/presentation.py`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `backend`
-- Size: 1665 bytes
-- Source SHA-256: `246ac9242b0d6badd60524d9676519c6519fbba55af06b663d311fc7ee6693a3`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 1.6 KB
 
 ```python
 from collections import OrderedDict

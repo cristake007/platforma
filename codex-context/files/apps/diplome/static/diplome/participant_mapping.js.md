@@ -1,21 +1,8 @@
-# apps/diplome/static/diplome/participant_mapping.js
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/diplome/static/diplome/participant_mapping.js`
 
-## Scope
-
-- Real source file: `apps/diplome/static/diplome/participant_mapping.js`
-- App: `diplome`
-- App guide: `codex-context/apps/diplome.md`
-- Role: `static`
-- Size: 1690 bytes
-- Source SHA-256: `497c4f341ccb06b2ddf368272cf37ffd341bb477643bfffbaf1162a52f7d7430`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 1.7 KB
 
 ```javascript
 (() => {

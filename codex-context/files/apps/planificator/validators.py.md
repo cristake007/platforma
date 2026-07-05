@@ -1,21 +1,8 @@
-# apps/planificator/validators.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/validators.py`
 
-## Scope
-
-- Real source file: `apps/planificator/validators.py`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `backend`
-- Size: 7118 bytes
-- Source SHA-256: `bc23f7ab2758dbd6a74f4d0435c27318020f922fea029fb825af67ae18527ecd`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 7.0 KB
 
 ```python
 from datetime import datetime

@@ -1,20 +1,8 @@
-# theme/static/js/sidebar.js
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `theme/static/js/sidebar.js`
 
-## Scope
-
-- Real source file: `theme/static/js/sidebar.js`
-- App: none
-- Role: `static`
-- Size: 5598 bytes
-- Source SHA-256: `626c3642b2dd1af60ba735b22b1ce2e3f7e4e4732f61a6092d648cf6d3c0e1e9`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 5.5 KB
 
 ```javascript
 (() => {

@@ -1,21 +1,8 @@
-# apps/media_library/urls.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/media_library/urls.py`
 
-## Scope
-
-- Real source file: `apps/media_library/urls.py`
-- App: `media_library`
-- App guide: `codex-context/apps/media_library.md`
-- Role: `backend`
-- Size: 623 bytes
-- Source SHA-256: `326e8f9b2d4c4b93b3815eba940cae08e72331dbb415bcd57863e7993ed5f455`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 623 B
 
 ```python
 from django.urls import path

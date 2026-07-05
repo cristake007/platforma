@@ -1,20 +1,8 @@
-# theme/static_src/package.json
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `theme/static_src/package.json`
 
-## Scope
-
-- Real source file: `theme/static_src/package.json`
-- App: none
-- Role: `theme`
-- Size: 781 bytes
-- Source SHA-256: `b8ce596b0247722d3380363f615f350f5ac75e6c50195e9bc17ddccd65072a5c`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 781 B
 
 ```json
 {

@@ -1,21 +1,8 @@
-# apps/media_library/tests.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/media_library/tests.py`
 
-## Scope
-
-- Real source file: `apps/media_library/tests.py`
-- App: `media_library`
-- App guide: `codex-context/apps/media_library.md`
-- Role: `test`
-- Size: 18302 bytes
-- Source SHA-256: `bc8e356a9041ebaeb82a77b5ef1d0f52382cb9ab46e761f84af215345b464968`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 17.9 KB
 
 ```python
 import json

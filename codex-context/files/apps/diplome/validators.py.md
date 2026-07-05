@@ -1,21 +1,8 @@
-# apps/diplome/validators.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/diplome/validators.py`
 
-## Scope
-
-- Real source file: `apps/diplome/validators.py`
-- App: `diplome`
-- App guide: `codex-context/apps/diplome.md`
-- Role: `backend`
-- Size: 20936 bytes
-- Source SHA-256: `c4fb8049a9e82c9057d787663a0940e2f1cd88d2ea3441ea8b0ef3dc16593740`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 20.4 KB
 
 ```python
 import math

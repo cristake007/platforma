@@ -1,21 +1,8 @@
-# apps/planificator/static/planificator/course_updater.js
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/static/planificator/course_updater.js`
 
-## Scope
-
-- Real source file: `apps/planificator/static/planificator/course_updater.js`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `static`
-- Size: 16779 bytes
-- Source SHA-256: `e3e68c6a686bb31917f8bd3bf9e76855b465333d175949a28a4c8ec877fab140`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 16.4 KB
 
 ```javascript
 (() => {

@@ -1,21 +1,8 @@
-# apps/tasks/templates/tasks/includes/messages.html
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/tasks/templates/tasks/includes/messages.html`
 
-## Scope
-
-- Real source file: `apps/tasks/templates/tasks/includes/messages.html`
-- App: `tasks`
-- App guide: `codex-context/apps/tasks.md`
-- Role: `template`
-- Size: 316 bytes
-- Source SHA-256: `4e2ab9c003c72b479813bc6c967913ce961af419d7bf4f3ab60bd5dba265e349`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 316 B
 
 ```html
 {% if messages %}
@@ -25,4 +12,5 @@ Use this context only when the task directly touches this file or requires this 
     {% endfor %}
 </div>
 {% endif %}
+
 ```

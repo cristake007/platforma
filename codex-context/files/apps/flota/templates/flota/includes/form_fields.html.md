@@ -1,21 +1,8 @@
-# apps/flota/templates/flota/includes/form_fields.html
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/flota/templates/flota/includes/form_fields.html`
 
-## Scope
-
-- Real source file: `apps/flota/templates/flota/includes/form_fields.html`
-- App: `flota`
-- App guide: `codex-context/apps/flota.md`
-- Role: `template`
-- Size: 831 bytes
-- Source SHA-256: `67f63d611aafe5a3f9191ed36990f8e2d5adb6f267f6fc686c13c7b1d301c441`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 831 B
 
 ```html
 {% if form.non_field_errors %}
@@ -31,4 +18,5 @@ Use this context only when the task directly touches this file or requires this 
         {% if field.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ field.errors|join:", " }}</p>{% endif %}
     </fieldset>
 {% endfor %}
+
 ```

@@ -1,20 +1,8 @@
-# repomix.config.json
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `repomix.config.json`
 
-## Scope
-
-- Real source file: `repomix.config.json`
-- App: none
-- Role: `tooling`
-- Size: 1293 bytes
-- Source SHA-256: `36d5ece4e5f5c66b71c0ebe0b3f6d07935d2c526327faae9a498c80ff654012f`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 1.3 KB
 
 ```json
 {

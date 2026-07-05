@@ -1,20 +1,8 @@
-# core/templates/registration/login.html
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `core/templates/registration/login.html`
 
-## Scope
-
-- Real source file: `core/templates/registration/login.html`
-- App: none
-- Role: `template`
-- Size: 2574 bytes
-- Source SHA-256: `0d19249738115dc8a356a93b8063739877b27586abca89cf34fbc5776e2f7d05`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 2.5 KB
 
 ```html
 {% load static tailwind_tags %}

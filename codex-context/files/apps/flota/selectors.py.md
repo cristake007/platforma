@@ -1,21 +1,8 @@
-# apps/flota/selectors.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/flota/selectors.py`
 
-## Scope
-
-- Real source file: `apps/flota/selectors.py`
-- App: `flota`
-- App guide: `codex-context/apps/flota.md`
-- Role: `backend`
-- Size: 7415 bytes
-- Source SHA-256: `bc907ad93e52db7528f33b71254946899c480c118431bcf01d9df95bc21be610`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 7.2 KB
 
 ```python
 from dataclasses import dataclass

@@ -1,21 +1,8 @@
-# apps/diplome/models.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/diplome/models.py`
 
-## Scope
-
-- Real source file: `apps/diplome/models.py`
-- App: `diplome`
-- App guide: `codex-context/apps/diplome.md`
-- Role: `backend`
-- Size: 15398 bytes
-- Source SHA-256: `76addb681e54cd20dc4abbfe8f20927a4bbf85de9a7283a189ad71c1914aa839`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 15.0 KB
 
 ```python
 import uuid

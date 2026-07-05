@@ -1,21 +1,8 @@
-# apps/diplome/static/diplome/template_editor.js
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/diplome/static/diplome/template_editor.js`
 
-## Scope
-
-- Real source file: `apps/diplome/static/diplome/template_editor.js`
-- App: `diplome`
-- App guide: `codex-context/apps/diplome.md`
-- Role: `static`
-- Size: 75315 bytes
-- Source SHA-256: `a170cb3fc8f8ac8bc23cb07601bbec000825b89891b775f41d5a23fef5ab6629`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 73.5 KB
 
 ```javascript
 (function () {

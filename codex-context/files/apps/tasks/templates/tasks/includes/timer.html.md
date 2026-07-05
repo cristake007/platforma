@@ -1,21 +1,8 @@
-# apps/tasks/templates/tasks/includes/timer.html
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/tasks/templates/tasks/includes/timer.html`
 
-## Scope
-
-- Real source file: `apps/tasks/templates/tasks/includes/timer.html`
-- App: `tasks`
-- App guide: `codex-context/apps/tasks.md`
-- Role: `template`
-- Size: 573 bytes
-- Source SHA-256: `adf0f7f1cfdf58031f2832f1cda52aceb5b37f4798f9abdb9045d8ed4eed8fad`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 573 B
 
 ```html
 <span
@@ -28,4 +15,5 @@ Use this context only when the task directly touches this file or requires this 
     <span aria-hidden="true">◷</span>
     <span data-timer-label>{% if task.completed_at %}Finalizat{% else %}Se calculează…{% endif %}</span>
 </span>
+
 ```

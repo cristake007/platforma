@@ -1,21 +1,8 @@
-# apps/tasks/templates/tasks/includes/form_fields.html
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/tasks/templates/tasks/includes/form_fields.html`
 
-## Scope
-
-- Real source file: `apps/tasks/templates/tasks/includes/form_fields.html`
-- App: `tasks`
-- App guide: `codex-context/apps/tasks.md`
-- Role: `template`
-- Size: 775 bytes
-- Source SHA-256: `8509b459ad530de92859342a8d25fb369165c4c7343b296092793df2d53a34ad`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 775 B
 
 ```html
 {% if form.non_field_errors %}
@@ -29,4 +16,5 @@ Use this context only when the task directly touches this file or requires this 
         {% if field.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ field.errors|join:", " }}</p>{% endif %}
     </fieldset>
 {% endfor %}
+
 ```

@@ -1,20 +1,8 @@
-# platforma_tuvtk/wsgi.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `platforma_tuvtk/wsgi.py`
 
-## Scope
-
-- Real source file: `platforma_tuvtk/wsgi.py`
-- App: none
-- Role: `project-config`
-- Size: 423 bytes
-- Source SHA-256: `37dcb50febc0a7b7dcf1e8d41e816e9f1cccb9b4173733f959479c54b697acaa`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 407 B
 
 ```python
 """

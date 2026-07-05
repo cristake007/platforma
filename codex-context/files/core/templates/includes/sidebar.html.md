@@ -1,20 +1,8 @@
-# core/templates/includes/sidebar.html
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `core/templates/includes/sidebar.html`
 
-## Scope
-
-- Real source file: `core/templates/includes/sidebar.html`
-- App: none
-- Role: `template`
-- Size: 5724 bytes
-- Source SHA-256: `42adb0e17420093941e9ca5b06bf8b92eb17c8bd70d2a29b0c5b901ddd7b79a0`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 6.0 KB
 
 ```html
 {% load bootstrap_icons %}
@@ -42,7 +30,7 @@ Use this context only when the task directly touches this file or requires this 
                                                 {% for child in item.children %}
                                                     <li>
                                                         {% if child.url_name %}
-                                                            <a href="{% url child.url_name %}" class="transition-none{% if child.is_active %} active font-semibold{% endif %}" {% if child.is_active %}aria-current="page"{% endif %}><span class="ops-submenu-label">{{ child.label }}</span></a>
+                                                            <a href="{% url child.url_name %}" data-shell-nav-url="{% url child.url_name %}"{% if child.htmx %} hx-get="{% url child.url_name %}" hx-target="#page-content" hx-swap="outerHTML show:#ops-main-scroll:top" hx-push-url="true" hx-sync="#page-content:replace"{% endif %} class="transition-none{% if child.is_active %} active font-semibold{% endif %}" {% if child.is_active %}aria-current="page"{% endif %}><span class="ops-submenu-label">{{ child.label }}</span></a>
                                                         {% else %}
                                                             <a href="#" class="transition-none"><span class="ops-submenu-label">{{ child.label }}</span></a>
                                                         {% endif %}
@@ -52,7 +40,7 @@ Use this context only when the task directly touches this file or requires this 
                                         </details>
                                     {% else %}
                                         {% if item.url_name %}
-                                            <a href="{% url item.url_name %}" class="is-drawer-close:tooltip is-drawer-close:tooltip-right is-drawer-close:justify-center transition-none{% if item.is_active %} active font-semibold{% endif %}" data-tip="{{ item.label }}" {% if item.is_active %}aria-current="page"{% endif %}>
+                                            <a href="{% url item.url_name %}" data-shell-nav-url="{% url item.url_name %}"{% if item.htmx %} hx-get="{% url item.url_name %}" hx-target="#page-content" hx-swap="outerHTML show:#ops-main-scroll:top" hx-push-url="true" hx-sync="#page-content:replace"{% endif %} class="is-drawer-close:tooltip is-drawer-close:tooltip-right is-drawer-close:justify-center transition-none{% if item.is_active %} active font-semibold{% endif %}" data-tip="{{ item.label }}" {% if item.is_active %}aria-current="page"{% endif %}>
                                         {% else %}
                                             <a href="#" class="is-drawer-close:tooltip is-drawer-close:tooltip-right is-drawer-close:justify-center transition-none" data-tip="{{ item.label }}">
                                         {% endif %}

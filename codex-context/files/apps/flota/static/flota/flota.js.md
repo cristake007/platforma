@@ -1,21 +1,8 @@
-# apps/flota/static/flota/flota.js
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/flota/static/flota/flota.js`
 
-## Scope
-
-- Real source file: `apps/flota/static/flota/flota.js`
-- App: `flota`
-- App guide: `codex-context/apps/flota.md`
-- Role: `static`
-- Size: 1760 bytes
-- Source SHA-256: `f8f5d951940e4322a4d4a6483acddca67119cb9dea1ee9b76e48a543d7fc6934`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 1.7 KB
 
 ```javascript
 (() => {

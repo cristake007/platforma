@@ -1,20 +1,8 @@
-# core/tests.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `core/tests.py`
 
-## Scope
-
-- Real source file: `core/tests.py`
-- App: none
-- Role: `test`
-- Size: 2974 bytes
-- Source SHA-256: `726a2dcb41ec4bf0001f87afe219e3228bd561217aa472a84394dd5259bc5a92`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 3.0 KB
 
 ```python
 from django.contrib.auth.models import AnonymousUser
@@ -44,6 +32,7 @@ class ApplicationShellTests(TestCase):
 
         self.assertTrue(dashboard_item['is_active'])
         self.assertEqual(dashboard_item['url_name'], 'dashboard:index')
+        self.assertEqual(context['active_navigation_url'], '/')
 
     def test_context_processor_does_not_query_the_database(self):
         user = get_user_model().objects.create_user(username="shell-user")

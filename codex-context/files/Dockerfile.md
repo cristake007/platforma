@@ -1,22 +1,10 @@
-# Dockerfile
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `Dockerfile`
 
-## Scope
+Size: 1.2 KB
 
-- Real source file: `Dockerfile`
-- App: none
-- Role: `source`
-- Size: 1192 bytes
-- Source SHA-256: `8a6aedddd45977e70d842b8dc600cf7dcc3d2f196f71d8c6c15b30043d2b557f`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
-
-```text
+```dockerfile
 FROM node:22-bookworm-slim AS frontend
 
 WORKDIR /build

@@ -1,21 +1,8 @@
-# apps/flota/templates/flota/vehicle_form.html
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/flota/templates/flota/vehicle_form.html`
 
-## Scope
-
-- Real source file: `apps/flota/templates/flota/vehicle_form.html`
-- App: `flota`
-- App guide: `codex-context/apps/flota.md`
-- Role: `template`
-- Size: 1158 bytes
-- Source SHA-256: `d2ae18a93a1909a96dfadbdd9c0a7049d9dcc5265da66b5be5c50abdb4359a34`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 1.1 KB
 
 ```html
 {% extends "layouts/base.html" %}
@@ -39,4 +26,5 @@ Use this context only when the task directly touches this file or requires this 
     </form>
 </section>
 {% endblock %}
+
 ```

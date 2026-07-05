@@ -1,21 +1,8 @@
-# apps/tasks/urls.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/tasks/urls.py`
 
-## Scope
-
-- Real source file: `apps/tasks/urls.py`
-- App: `tasks`
-- App guide: `codex-context/apps/tasks.md`
-- Role: `backend`
-- Size: 1811 bytes
-- Source SHA-256: `1d2c915b8a9c1918fccdc98be171dc1b109b9d8af9d34d6f7124acf0e4cacf9a`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 1.8 KB
 
 ```python
 from django.urls import path
@@ -45,4 +32,5 @@ urlpatterns = [
     path("tasks/<uuid:task_id>/archive/", views.TaskArchiveView.as_view(), name="task_archive"),
     path("boards/<uuid:board_id>/state/", views.BoardStateView.as_view(), name="board_state"),
 ]
+
 ```

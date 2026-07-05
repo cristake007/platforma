@@ -1,23 +1,13 @@
-# core/context_processors.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `core/context_processors.py`
 
-## Scope
-
-- Real source file: `core/context_processors.py`
-- App: none
-- Role: `core`
-- Size: 3012 bytes
-- Source SHA-256: `8e1f1f1d7f5232eb428af1a98d7f9c2772b7ca7b2661ae223e08aeed0e198980`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 3.6 KB
 
 ```python
 import re
+
+from django.urls import reverse
 
 from .navigation import NAVIGATION
 
@@ -81,8 +71,24 @@ def build_application_shell(request, profile=None, permissions: set[str] | None 
             user_initials = username[:2].upper() or "U"
         if profile and profile.avatar:
             user_avatar_url = profile.avatar.url
+    navigation = build_navigation(request, permissions)
+    active_navigation_url = ""
+    for section in navigation:
+        for item in section["items"]:
+            active_child = next(
+                (child for child in item["children"] if child["is_active"]),
+                None,
+            )
+            active_item = active_child or (item if item["is_active"] else None)
+            if active_item and active_item.get("url_name"):
+                active_navigation_url = reverse(active_item["url_name"])
+                break
+        if active_navigation_url:
+            break
+
     return {
-        "app_navigation": build_navigation(request, permissions),
+        "app_navigation": navigation,
+        "active_navigation_url": active_navigation_url,
         "app_name": "Platforma TUVTK",
         "app_tagline": "Operațiuni interne",
         "user_display_name": user_display_name,

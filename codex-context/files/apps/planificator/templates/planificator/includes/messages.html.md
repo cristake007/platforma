@@ -1,21 +1,8 @@
-# apps/planificator/templates/planificator/includes/messages.html
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/templates/planificator/includes/messages.html`
 
-## Scope
-
-- Real source file: `apps/planificator/templates/planificator/includes/messages.html`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `template`
-- Size: 773 bytes
-- Source SHA-256: `37504803047b3cdc710473bd8446c6b1d56960fe9f3231f7b6b038c1eae6f551`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 773 B
 
 ```html
 {% if page_messages %}

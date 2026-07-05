@@ -1,21 +1,8 @@
-# apps/diplome/views.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/diplome/views.py`
 
-## Scope
-
-- Real source file: `apps/diplome/views.py`
-- App: `diplome`
-- App guide: `codex-context/apps/diplome.md`
-- Role: `backend`
-- Size: 24389 bytes
-- Source SHA-256: `2cbcd5d14769862287586dbe38935e0d95d03de08ffd88dcea3264b8aeeb5f3c`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 23.8 KB
 
 ```python
 import logging

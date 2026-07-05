@@ -1,21 +1,8 @@
-# apps/tasks/templates/tasks/hub.html
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/tasks/templates/tasks/hub.html`
 
-## Scope
-
-- Real source file: `apps/tasks/templates/tasks/hub.html`
-- App: `tasks`
-- App guide: `codex-context/apps/tasks.md`
-- Role: `template`
-- Size: 8735 bytes
-- Source SHA-256: `e92f1f6f03e3e117f1b947c08d2d6e1ac4d456a8758980511fa46f6e20cf7c3c`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 8.5 KB
 
 ```html
 {% extends "layouts/base.html" %}

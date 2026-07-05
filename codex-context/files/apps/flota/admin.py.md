@@ -1,21 +1,8 @@
-# apps/flota/admin.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/flota/admin.py`
 
-## Scope
-
-- Real source file: `apps/flota/admin.py`
-- App: `flota`
-- App guide: `codex-context/apps/flota.md`
-- Role: `backend`
-- Size: 2287 bytes
-- Source SHA-256: `bd0f66329685956957a66051a0708147374730733c73869fcbc1764a54db2cee`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 2.2 KB
 
 ```python
 from django.contrib import admin

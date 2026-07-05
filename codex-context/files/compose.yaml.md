@@ -1,20 +1,10 @@
-# compose.yaml
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `compose.yaml`
 
-## Scope
+Size: 3.7 KB
 
-- Real source file: `compose.yaml`
-- App: none
-- Role: `source`
-- Size: 3838 bytes
-- Source SHA-256: `5790e30dc9dea51b751eb9491b0a88e6faa0dfb789f2e988a54295824c30d0a4`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Redacted secret-like assignments: 3
 
 ```yaml
 name: tuvtk
@@ -26,7 +16,7 @@ x-app-base: &app-base
     target: runtime
   environment: &app-environment
     DJANGO_DEPLOYMENT_MODE: container
-    DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY is required}
+    DJANGO_SECRET_KEY: <redacted>
     DJANGO_DEBUG: "false"
     DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:?DJANGO_ALLOWED_HOSTS is required}
     DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:?DJANGO_CSRF_TRUSTED_ORIGINS is required}
@@ -40,7 +30,7 @@ x-app-base: &app-base
     DJANGO_PRIVATE_MEDIA_ROOT: /app/private_media
     POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
     POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
-    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    POSTGRES_PASSWORD: <redacted>
     POSTGRES_HOST: db
     POSTGRES_PORT: "5432"
     POSTGRES_CONN_MAX_AGE: ${POSTGRES_CONN_MAX_AGE:-60}
@@ -67,7 +57,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
       POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_PASSWORD: <redacted>
     volumes:
       - type: bind
         source: ${TUVTK_DATA_DIR:?TUVTK_DATA_DIR is required}/postgres

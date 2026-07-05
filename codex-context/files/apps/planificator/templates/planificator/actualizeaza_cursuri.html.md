@@ -1,21 +1,8 @@
-# apps/planificator/templates/planificator/actualizeaza_cursuri.html
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/templates/planificator/actualizeaza_cursuri.html`
 
-## Scope
-
-- Real source file: `apps/planificator/templates/planificator/actualizeaza_cursuri.html`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `template`
-- Size: 9188 bytes
-- Source SHA-256: `5223c7124da169d9ac7abc9371113512b180733d0397dfb69f1e4de02267704c`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 9.0 KB
 
 ```html
 {% extends "layouts/base.html" %}

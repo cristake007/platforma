@@ -1,21 +1,8 @@
-# apps/diplome/services.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/diplome/services.py`
 
-## Scope
-
-- Real source file: `apps/diplome/services.py`
-- App: `diplome`
-- App guide: `codex-context/apps/diplome.md`
-- Role: `backend`
-- Size: 40140 bytes
-- Source SHA-256: `509a80b118bfa77121cb2b2a6097378096553054419dd1810fff9faa404e1376`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 39.2 KB
 
 ```python
 import csv

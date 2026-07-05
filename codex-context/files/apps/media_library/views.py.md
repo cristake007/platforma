@@ -1,21 +1,8 @@
-# apps/media_library/views.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/media_library/views.py`
 
-## Scope
-
-- Real source file: `apps/media_library/views.py`
-- App: `media_library`
-- App guide: `codex-context/apps/media_library.md`
-- Role: `backend`
-- Size: 3656 bytes
-- Source SHA-256: `2c1d3c2e88744f64d6fea1d5e6930423d1dd2d58c79d48a29e4adff369843292`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 3.6 KB
 
 ```python
 from django.contrib import messages

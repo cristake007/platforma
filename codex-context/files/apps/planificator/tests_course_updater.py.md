@@ -1,21 +1,10 @@
-# apps/planificator/tests_course_updater.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/tests_course_updater.py`
 
-## Scope
+Size: 9.8 KB
 
-- Real source file: `apps/planificator/tests_course_updater.py`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `test`
-- Size: 10084 bytes
-- Source SHA-256: `3b254652f4ac5f911fd556624181ce64d46c9a1db3463c511c47e2f3f9f2c4c0`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Redacted secret-like assignments: 1
 
 ```python
 from datetime import date
@@ -165,7 +154,7 @@ class CourseUpdaterWorkflowTests(TestCase):
     def setUpTestData(cls):
         cls.user = get_user_model().objects.create_user(
             username="wp-updater",
-            password="test-password",
+            password=<redacted>
         )
         cls.user.user_permissions.add(
             Permission.objects.get(codename="use_course_planning")

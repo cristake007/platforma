@@ -1,20 +1,8 @@
-# core/admin.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `core/admin.py`
 
-## Scope
-
-- Real source file: `core/admin.py`
-- App: none
-- Role: `core`
-- Size: 386 bytes
-- Source SHA-256: `4bf3b9aff942a2a42d221dccbd59c644f1da6a4bb2f2c881df4682ca86671b2e`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 386 B
 
 ```python
 from django.contrib import admin

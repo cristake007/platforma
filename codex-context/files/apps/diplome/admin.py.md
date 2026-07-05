@@ -1,21 +1,8 @@
-# apps/diplome/admin.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/diplome/admin.py`
 
-## Scope
-
-- Real source file: `apps/diplome/admin.py`
-- App: `diplome`
-- App guide: `codex-context/apps/diplome.md`
-- Role: `backend`
-- Size: 3652 bytes
-- Source SHA-256: `4b103d54d83f3782f0b76df952decd641d44200de34c981a75ae6ab134cc8b44`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 3.6 KB
 
 ```python
 from django.contrib import admin

@@ -1,21 +1,8 @@
-# apps/planificator/constants.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/constants.py`
 
-## Scope
-
-- Real source file: `apps/planificator/constants.py`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `backend`
-- Size: 301 bytes
-- Source SHA-256: `9a369c09a6aa04efc7b4bc5b742777f3178959f747d6225ac784fe233bcb96d3`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 301 B
 
 ```python
 ROMANIAN_MONTH_NAMES = {

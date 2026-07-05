@@ -1,21 +1,8 @@
-# apps/planificator/tests_scheduler.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/tests_scheduler.py`
 
-## Scope
-
-- Real source file: `apps/planificator/tests_scheduler.py`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `test`
-- Size: 2717 bytes
-- Source SHA-256: `2b540cd53f55707171740b1341fc3c101a42577345a6db68609ca3e5d8a2a87e`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 2.7 KB
 
 ```python
 from datetime import datetime

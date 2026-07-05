@@ -1,21 +1,8 @@
-# apps/tasks/IMPLEMENTATION_PLAN.md
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/tasks/IMPLEMENTATION_PLAN.md`
 
-## Scope
-
-- Real source file: `apps/tasks/IMPLEMENTATION_PLAN.md`
-- App: `tasks`
-- App guide: `codex-context/apps/tasks.md`
-- Role: `backend`
-- Size: 6724 bytes
-- Source SHA-256: `a290b9f0bc8b7378d4f080edba0b0a663cf3f2b48c978877d58739e250e29a4f`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 6.6 KB
 
 ````markdown
 # Collaborative Tasks App — Phased Implementation Plan

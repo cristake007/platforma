@@ -1,21 +1,8 @@
-# apps/planificator/tests_word_converter.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/tests_word_converter.py`
 
-## Scope
-
-- Real source file: `apps/planificator/tests_word_converter.py`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `test`
-- Size: 14414 bytes
-- Source SHA-256: `d2b85a7cf85fdc3b27ee37289c3bbf4a437663c64349af5871f7cb1a35eff866`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 14.1 KB
 
 ```python
 import base64

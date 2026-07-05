@@ -1,21 +1,10 @@
-# apps/diplome/tests_participants.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/diplome/tests_participants.py`
 
-## Scope
+Size: 20.3 KB
 
-- Real source file: `apps/diplome/tests_participants.py`
-- App: `diplome`
-- App guide: `codex-context/apps/diplome.md`
-- Role: `test`
-- Size: 20746 bytes
-- Source SHA-256: `f885bce7d403803d39a07d56ed1e886c226c4680e9019673a268668508e93da4`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Redacted secret-like assignments: 2
 
 ```python
 from datetime import datetime, timedelta
@@ -120,11 +109,11 @@ class ParticipantImportTests(TestCase):
     def setUpTestData(cls):
         cls.user = get_user_model().objects.create_user(
             username="participant-owner",
-            password="test-password",
+            password=<redacted>
         )
         cls.other_user = get_user_model().objects.create_user(
             username="participant-other",
-            password="test-password",
+            password=<redacted>
         )
 
     def setUp(self):

@@ -1,21 +1,8 @@
-# apps/tasks/templates/tasks/board_list.html
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/tasks/templates/tasks/board_list.html`
 
-## Scope
-
-- Real source file: `apps/tasks/templates/tasks/board_list.html`
-- App: `tasks`
-- App guide: `codex-context/apps/tasks.md`
-- Role: `template`
-- Size: 3897 bytes
-- Source SHA-256: `ba3fe5aa8a294d7821acfb9b2ce3152c33eafcd8794815f5c685e33c3cedb82c`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 3.8 KB
 
 ```html
 {% extends "layouts/base.html" %}

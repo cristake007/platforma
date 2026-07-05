@@ -1,21 +1,8 @@
-# apps/tasks/models.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/tasks/models.py`
 
-## Scope
-
-- Real source file: `apps/tasks/models.py`
-- App: `tasks`
-- App guide: `codex-context/apps/tasks.md`
-- Role: `backend`
-- Size: 6222 bytes
-- Source SHA-256: `ad5146a89a5083a9a962d92973c696ffdb9965a45fa1651d0d4987ded28594e1`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 6.1 KB
 
 ```python
 import uuid
@@ -187,4 +174,5 @@ class Task(models.Model):
 
     def __str__(self):
         return self.title
+
 ```

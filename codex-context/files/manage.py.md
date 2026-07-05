@@ -1,20 +1,8 @@
-# manage.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `manage.py`
 
-## Scope
-
-- Real source file: `manage.py`
-- App: none
-- Role: `source`
-- Size: 693 bytes
-- Source SHA-256: `3fb943f499373ad4500b64a327b08f27878900f70616a5e62b8a3780d729e56a`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 671 B
 
 ```python
 #!/usr/bin/env python

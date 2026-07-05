@@ -1,20 +1,8 @@
-# docker/nginx.conf.template
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `docker/nginx.conf.template`
 
-## Scope
-
-- Real source file: `docker/nginx.conf.template`
-- App: none
-- Role: `source`
-- Size: 1425 bytes
-- Source SHA-256: `eacbc09b05f55967ab74710660919c99cf78015b6fe120ee8e74fc8e61eb144e`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 1.4 KB
 
 ```text
 server {

@@ -1,20 +1,8 @@
-# core/templatetags/optional_browser_reload.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `core/templatetags/optional_browser_reload.py`
 
-## Scope
-
-- Real source file: `core/templatetags/optional_browser_reload.py`
-- App: none
-- Role: `core`
-- Size: 410 bytes
-- Source SHA-256: `2906211370e9cbe7dec5d9ed9145e81cb76a4d74f09e4db02d35b16c1700c82b`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 410 B
 
 ```python
 from django.conf import settings

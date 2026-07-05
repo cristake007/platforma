@@ -1,21 +1,8 @@
-# apps/flota/templates/flota/maintenance_type_form.html
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/flota/templates/flota/maintenance_type_form.html`
 
-## Scope
-
-- Real source file: `apps/flota/templates/flota/maintenance_type_form.html`
-- App: `flota`
-- App guide: `codex-context/apps/flota.md`
-- Role: `template`
-- Size: 1013 bytes
-- Source SHA-256: `637f3e8b1a56feec06251f2960822d3d4013fa1606e32b4806b992bb16cad914`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 1013 B
 
 ```html
 {% extends "layouts/base.html" %}
@@ -38,4 +25,5 @@ Use this context only when the task directly touches this file or requires this 
     </form>
 </section>
 {% endblock %}
+
 ```

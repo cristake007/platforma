@@ -1,42 +1,258 @@
-# App context: dashboard
+# Django app: dashboard
 
-Generated: `2026-07-05T22:50:42`
+Migrations are excluded by default. Tests are included unless `--no-tests` is used.
 
-Local instructions: `apps/dashboard/AGENTS.md`. They define app contracts and the smallest workflow-specific file set.
+## `apps/dashboard/__init__.py`
 
-Use this app guide to select exact file-level context. Do not load all files listed here unless the task truly affects all of them.
+Size: 0 B
 
-## Routing
+```python
+```
 
-- Backend behavior: start with `models.py`, `urls.py`, `views.py`, `forms.py`, `services.py`, `selectors.py`, or `validators.py` only if present and relevant.
-- UI behavior: start with the exact template/static context file.
-- Tests: read only tests related to the changed behavior.
-- Migrations: read only for model/schema changes or migration debugging.
+## `apps/dashboard/AGENTS.md`
 
-## Backend files
+Size: 1.2 KB
 
-| Real file | Context file |
-|---|---|
-| `apps/dashboard/__init__.py` | [`files/apps/dashboard/__init__.py.md`](../files/apps/dashboard/__init__.py.md) |
-| `apps/dashboard/apps.py` | [`files/apps/dashboard/apps.py.md`](../files/apps/dashboard/apps.py.md) |
-| `apps/dashboard/urls.py` | [`files/apps/dashboard/urls.py.md`](../files/apps/dashboard/urls.py.md) |
-| `apps/dashboard/views.py` | [`files/apps/dashboard/views.py.md`](../files/apps/dashboard/views.py.md) |
+````markdown
+# Dashboard App Instructions
 
-## Template files
+## Scope and Ownership
 
-| Real file | Context file |
-|---|---|
-| `apps/dashboard/templates/dashboard/index.html` | [`files/apps/dashboard/templates/dashboard/index.html.md`](../files/apps/dashboard/templates/dashboard/index.html.md) |
+This app owns the authenticated root dashboard at `/`. It is a lightweight overview and navigation entry point, not a home for domain workflows or duplicate business data.
 
-## Test files
+## Minimal Routing
 
-| Real file | Context file |
-|---|---|
-| `apps/dashboard/tests.py` | [`files/apps/dashboard/tests.py.md`](../files/apps/dashboard/tests.py.md) |
+- Route or authentication: `urls.py`, `views.py`, then the matching tests.
+- Page content or layout: `templates/dashboard/index.html`, then `tests.py` if the rendered contract changes.
+- Shared shell, sidebar, or navigation: leave this app and inspect `core/templates/layouts/base.html`, `core/templates/includes/sidebar.html`, `core/navigation.py`, and the relevant theme file.
+- Use `codex-context/apps/dashboard.md` only when an additional path is unknown.
 
-## Migration files
+## Contracts
 
-| Real file | Context file |
-|---|---|
-| `apps/dashboard/migrations/__init__.py` | [`files/apps/dashboard/migrations/__init__.py.md`](../files/apps/dashboard/migrations/__init__.py.md) |
+- Keep `DashboardView` authenticated and the route named `dashboard:index` unless a coordinated root routing change is requested.
+- Keep the template app-owned and extending `layouts/base.html`.
+- Use the shared semantic theme tokens; do not add dashboard-specific colors or shell styles.
+- Put real planificator, diploma, or media behavior in its owning app and link to it rather than implementing it here.
 
+## Focused Check
+
+```powershell
+python manage.py test apps.dashboard
+```
+````
+
+## `apps/dashboard/apps.py`
+
+Size: 98 B
+
+```python
+from django.apps import AppConfig
+
+
+class DashboardConfig(AppConfig):
+    name = 'apps.dashboard'
+```
+
+## `apps/dashboard/templates/dashboard/_content.html`
+
+Size: 347 B
+
+```html
+<section class="space-y-4">
+    <div>
+        <h1 class="ops-title text-2xl font-bold sm:text-[2rem]">Internal operations command center</h1>
+        <p class="mt-1 max-w-3xl text-sm leading-6 text-muted">
+            Monitor work intake, field activity, asset health, and alerts from a single shared workspace.
+        </p>
+    </div>
+</section>
+```
+
+## `apps/dashboard/templates/dashboard/index.html`
+
+Size: 185 B
+
+```html
+{% extends "layouts/base.html" %}
+
+{% block title %}Operations Dashboard | Platforma TUVTK{% endblock %}
+
+{% block content %}
+    {% include "dashboard/_content.html" %}
+{% endblock %}
+```
+
+## `apps/dashboard/tests.py`
+
+Size: 5.4 KB
+
+Redacted secret-like assignments: 1
+
+```python
+from django.contrib.auth import get_user_model
+from django.test import TestCase
+from django.urls import reverse
+
+
+class DashboardViewTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = get_user_model().objects.create_user(
+            username='operator',
+            password=<redacted>
+            first_name='Test',
+            last_name='Operator',
+        )
+
+    def setUp(self):
+        self.client.force_login(self.user)
+
+    def test_dashboard_uses_app_owned_template(self):
+        response = self.client.get(reverse('dashboard:index'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'dashboard/index.html')
+        self.assertTemplateNotUsed(response, 'includes/htmx_page.html')
+        self.assertContains(response, 'Internal operations command center')
+
+    def test_dashboard_htmx_request_returns_page_content_fragment(self):
+        response = self.client.get(
+            reverse('dashboard:index'),
+            HTTP_HX_REQUEST='true',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'includes/htmx_page.html')
+        self.assertTemplateUsed(response, 'dashboard/_content.html')
+        self.assertTemplateNotUsed(response, 'dashboard/index.html')
+        self.assertContains(response, 'id="page-content"', count=1)
+        self.assertContains(response, 'data-active-nav-url="/"')
+
+    def test_dashboard_history_restore_request_returns_full_page(self):
+        response = self.client.get(
+            reverse('dashboard:index'),
+            HTTP_HX_REQUEST='true',
+            HTTP_HX_HISTORY_RESTORE_REQUEST='true',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'dashboard/index.html')
+        self.assertTemplateNotUsed(response, 'includes/htmx_page.html')
+
+    def test_dashboard_navigation_is_active(self):
+        response = self.client.get(reverse('dashboard:index'))
+
+        self.assertContains(response, 'aria-current="page"')
+        self.assertContains(response, 'Dashboard')
+
+    def test_nested_navigation_has_collapsed_sidebar_flyout_hooks(self):
+        response = self.client.get(reverse('dashboard:index'))
+
+        self.assertContains(response, '<details class="ops-nav-group" data-sidebar-flyout', count=1)
+        self.assertContains(response, 'data-sidebar-flyout-trigger', count=1)
+        self.assertContains(response, 'data-sidebar-flyout-panel', count=1)
+        self.assertContains(response, 'aria-haspopup="true"', count=1)
+        self.assertContains(response, 'class="ops-submenu-label"', count=2)
+        self.assertNotContains(response, 'ops-flyout-heading')
+        self.assertNotContains(response, 'ops-submenu is-drawer-close:hidden')
+
+    def test_sidebar_state_is_restored_before_drawer_markup_renders(self):
+        response = self.client.get(reverse('dashboard:index'))
+
+        self.assertContains(response, 'data-sidebar-start-collapsed="false"')
+        self.assertContains(response, 'sessionStorage.getItem("ops-sidebar-expanded")')
+        self.assertContains(response, 'drawer.dataset.sidebarReady = "true"')
+        self.assertNotContains(response, 'js/sidebar_state.js')
+        content = response.content.decode()
+        toggle_position = content.index('id="ops-sidebar"')
+        initializer_position = content.index('sessionStorage.getItem("ops-sidebar-expanded")')
+        sidebar_position = content.index('class="drawer-side')
+        drawer_content_position = content.index('class="drawer-content')
+        self.assertLess(toggle_position, initializer_position)
+        self.assertLess(initializer_position, sidebar_position)
+        self.assertLess(sidebar_position, drawer_content_position)
+
+    def test_anonymous_user_is_redirected_to_login(self):
+        self.client.logout()
+
+        response = self.client.get(reverse('dashboard:index'))
+
+        self.assertRedirects(
+            response,
+            f"{reverse('login')}?next={reverse('dashboard:index')}",
+        )
+
+    def test_anonymous_htmx_request_uses_full_page_login_redirect(self):
+        self.client.logout()
+
+        response = self.client.get(
+            reverse('dashboard:index'),
+            HTTP_HX_REQUEST='true',
+        )
+
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(
+            response.headers['HX-Redirect'],
+            f"{reverse('login')}?next={reverse('dashboard:index')}",
+        )
+        self.assertNotIn('Location', response.headers)
+
+    def test_only_pilot_dashboard_link_has_htmx_navigation(self):
+        response = self.client.get(reverse('dashboard:index'))
+
+        self.assertContains(
+            response,
+            'href="/" data-shell-nav-url="/" hx-get="/" '
+            'hx-target="#page-content" hx-swap="outerHTML show:#ops-main-scroll:top" '
+            'hx-push-url="true" hx-sync="#page-content:replace"',
+        )
+        self.assertContains(
+            response,
+            f'href="{reverse("tasks:index")}" '
+            f'data-shell-nav-url="{reverse("tasks:index")}"',
+        )
+        self.assertNotContains(
+            response,
+            f'data-shell-nav-url="{reverse("tasks:index")}" hx-get=',
+        )
+
+    def test_user_menu_posts_to_django_logout(self):
+        response = self.client.get(reverse('dashboard:index'))
+
+        self.assertContains(response, f'action="{reverse("logout")}"')
+        self.assertContains(response, 'Test Operator')
+```
+
+## `apps/dashboard/urls.py`
+
+Size: 159 B
+
+```python
+from django.urls import path
+
+from .views import DashboardView
+
+app_name = 'dashboard'
+
+urlpatterns = [
+    path('', DashboardView.as_view(), name='index'),
+]
+```
+
+## `apps/dashboard/views.py`
+
+Size: 419 B
+
+```python
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import TemplateView
+
+from core.mixins import HtmxPageMixin
+
+
+class DashboardView(HtmxPageMixin, LoginRequiredMixin, TemplateView):
+    template_name = 'dashboard/index.html'
+    htmx_content_template = "dashboard/_content.html"
+    shell_page_title = "Operations Dashboard | Platforma TUVTK"
+    shell_nav_url_name = "dashboard:index"
+```

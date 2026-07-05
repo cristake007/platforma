@@ -1,21 +1,8 @@
-# apps/planificator/templates/planificator/xml_formatter.html
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/templates/planificator/xml_formatter.html`
 
-## Scope
-
-- Real source file: `apps/planificator/templates/planificator/xml_formatter.html`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `template`
-- Size: 5013 bytes
-- Source SHA-256: `34317f99e14ae6905b3da8598ff2282cdfd56a1468fbd4096d01a915a7cb7b9a`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 4.9 KB
 
 ```html
 {% extends "layouts/base.html" %}

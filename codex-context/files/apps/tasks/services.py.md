@@ -1,21 +1,8 @@
-# apps/tasks/services.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/tasks/services.py`
 
-## Scope
-
-- Real source file: `apps/tasks/services.py`
-- App: `tasks`
-- App guide: `codex-context/apps/tasks.md`
-- Role: `backend`
-- Size: 12717 bytes
-- Source SHA-256: `c037f693d7cbad1656bf75a421534dd52eeb3f086383e466248d5e24ea5d5b27`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 12.4 KB
 
 ```python
 from dataclasses import dataclass

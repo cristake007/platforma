@@ -1,21 +1,8 @@
-# apps/tasks/static/tasks/tasks.js
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/tasks/static/tasks/tasks.js`
 
-## Scope
-
-- Real source file: `apps/tasks/static/tasks/tasks.js`
-- App: `tasks`
-- App guide: `codex-context/apps/tasks.md`
-- Role: `static`
-- Size: 7166 bytes
-- Source SHA-256: `cf654fb904c07303d362326d2a9c5acc2869dbb9f2d4149cfa17c7cf0f1df6e4`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 7.0 KB
 
 ```javascript
 (() => {

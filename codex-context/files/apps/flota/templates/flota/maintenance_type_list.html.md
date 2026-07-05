@@ -1,21 +1,8 @@
-# apps/flota/templates/flota/maintenance_type_list.html
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/flota/templates/flota/maintenance_type_list.html`
 
-## Scope
-
-- Real source file: `apps/flota/templates/flota/maintenance_type_list.html`
-- App: `flota`
-- App guide: `codex-context/apps/flota.md`
-- Role: `template`
-- Size: 2243 bytes
-- Source SHA-256: `52b7cbdc9b6eebbf85b80e3a4cab10b70fcf2c885ebd57839db30aee76ecbaad`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 2.2 KB
 
 ```html
 {% extends "layouts/base.html" %}
@@ -52,4 +39,5 @@ Use this context only when the task directly touches this file or requires this 
     </div>
 </section>
 {% endblock %}
+
 ```

@@ -1,20 +1,8 @@
-# core/templates/layouts/base.html
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `core/templates/layouts/base.html`
 
-## Scope
-
-- Real source file: `core/templates/layouts/base.html`
-- App: none
-- Role: `template`
-- Size: 6832 bytes
-- Source SHA-256: `3bfaa7a77158a0adb310d50e32252613dde3847cb6d610a4ddc60f8c14a0ffc5`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 8.1 KB
 
 ```html
 {% load static tailwind_tags optional_browser_reload %}
@@ -24,9 +12,11 @@ Use this context only when the task directly touches this file or requires this 
     <title>{% block title %}Platforma TUVTK{% endblock %}</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="htmx-config" content='{"historyRestoreAsHxRequest": false}'>
     <link rel="preload" href="{% static 'fonts/inter/InterVariable.woff2' %}" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="{% static 'bootstrap_icons/css/bootstrap_icons.css' %}">
     {% tailwind_css %}
+    <script src="{% static 'js/vendor/htmx.min.js' %}" defer></script>
     {% block page_styles %}{% endblock %}
 </head>
 <body class="h-dvh overflow-hidden">
@@ -108,18 +98,49 @@ Use this context only when the task directly touches this file or requires this 
                 class="drawer-toggle"
                 data-sidebar-start-collapsed="{% block sidebar_start_collapsed %}false{% endblock %}"
             >
-            <script src="{% static 'js/sidebar_state.js' %}"></script>
+            <script>
+                (() => {
+                    const toggle = document.getElementById("ops-sidebar");
+                    const drawer = toggle?.closest(".drawer");
+                    if (!toggle || !drawer) return;
+
+                    const desktop = window.matchMedia("(min-width: 1024px)");
+                    const startsCollapsed = toggle.dataset.sidebarStartCollapsed === "true";
+                    let savedState = null;
+
+                    try {
+                        savedState = sessionStorage.getItem("ops-sidebar-expanded");
+                    } catch {
+                        // Storage can be unavailable in restricted browser contexts.
+                    }
+
+                    toggle.checked = desktop.matches
+                        && !startsCollapsed
+                        && (savedState === null || savedState === "true");
+
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => drawer.dataset.sidebarReady = "true");
+                    });
+                })();
+            </script>
+            {% include "includes/sidebar.html" %}
             <div class="drawer-content h-full min-h-0 overflow-hidden">
-                <main class="ops-scrollbar h-full overflow-y-auto">
-                    <div class="mx-auto w-full max-w-[1600px] px-4 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-5">
+                <main id="ops-main-scroll" class="ops-scrollbar h-full overflow-y-auto">
+                    <div
+                        id="page-content"
+                        class="mx-auto w-full max-w-[1600px] px-4 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-5"
+                        data-active-nav-url="{{ active_navigation_url }}"
+                        hx-history-elt
+                        hx-history="false"
+                    >
                         {% block content %}{% endblock %}
                     </div>
                 </main>
             </div>
-            {% include "includes/sidebar.html" %}
         </div>
     </div>
     <script src="{% static 'js/sidebar.js' %}" defer></script>
+    <script src="{% static 'js/shell_htmx.js' %}" defer></script>
     {% block page_scripts %}{% endblock %}
     {% optional_browser_reload_script %}
 </body>

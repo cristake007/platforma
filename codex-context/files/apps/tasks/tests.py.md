@@ -1,21 +1,8 @@
-# apps/tasks/tests.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/tasks/tests.py`
 
-## Scope
-
-- Real source file: `apps/tasks/tests.py`
-- App: `tasks`
-- App guide: `codex-context/apps/tasks.md`
-- Role: `test`
-- Size: 12785 bytes
-- Source SHA-256: `065185852c5a74afbfe070f518417c347a824124f3afa3acc6efbf199f7ead94`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 12.5 KB
 
 ```python
 from datetime import timedelta

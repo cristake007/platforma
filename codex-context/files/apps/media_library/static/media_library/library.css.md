@@ -1,21 +1,8 @@
-# apps/media_library/static/media_library/library.css
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/media_library/static/media_library/library.css`
 
-## Scope
-
-- Real source file: `apps/media_library/static/media_library/library.css`
-- App: `media_library`
-- App guide: `codex-context/apps/media_library.md`
-- Role: `static`
-- Size: 302 bytes
-- Source SHA-256: `7d5ecd95a776924c5b8d638f790f7214f7ec63e7574ecb950e5057a3238e0350`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 302 B
 
 ```css
 .media-asset-preview {

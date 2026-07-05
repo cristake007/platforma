@@ -1,21 +1,8 @@
-# apps/planificator/settings_store.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/settings_store.py`
 
-## Scope
-
-- Real source file: `apps/planificator/settings_store.py`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `backend`
-- Size: 1702 bytes
-- Source SHA-256: `5b686770c7acae42c5d26c2d1e2d5b10399fc3d226f3bdbd6715933006fdbac9`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 1.7 KB
 
 ```python
 import logging

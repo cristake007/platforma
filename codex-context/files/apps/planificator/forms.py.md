@@ -1,21 +1,8 @@
-# apps/planificator/forms.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/forms.py`
 
-## Scope
-
-- Real source file: `apps/planificator/forms.py`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `backend`
-- Size: 9620 bytes
-- Source SHA-256: `c69ea2ddb113cfd23afca8f841e672fa68e5f52f1730d51e39f7a07a2732b1f2`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 9.4 KB
 
 ```python
 from django import forms

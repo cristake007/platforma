@@ -1,20 +1,8 @@
-# core/signals.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `core/signals.py`
 
-## Scope
-
-- Real source file: `core/signals.py`
-- App: none
-- Role: `core`
-- Size: 334 bytes
-- Source SHA-256: `83a3fff6200ba0725bbbbadc55d9d8bcbe668f4056655417010ab71ae0f24e9d`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 334 B
 
 ```python
 from django.conf import settings

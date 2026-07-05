@@ -1,21 +1,8 @@
-# apps/planificator/templates/planificator/generator_perioade.html
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/templates/planificator/generator_perioade.html`
 
-## Scope
-
-- Real source file: `apps/planificator/templates/planificator/generator_perioade.html`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `template`
-- Size: 2615 bytes
-- Source SHA-256: `784d2cb6e999e68725f9bbdf0a88de6be84f70e0207a446cf3410502dd978c35`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 2.6 KB
 
 ```html
 {% extends "layouts/base.html" %}

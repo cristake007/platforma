@@ -1,20 +1,10 @@
-# platforma_tuvtk/settings.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `platforma_tuvtk/settings.py`
 
-## Scope
+Size: 8.4 KB
 
-- Real source file: `platforma_tuvtk/settings.py`
-- App: none
-- Role: `project-config`
-- Size: 8741 bytes
-- Source SHA-256: `0ab0be0e8d4ee66b6184104e685884f068f0548dde52ff3c3df6703d17577662`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Redacted secret-like assignments: 1
 
 ```python
 """
@@ -116,7 +106,7 @@ DEPLOYMENT_MODE = os.environ.get('DJANGO_DEPLOYMENT_MODE', 'development').strip(
 configured_secret_key = os.environ.get('DJANGO_SECRET_KEY', '').strip()
 if DEPLOYMENT_MODE == 'container' and not configured_secret_key:
     raise ImproperlyConfigured('DJANGO_SECRET_KEY is required in container deployment mode.')
-SECRET_KEY = configured_secret_key or 'django-insecure-n=_c^sf9(ovz%2lh6sr3bpc5d89(ndl#5tm_)19k+d5-k59s%b'
+SECRET_KEY = <redacted>
 
 HAS_DJANGO_BROWSER_RELOAD = DEBUG and find_spec("django_browser_reload") is not None
 
