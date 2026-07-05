@@ -1,6 +1,6 @@
 # apps/diplome/migrations/0006_generated_diploma.py
 
-Generated: `2026-07-05T22:30:50`
+Generated: `2026-07-05T22:50:42`
 
 ## Scope
 

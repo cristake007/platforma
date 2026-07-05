@@ -1,6 +1,6 @@
 # Project core context
 
-Generated: `2026-07-05T22:30:50`
+Generated: `2026-07-05T22:50:42`
 
 Use this guide for project settings, root URLs, global shell/navigation, Tailwind/daisyUI source, and tooling.
 
@@ -42,7 +42,6 @@ Use this guide for project settings, root URLs, global shell/navigation, Tailwin
 | `requirements-dev.txt` | `docs` | [`files/requirements-dev.txt.md`](files/requirements-dev.txt.md) |
 | `theme/static/js/sidebar.js` | `static` | [`files/theme/static/js/sidebar.js.md`](files/theme/static/js/sidebar.js.md) |
 | `theme/static/js/sidebar_state.js` | `static` | [`files/theme/static/js/sidebar_state.js.md`](files/theme/static/js/sidebar_state.js.md) |
-| `theme/static/js/user_menu.js` | `static` | [`files/theme/static/js/user_menu.js.md`](files/theme/static/js/user_menu.js.md) |
 | `theme/static_src/.gitignore` | `theme` | [`files/theme/static_src/.gitignore.md`](files/theme/static_src/.gitignore.md) |
 | `theme/static_src/package.json` | `theme` | [`files/theme/static_src/package.json.md`](files/theme/static_src/package.json.md) |
 | `theme/static_src/postcss.config.js` | `theme` | [`files/theme/static_src/postcss.config.js.md`](files/theme/static_src/postcss.config.js.md) |

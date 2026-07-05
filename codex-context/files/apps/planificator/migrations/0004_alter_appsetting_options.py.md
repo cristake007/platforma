@@ -1,6 +1,6 @@
 # apps/planificator/migrations/0004_alter_appsetting_options.py
 
-Generated: `2026-07-05T22:30:50`
+Generated: `2026-07-05T22:50:42`
 
 ## Scope
 

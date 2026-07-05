@@ -1,14 +1,14 @@
 # core/templates/layouts/base.html
 
-Generated: `2026-07-05T22:30:50`
+Generated: `2026-07-05T22:50:42`
 
 ## Scope
 
 - Real source file: `core/templates/layouts/base.html`
 - App: none
 - Role: `template`
-- Size: 6893 bytes
-- Source SHA-256: `d085b9f4797912b5cf1f3c22bccfa03aee3ee098f12ecd0e7dc9f2a60d72acb4`
+- Size: 6832 bytes
+- Source SHA-256: `3bfaa7a77158a0adb310d50e32252613dde3847cb6d610a4ddc60f8c14a0ffc5`
 
 ## Codex usage
 
@@ -24,6 +24,7 @@ Use this context only when the task directly touches this file or requires this 
     <title>{% block title %}Platforma TUVTK{% endblock %}</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preload" href="{% static 'fonts/inter/InterVariable.woff2' %}" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="{% static 'bootstrap_icons/css/bootstrap_icons.css' %}">
     {% tailwind_css %}
     {% block page_styles %}{% endblock %}
@@ -52,8 +53,8 @@ Use this context only when the task directly touches this file or requires this 
                         <span class="inline-block h-2 w-2 rounded-full bg-primary"></span>
                         Mediu local
                     </div>
-                    <details class="ops-user-flyout relative" data-user-flyout>
-                        <summary class="ops-user-trigger" data-user-flyout-trigger aria-label="Deschide meniul utilizatorului" title="Meniu utilizator" aria-haspopup="menu" aria-controls="ops-user-menu" aria-expanded="false">
+                    <details class="dropdown dropdown-end ops-user-flyout">
+                        <summary class="ops-user-trigger transition-none" aria-label="Deschide meniul utilizatorului" title="Meniu utilizator">
                             <span class="ops-avatar-frame relative shrink-0">
                                 <span class="avatar{% if not user_avatar_url %} avatar-placeholder{% endif %}">
                                     <span class="ops-avatar">
@@ -67,10 +68,10 @@ Use this context only when the task directly touches this file or requires this 
                                 <span class="ops-avatar-status" aria-hidden="true"></span>
                             </span>
                         </summary>
-                        <ul id="ops-user-menu" class="menu ops-user-menu absolute right-0 z-[60] mt-2 w-64 border p-0" data-user-flyout-panel role="menu">
+                        <ul class="menu dropdown-content ops-user-menu z-[60] mt-2 w-64 border p-0 transition-none animate-none">
                             {% if request.user.is_staff %}
-                                <li role="none">
-                                    <a href="{% url 'admin:index' %}" role="menuitem">
+                                <li>
+                                    <a href="{% url 'admin:index' %}" class="transition-none">
                                         <span class="ops-user-menu-icon" aria-hidden="true">
                                             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M12 3.75a2.25 2.25 0 0 1 2.122 1.5h2.628A2.25 2.25 0 0 1 19 7.5v9a2.25 2.25 0 0 1-2.25 2.25h-9A2.25 2.25 0 0 1 5.5 16.5v-9a2.25 2.25 0 0 1 2.25-2.25h2.128A2.25 2.25 0 0 1 12 3.75Z" />
@@ -84,7 +85,7 @@ Use this context only when the task directly touches this file or requires this 
                             <li class="ops-user-logout">
                                 <form method="post" action="{% url 'logout' %}">
                                     {% csrf_token %}
-                                    <button type="submit" class="w-full cursor-pointer text-left" role="menuitem">
+                                    <button type="submit" class="w-full cursor-pointer text-left transition-none">
                                         <span class="ops-user-menu-icon" aria-hidden="true">
                                             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M14.25 8.25V6A2.25 2.25 0 0 0 12 3.75H6.75A2.25 2.25 0 0 0 4.5 6v12a2.25 2.25 0 0 0 2.25 2.25H12A2.25 2.25 0 0 0 14.25 18v-2.25M10.5 12h9m0 0-3-3m3 3-3 3" />
@@ -119,7 +120,6 @@ Use this context only when the task directly touches this file or requires this 
         </div>
     </div>
     <script src="{% static 'js/sidebar.js' %}" defer></script>
-    <script src="{% static 'js/user_menu.js' %}" defer></script>
     {% block page_scripts %}{% endblock %}
     {% optional_browser_reload_script %}
 </body>

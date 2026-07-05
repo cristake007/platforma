@@ -1,14 +1,14 @@
 # core/templates/includes/sidebar.html
 
-Generated: `2026-07-05T22:30:50`
+Generated: `2026-07-05T22:50:42`
 
 ## Scope
 
 - Real source file: `core/templates/includes/sidebar.html`
 - App: none
 - Role: `template`
-- Size: 5601 bytes
-- Source SHA-256: `68dcc216ec11e615573f57722a5ad08a7ba52e7f8a59baf394bc8dc670882eab`
+- Size: 5724 bytes
+- Source SHA-256: `42adb0e17420093941e9ca5b06bf8b92eb17c8bd70d2a29b0c5b901ddd7b79a0`
 
 ## Codex usage
 
@@ -31,7 +31,7 @@ Use this context only when the task directly touches this file or requires this 
                                 <li>
                                     {% if item.children %}
                                         <details class="ops-nav-group" data-sidebar-flyout {% if item.is_active %}open{% endif %}>
-                                            <summary class="is-drawer-close:tooltip is-drawer-close:tooltip-right is-drawer-close:justify-center" data-sidebar-flyout-trigger data-tip="{{ item.label }}" aria-haspopup="true" aria-controls="ops-submenu-{{ forloop.parentloop.counter }}-{{ forloop.counter }}" aria-expanded="{% if item.is_active %}true{% else %}false{% endif %}">
+                                            <summary class="is-drawer-close:tooltip is-drawer-close:tooltip-right is-drawer-close:justify-center transition-none" data-sidebar-flyout-trigger data-tip="{{ item.label }}" aria-haspopup="true" aria-controls="ops-submenu-{{ forloop.parentloop.counter }}-{{ forloop.counter }}" aria-expanded="{% if item.is_active %}true{% else %}false{% endif %}">
                                                 <span class="ops-nav-icon">
                                                     {% if item.icon_set == "mdi" %}{% md_icon item.icon extra_classes="ops-nav-glyph" %}{% else %}{% bs_icon item.icon extra_classes="ops-nav-glyph bi-valign-default" %}{% endif %}
                                                 </span>
@@ -42,9 +42,9 @@ Use this context only when the task directly touches this file or requires this 
                                                 {% for child in item.children %}
                                                     <li>
                                                         {% if child.url_name %}
-                                                            <a href="{% url child.url_name %}" {% if child.is_active %}class="active font-semibold" aria-current="page"{% endif %}><span class="ops-submenu-label">{{ child.label }}</span></a>
+                                                            <a href="{% url child.url_name %}" class="transition-none{% if child.is_active %} active font-semibold{% endif %}" {% if child.is_active %}aria-current="page"{% endif %}><span class="ops-submenu-label">{{ child.label }}</span></a>
                                                         {% else %}
-                                                            <a href="#"><span class="ops-submenu-label">{{ child.label }}</span></a>
+                                                            <a href="#" class="transition-none"><span class="ops-submenu-label">{{ child.label }}</span></a>
                                                         {% endif %}
                                                     </li>
                                                 {% endfor %}
@@ -52,9 +52,9 @@ Use this context only when the task directly touches this file or requires this 
                                         </details>
                                     {% else %}
                                         {% if item.url_name %}
-                                            <a href="{% url item.url_name %}" class="is-drawer-close:tooltip is-drawer-close:tooltip-right is-drawer-close:justify-center{% if item.is_active %} active font-semibold{% endif %}" data-tip="{{ item.label }}" {% if item.is_active %}aria-current="page"{% endif %}>
+                                            <a href="{% url item.url_name %}" class="is-drawer-close:tooltip is-drawer-close:tooltip-right is-drawer-close:justify-center transition-none{% if item.is_active %} active font-semibold{% endif %}" data-tip="{{ item.label }}" {% if item.is_active %}aria-current="page"{% endif %}>
                                         {% else %}
-                                            <a href="#" class="is-drawer-close:tooltip is-drawer-close:tooltip-right is-drawer-close:justify-center" data-tip="{{ item.label }}">
+                                            <a href="#" class="is-drawer-close:tooltip is-drawer-close:tooltip-right is-drawer-close:justify-center transition-none" data-tip="{{ item.label }}">
                                         {% endif %}
                                             <span class="ops-nav-icon">{% bs_icon item.icon extra_classes="ops-nav-glyph bi-valign-default" %}</span>
                                             <span class="is-drawer-close:hidden">{{ item.label }}</span>

@@ -1,6 +1,6 @@
 # apps/flota/migrations/0002_seed_maintenance_types.py
 
-Generated: `2026-07-05T22:30:50`
+Generated: `2026-07-05T22:50:42`
 
 ## Scope
 

@@ -1,6 +1,6 @@
 # Codex Context Index
 
-Generated: `2026-07-05T22:30:50`
+Generated: `2026-07-05T22:50:42`
 
 Use the smallest possible context. This generator creates one Markdown context file per included source file. It intentionally does not create broad app XML packs or full-repository Repomix output.
 

@@ -1,14 +1,14 @@
 # theme/static_src/src/styles.css
 
-Generated: `2026-07-05T22:30:50`
+Generated: `2026-07-05T22:50:42`
 
 ## Scope
 
 - Real source file: `theme/static_src/src/styles.css`
 - App: none
 - Role: `theme`
-- Size: 30335 bytes
-- Source SHA-256: `5095c859a977a678b4be83527e6a4071c4516a439bfd4696a8d9c7aec8086a51`
+- Size: 27247 bytes
+- Source SHA-256: `b1b6e689dfb99b41432846f54b23b7c11183b747694783cf034f3408665d3a88`
 
 ## Codex usage
 
@@ -124,7 +124,7 @@ Use this context only when the task directly touches this file or requires this 
     font-family: "InterVariable";
     font-style: normal;
     font-weight: 100 900;
-    font-display: swap;
+    font-display: optional;
     src: url("../../fonts/inter/InterVariable.woff2") format("woff2");
 }
 
@@ -227,7 +227,6 @@ Use this context only when the task directly touches this file or requires this 
         padding: 0.3rem;
         color: var(--sidebar-item-text);
         list-style: none;
-        transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
     }
 
     .ops-user-trigger::-webkit-details-marker {
@@ -249,14 +248,12 @@ Use this context only when the task directly touches this file or requires this 
         border: 1px solid var(--sidebar-border);
         border-radius: 9999px;
         background: var(--color-base-100);
-        transition: border-color 160ms ease, transform 160ms ease;
     }
 
     .ops-user-trigger:hover .ops-avatar-frame,
     .ops-user-trigger:focus-visible .ops-avatar-frame,
     .ops-user-flyout[open] > .ops-user-trigger .ops-avatar-frame {
         border-color: var(--sidebar-item-hover-indicator);
-        transform: scale(1.03);
     }
 
     .ops-avatar {
@@ -576,7 +573,6 @@ Use this context only when the task directly touches this file or requires this 
 
     .ops-nav-chevron {
         margin-left: auto;
-        transition: transform 150ms ease;
     }
 
     details[open] > summary .ops-nav-chevron {
@@ -620,32 +616,14 @@ Use this context only when the task directly touches this file or requires this 
 /* Sidebar rules share daisyUI's utility layer so its menu defaults cannot
    flatten the established expanded/collapsed navigation treatment. */
 @layer utilities {
-    .ops-user-flyout > .ops-user-menu {
+    .dropdown > .ops-user-menu {
         border-color: var(--sidebar-border);
         border-radius: 0;
         background: var(--sidebar-bg);
         box-shadow: none;
         color: var(--sidebar-child-text);
-        opacity: 0;
-        pointer-events: none;
-        transform: translateY(-0.35rem) scale(0.98);
-        transform-origin: right top;
-        transition: opacity 160ms ease, transform 160ms ease;
-        visibility: hidden;
-    }
-
-    .ops-user-flyout.is-flyout-active > .ops-user-menu {
-        opacity: 1;
-        pointer-events: auto;
-        transform: translateY(0) scale(1);
-        visibility: visible;
-    }
-
-    .ops-user-flyout.is-flyout-active.is-flyout-preparing > .ops-user-menu,
-    .ops-user-flyout.is-flyout-active.is-flyout-closing > .ops-user-menu {
-        opacity: 0;
-        pointer-events: none;
-        transform: translateY(-0.35rem) scale(0.98);
+        animation: none;
+        transition: none;
     }
 
     .ops-user-menu.menu > li > a,
@@ -662,7 +640,6 @@ Use this context only when the task directly touches this file or requires this 
         color: var(--sidebar-child-text);
         font-size: 0.875rem;
         text-align: left;
-        transition: color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
     }
 
     .ops-user-menu.menu > li > form {
@@ -707,7 +684,6 @@ Use this context only when the task directly touches this file or requires this 
         flex: none;
         place-items: center;
         color: var(--sidebar-item-icon);
-        transition: color 180ms ease, transform 180ms ease;
     }
 
     .ops-user-menu-icon > svg {
@@ -715,23 +691,11 @@ Use this context only when the task directly touches this file or requires this 
         height: 100%;
     }
 
-    .ops-user-menu-label {
-        transition: transform 180ms ease;
-    }
-
     .ops-user-menu.menu > li > a:hover .ops-user-menu-icon,
     .ops-user-menu.menu > li > a:focus-visible .ops-user-menu-icon,
     .ops-user-menu.menu > li > form > button:hover .ops-user-menu-icon,
     .ops-user-menu.menu > li > form > button:focus-visible .ops-user-menu-icon {
         color: var(--sidebar-item-hover-icon);
-        transform: translateX(var(--sidebar-item-hover-shift));
-    }
-
-    .ops-user-menu.menu > li > a:hover .ops-user-menu-label,
-    .ops-user-menu.menu > li > a:focus-visible .ops-user-menu-label,
-    .ops-user-menu.menu > li > form > button:hover .ops-user-menu-label,
-    .ops-user-menu.menu > li > form > button:focus-visible .ops-user-menu-label {
-        transform: translateX(var(--sidebar-item-hover-shift));
     }
 
     .drawer-side .ops-sidebar,
@@ -937,11 +901,6 @@ Use this context only when the task directly touches this file or requires this 
         min-height: 2.25rem;
         padding-inline: 0.85rem;
         box-shadow: inset 0 0 var(--sidebar-item-hover-indicator);
-        transition: color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
-    }
-
-    .drawer-toggle:not(:checked) ~ .drawer-side .ops-sidebar-nav ul.ops-submenu > li > a > .ops-submenu-label {
-        transition: transform 180ms ease;
     }
 
     .drawer-toggle:not(:checked) ~ .drawer-side .ops-sidebar-nav ul.ops-submenu > li > a:hover,
@@ -950,10 +909,6 @@ Use this context only when the task directly touches this file or requires this 
         box-shadow: inset var(--sidebar-item-hover-indicator-width) 0 var(--sidebar-item-hover-indicator);
     }
 
-    .drawer-toggle:not(:checked) ~ .drawer-side .ops-sidebar-nav ul.ops-submenu > li > a:hover > .ops-submenu-label,
-    .drawer-toggle:not(:checked) ~ .drawer-side .ops-sidebar-nav ul.ops-submenu > li > a:focus-visible > .ops-submenu-label {
-        transform: translateX(var(--sidebar-item-hover-shift));
-    }
 }
 
 .drawer-toggle:not(:checked) ~ .drawer-side .ops-sidebar-nav [data-tip] {
@@ -983,7 +938,6 @@ Use this context only when the task directly touches this file or requires this 
 .drawer-toggle:checked ~ .drawer-side .ops-sidebar-nav ul.menu > li > a,
 .drawer-toggle:checked ~ .drawer-side .ops-sidebar-nav ul.menu > li > details > summary {
     box-shadow: inset 0 0 var(--sidebar-item-hover-indicator);
-    transition: color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
 }
 
 .drawer-toggle:checked ~ .drawer-side .ops-sidebar-nav ul.menu > li > a:hover,
@@ -993,20 +947,6 @@ Use this context only when the task directly touches this file or requires this 
 
 .drawer-toggle:checked ~ .drawer-side .ops-sidebar-nav ul.menu > li > a.active {
     box-shadow: inset 3px 0 var(--sidebar-item-current-indicator);
-}
-
-.drawer-toggle:checked ~ .drawer-side .ops-sidebar-nav ul.menu > li > a > .ops-nav-icon,
-.drawer-toggle:checked ~ .drawer-side .ops-sidebar-nav ul.menu > li > a > span:last-child,
-.drawer-toggle:checked ~ .drawer-side .ops-sidebar-nav ul.menu > li > details > summary > .ops-nav-icon,
-.drawer-toggle:checked ~ .drawer-side .ops-sidebar-nav ul.menu > li > details > summary > span:not(.ops-nav-icon) {
-    transition: transform 180ms ease;
-}
-
-.drawer-toggle:checked ~ .drawer-side .ops-sidebar-nav ul.menu > li > a:hover > .ops-nav-icon,
-.drawer-toggle:checked ~ .drawer-side .ops-sidebar-nav ul.menu > li > a:hover > span:last-child,
-.drawer-toggle:checked ~ .drawer-side .ops-sidebar-nav ul.menu > li > details > summary:hover > .ops-nav-icon,
-.drawer-toggle:checked ~ .drawer-side .ops-sidebar-nav ul.menu > li > details > summary:hover > span:not(.ops-nav-icon) {
-    transform: translateX(var(--sidebar-item-hover-shift));
 }
 
 @media (prefers-reduced-motion: reduce) {

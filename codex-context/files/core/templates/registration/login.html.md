@@ -1,14 +1,14 @@
 # core/templates/registration/login.html
 
-Generated: `2026-07-05T22:30:50`
+Generated: `2026-07-05T22:50:42`
 
 ## Scope
 
 - Real source file: `core/templates/registration/login.html`
 - App: none
 - Role: `template`
-- Size: 2455 bytes
-- Source SHA-256: `ce8ec77c3f31e43f0f17e0c759c168e249103299e696180f2e84931dfe4555cd`
+- Size: 2574 bytes
+- Source SHA-256: `0d19249738115dc8a356a93b8063739877b27586abca89cf34fbc5776e2f7d05`
 
 ## Codex usage
 
@@ -24,6 +24,7 @@ Use this context only when the task directly touches this file or requires this 
     <title>Loghează-te | Platforma TUVTK</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preload" href="{% static 'fonts/inter/InterVariable.woff2' %}" as="font" type="font/woff2" crossorigin>
     {% tailwind_css %}
 </head>
 <body class="min-h-dvh bg-base-200 text-base-content">

@@ -219,7 +219,6 @@ theme/__init__.py
 theme/apps.py
 theme/static/js/sidebar.js
 theme/static/js/sidebar_state.js
-theme/static/js/user_menu.js
 theme/static_src/.gitignore
 theme/static_src/package.json
 theme/static_src/postcss.config.js

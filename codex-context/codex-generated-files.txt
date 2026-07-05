@@ -228,7 +228,6 @@ files/theme/__init__.py.md
 files/theme/apps.py.md
 files/theme/static/js/sidebar.js.md
 files/theme/static/js/sidebar_state.js.md
-files/theme/static/js/user_menu.js.md
 files/theme/static_src/.gitignore.md
 files/theme/static_src/package.json.md
 files/theme/static_src/postcss.config.js.md

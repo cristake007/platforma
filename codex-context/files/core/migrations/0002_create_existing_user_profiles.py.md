@@ -1,6 +1,6 @@
 # core/migrations/0002_create_existing_user_profiles.py
 
-Generated: `2026-07-05T22:30:50`
+Generated: `2026-07-05T22:50:42`
 
 ## Scope
 
