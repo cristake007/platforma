@@ -1,21 +1,8 @@
-# apps/planificator/xml_export.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/xml_export.py`
 
-## Scope
-
-- Real source file: `apps/planificator/xml_export.py`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `backend`
-- Size: 9291 bytes
-- Source SHA-256: `d2f6e2f2a8fb2688f7e226718fe9ec723611ec26c6c7ec2a6701ddce96bdbe4d`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 9.1 KB
 
 ```python
 import calendar

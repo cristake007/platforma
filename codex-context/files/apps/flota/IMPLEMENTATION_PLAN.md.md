@@ -1,21 +1,8 @@
-# apps/flota/IMPLEMENTATION_PLAN.md
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/flota/IMPLEMENTATION_PLAN.md`
 
-## Scope
-
-- Real source file: `apps/flota/IMPLEMENTATION_PLAN.md`
-- App: `flota`
-- App guide: `codex-context/apps/flota.md`
-- Role: `backend`
-- Size: 2074 bytes
-- Source SHA-256: `ce29053f74a0ef1e517ee4777b0816681c7754004956376c33df27738b7e08e9`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 2.0 KB
 
 ```markdown
 # Flota - Phased Implementation Plan
@@ -57,4 +44,5 @@ Use this context only when the task directly touches this file or requires this 
 ## Deferred Scope
 
 - Notifications, email, scheduled jobs, recurring intervals, document attachments, fuel tracking, expense reporting, and permanent deletion.
+
 ```

@@ -1,21 +1,8 @@
-# apps/planificator/admin.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/admin.py`
 
-## Scope
-
-- Real source file: `apps/planificator/admin.py`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `backend`
-- Size: 1146 bytes
-- Source SHA-256: `5f10530dc702b7533fd879dd26c2431ebfac609417341db06a0ca69e7bb1856a`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 1.1 KB
 
 ```python
 from django.contrib import admin

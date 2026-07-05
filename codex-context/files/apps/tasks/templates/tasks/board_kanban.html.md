@@ -1,21 +1,8 @@
-# apps/tasks/templates/tasks/board_kanban.html
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/tasks/templates/tasks/board_kanban.html`
 
-## Scope
-
-- Real source file: `apps/tasks/templates/tasks/board_kanban.html`
-- App: `tasks`
-- App guide: `codex-context/apps/tasks.md`
-- Role: `template`
-- Size: 8825 bytes
-- Source SHA-256: `d7a4e0d3379817e17114e2b8a1332ec2eaa69e9e20c5a075d0da690a66b2e32b`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 8.6 KB
 
 ```html
 {% extends "layouts/base.html" %}

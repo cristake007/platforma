@@ -1,21 +1,8 @@
-# apps/flota/models.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/flota/models.py`
 
-## Scope
-
-- Real source file: `apps/flota/models.py`
-- App: `flota`
-- App guide: `codex-context/apps/flota.md`
-- Role: `backend`
-- Size: 7643 bytes
-- Source SHA-256: `acda1e101c9e0cf6815a5b3d5a95dd990384a395cdec32d1488b049b81e832aa`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 7.5 KB
 
 ```python
 import uuid

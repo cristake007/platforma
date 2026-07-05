@@ -1,20 +1,8 @@
-# frontend.md
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `frontend.md`
 
-## Scope
-
-- Real source file: `frontend.md`
-- App: none
-- Role: `docs`
-- Size: 921 bytes
-- Source SHA-256: `d85cad3cd943dd05a226e42ce994ced798b9f0201cfc2b04bb3f8469e5a9c9d7`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 921 B
 
 ```markdown
 # Frontend Rules

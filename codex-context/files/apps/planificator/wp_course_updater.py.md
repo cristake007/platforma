@@ -1,21 +1,10 @@
-# apps/planificator/wp_course_updater.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/wp_course_updater.py`
 
-## Scope
+Size: 16.5 KB
 
-- Real source file: `apps/planificator/wp_course_updater.py`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `backend`
-- Size: 16904 bytes
-- Source SHA-256: `f45ee6ad1a86bb3c43829b4e8fc4cae7d22ecbccebdbe2f24ab396215dcbaf6e`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Redacted secret-like assignments: 2
 
 ```python
 from __future__ import annotations
@@ -412,10 +401,10 @@ def _normalize_excel_date_value(value: Any) -> str:
 
 
 def expand_date_token(token: str) -> list[str]:
-    token = _normalize_excel_date_value(token)
+    token = <redacted>
     if not token or token.lower() == "nan":
         return []
-    token = token.replace("–", "-").replace("—", "-")
+    token = <redacted>
     if re.fullmatch(r"\d{1,2}\.\d{1,2}\.\d{4}", token):
         parsed = datetime.strptime(token, "%d.%m.%Y")
         return [parsed.strftime("%d.%m.%Y")]

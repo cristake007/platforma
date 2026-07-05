@@ -1,21 +1,8 @@
-# apps/flota/validators.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/flota/validators.py`
 
-## Scope
-
-- Real source file: `apps/flota/validators.py`
-- App: `flota`
-- App guide: `codex-context/apps/flota.md`
-- Role: `backend`
-- Size: 2014 bytes
-- Source SHA-256: `34c895e804c2212203fff020673f2bf57e7dc8fe641362b2d4cfaedc2a54ba72`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 2.0 KB
 
 ```python
 import re

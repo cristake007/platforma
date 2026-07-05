@@ -1,21 +1,8 @@
-# apps/tasks/views.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/tasks/views.py`
 
-## Scope
-
-- Real source file: `apps/tasks/views.py`
-- App: `tasks`
-- App guide: `codex-context/apps/tasks.md`
-- Role: `backend`
-- Size: 20095 bytes
-- Source SHA-256: `5ec8e508c62012b3c4d0fe0eab9aab3634c0068288008c6a25be4c774cb2dd6f`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 19.6 KB
 
 ```python
 import hashlib

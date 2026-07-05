@@ -1,21 +1,8 @@
-# apps/flota/views.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/flota/views.py`
 
-## Scope
-
-- Real source file: `apps/flota/views.py`
-- App: `flota`
-- App guide: `codex-context/apps/flota.md`
-- Role: `backend`
-- Size: 12238 bytes
-- Source SHA-256: `9ce66ca8e8cb9ac098a91f9b48a8cb7ad2002690d226c12ef343c182db04cd3b`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 12.0 KB
 
 ```python
 from urllib.parse import urlencode
@@ -333,4 +320,5 @@ class MaintenanceTypeArchiveView(StaffRequiredMixin, View):
         else:
             messages.success(request, "Tipul de mentenanță a fost arhivat.")
         return redirect("flota:maintenance_type_list")
+
 ```

@@ -1,21 +1,8 @@
-# apps/diplome/pdf_renderer.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/diplome/pdf_renderer.py`
 
-## Scope
-
-- Real source file: `apps/diplome/pdf_renderer.py`
-- App: `diplome`
-- App guide: `codex-context/apps/diplome.md`
-- Role: `backend`
-- Size: 18531 bytes
-- Source SHA-256: `df8960da6f02e09d098709efd0d5755009d5532ee96174f4f64a709e2520806b`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 18.1 KB
 
 ```python
 from __future__ import annotations

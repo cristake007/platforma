@@ -1,20 +1,8 @@
-# core/middleware.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `core/middleware.py`
 
-## Scope
-
-- Real source file: `core/middleware.py`
-- App: none
-- Role: `core`
-- Size: 1079 bytes
-- Source SHA-256: `692286b6c0c7485a7db2f94077aa74912c5e006a118ccd2263d7259c451832c5`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 1.1 KB
 
 ```python
 from .context_processors import build_application_shell

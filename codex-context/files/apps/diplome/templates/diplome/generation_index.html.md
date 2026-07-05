@@ -1,21 +1,8 @@
-# apps/diplome/templates/diplome/generation_index.html
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/diplome/templates/diplome/generation_index.html`
 
-## Scope
-
-- Real source file: `apps/diplome/templates/diplome/generation_index.html`
-- App: `diplome`
-- App guide: `codex-context/apps/diplome.md`
-- Role: `template`
-- Size: 11312 bytes
-- Source SHA-256: `0af0b97dcdff7152855f08781ad6afa0f887b27fd4ded5a0ae9b5dcb381b6000`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 11.0 KB
 
 ```html
 {% extends "layouts/base.html" %}

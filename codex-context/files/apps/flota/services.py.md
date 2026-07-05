@@ -1,21 +1,8 @@
-# apps/flota/services.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/flota/services.py`
 
-## Scope
-
-- Real source file: `apps/flota/services.py`
-- App: `flota`
-- App guide: `codex-context/apps/flota.md`
-- Role: `backend`
-- Size: 6592 bytes
-- Source SHA-256: `0c52157f8160443f2923fe2f31dbd7a4589c926fcdbfab4c1d4f5411e653b15e`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 6.4 KB
 
 ```python
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -205,4 +192,5 @@ def archive_maintenance_type(*, actor, maintenance_type: MaintenanceType) -> Mai
     maintenance_type.is_active = False
     maintenance_type.save(update_fields=("is_active", "updated_at"))
     return maintenance_type
+
 ```

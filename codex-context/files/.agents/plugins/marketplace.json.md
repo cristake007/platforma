@@ -1,0 +1,28 @@
+# Source snapshot
+
+## `.agents/plugins/marketplace.json`
+
+Size: 369 B
+
+```json
+{
+  "name": "personal",
+  "interface": {
+    "displayName": "Personal"
+  },
+  "plugins": [
+    {
+      "name": "playwright",
+      "source": {
+        "source": "local",
+        "path": "./plugins/playwright"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}
+```

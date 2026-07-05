@@ -1,21 +1,8 @@
-# apps/media_library/models.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/media_library/models.py`
 
-## Scope
-
-- Real source file: `apps/media_library/models.py`
-- App: `media_library`
-- App guide: `codex-context/apps/media_library.md`
-- Role: `backend`
-- Size: 2018 bytes
-- Source SHA-256: `bbeb2279d3e26739ddd9914b72604409b818d04dda58ea14f7278088c283d6c2`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 2.0 KB
 
 ```python
 import uuid

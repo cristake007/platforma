@@ -1,21 +1,8 @@
-# apps/flota/templates/flota/vehicle_detail.html
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/flota/templates/flota/vehicle_detail.html`
 
-## Scope
-
-- Real source file: `apps/flota/templates/flota/vehicle_detail.html`
-- App: `flota`
-- App guide: `codex-context/apps/flota.md`
-- Role: `template`
-- Size: 9845 bytes
-- Source SHA-256: `607eaa93a86b5b06cb7d5f956fa2421c432e74932d6382f677414b933b5f29ac`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 9.6 KB
 
 ```html
 {% extends "layouts/base.html" %}

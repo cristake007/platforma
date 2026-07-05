@@ -1,21 +1,8 @@
-# apps/flota/forms.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/flota/forms.py`
 
-## Scope
-
-- Real source file: `apps/flota/forms.py`
-- App: `flota`
-- App guide: `codex-context/apps/flota.md`
-- Role: `backend`
-- Size: 5215 bytes
-- Source SHA-256: `51d74e51d471e04212aacce61456c9f888ade5d4288934f713ae887b34e54c1a`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 5.1 KB
 
 ```python
 from django import forms

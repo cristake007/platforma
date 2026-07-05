@@ -1,21 +1,8 @@
-# apps/planificator/templates/planificator/includes/result_table.html
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/templates/planificator/includes/result_table.html`
 
-## Scope
-
-- Real source file: `apps/planificator/templates/planificator/includes/result_table.html`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `template`
-- Size: 4847 bytes
-- Source SHA-256: `63548cd80bf6bff8e32b72ea5f898c1561d94835fb584a65f022d2c905a23439`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 4.7 KB
 
 ```html
 <section id="generator-result" class="card generator-step-card overflow-hidden bg-base-100 shadow-none" data-generator-card="3">

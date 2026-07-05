@@ -1,21 +1,8 @@
-# apps/media_library/services.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/media_library/services.py`
 
-## Scope
-
-- Real source file: `apps/media_library/services.py`
-- App: `media_library`
-- App guide: `codex-context/apps/media_library.md`
-- Role: `backend`
-- Size: 3126 bytes
-- Source SHA-256: `a5cc4eaf2d79bd389685fbb26719fe258e300d833b14d1587569a88afa8ac179`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 3.1 KB
 
 ```python
 from pathlib import Path

@@ -1,21 +1,8 @@
-# apps/media_library/validators.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/media_library/validators.py`
 
-## Scope
-
-- Real source file: `apps/media_library/validators.py`
-- App: `media_library`
-- App guide: `codex-context/apps/media_library.md`
-- Role: `backend`
-- Size: 14423 bytes
-- Source SHA-256: `7e3aac9dff4d126b3b875447810207193aac7d49088c487568def3ed736097ad`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 14.1 KB
 
 ```python
 import hashlib

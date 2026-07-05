@@ -1,21 +1,8 @@
-# apps/media_library/selectors.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/media_library/selectors.py`
 
-## Scope
-
-- Real source file: `apps/media_library/selectors.py`
-- App: `media_library`
-- App guide: `codex-context/apps/media_library.md`
-- Role: `backend`
-- Size: 690 bytes
-- Source SHA-256: `9f36c113db4a969399b11ff39616adc35e99a3e9cc194c947b81cf4b9f724ef9`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 690 B
 
 ```python
 from django.shortcuts import get_object_or_404

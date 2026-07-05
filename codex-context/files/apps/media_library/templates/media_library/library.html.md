@@ -1,21 +1,8 @@
-# apps/media_library/templates/media_library/library.html
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/media_library/templates/media_library/library.html`
 
-## Scope
-
-- Real source file: `apps/media_library/templates/media_library/library.html`
-- App: `media_library`
-- App guide: `codex-context/apps/media_library.md`
-- Role: `template`
-- Size: 3967 bytes
-- Source SHA-256: `85184fc6c7f3e3615dc51a1d2588dbfc2db186741a2e57fcabb8dcf1fa5fd367`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 3.9 KB
 
 ```html
 {% extends "layouts/base.html" %}

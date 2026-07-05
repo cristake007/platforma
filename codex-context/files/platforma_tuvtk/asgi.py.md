@@ -1,20 +1,8 @@
-# platforma_tuvtk/asgi.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `platforma_tuvtk/asgi.py`
 
-## Scope
-
-- Real source file: `platforma_tuvtk/asgi.py`
-- App: none
-- Role: `project-config`
-- Size: 423 bytes
-- Source SHA-256: `fdd1edbcf9f3299b38a26ec73c3a807ee9d868cc980c689bc3f6de2c3215987a`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 407 B
 
 ```python
 """

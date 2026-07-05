@@ -1,21 +1,8 @@
-# apps/planificator/models.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/models.py`
 
-## Scope
-
-- Real source file: `apps/planificator/models.py`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `backend`
-- Size: 2612 bytes
-- Source SHA-256: `a520453710d73fd45b71d40532b63801ba1f1cb96b9088b5b7fd83016d7a4bbc`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 2.6 KB
 
 ```python
 import uuid

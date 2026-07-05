@@ -1,20 +1,8 @@
-# core/models.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `core/models.py`
 
-## Scope
-
-- Real source file: `core/models.py`
-- App: none
-- Role: `core`
-- Size: 384 bytes
-- Source SHA-256: `42649ba2978d08d4a3742dc0e4aa996154cc62e2568f4a1b362a028462653baa`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 384 B
 
 ```python
 from django.conf import settings

@@ -1,21 +1,8 @@
-# apps/flota/urls.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/flota/urls.py`
 
-## Scope
-
-- Real source file: `apps/flota/urls.py`
-- App: `flota`
-- App guide: `codex-context/apps/flota.md`
-- Role: `backend`
-- Size: 1490 bytes
-- Source SHA-256: `2377717bf640f332b4335fb64ec1de1cf82b3db87e60f063e1c7d89ac0ac43ab`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 1.5 KB
 
 ```python
 from django.urls import path
@@ -55,4 +42,5 @@ urlpatterns = [
         name="maintenance_type_archive",
     ),
 ]
+
 ```

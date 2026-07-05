@@ -1,20 +1,8 @@
-# theme/apps.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `theme/apps.py`
 
-## Scope
-
-- Real source file: `theme/apps.py`
-- App: none
-- Role: `theme`
-- Size: 85 bytes
-- Source SHA-256: `568856176e63123f213f3c3d0a1d41ffd9ec2e5001b39724b09da997d90a5cff`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 85 B
 
 ```python
 from django.apps import AppConfig

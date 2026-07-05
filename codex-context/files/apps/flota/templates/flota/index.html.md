@@ -1,21 +1,8 @@
-# apps/flota/templates/flota/index.html
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/flota/templates/flota/index.html`
 
-## Scope
-
-- Real source file: `apps/flota/templates/flota/index.html`
-- App: `flota`
-- App guide: `codex-context/apps/flota.md`
-- Role: `template`
-- Size: 9864 bytes
-- Source SHA-256: `7ab6d98ac8f5c6768cbb5b7da986e2c0ab018ddc3c87d3a042a28853d95f188e`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 9.6 KB
 
 ```html
 {% extends "layouts/base.html" %}

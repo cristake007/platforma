@@ -1,21 +1,10 @@
-# apps/diplome/tests_bulk_generation.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/diplome/tests_bulk_generation.py`
 
-## Scope
+Size: 16.9 KB
 
-- Real source file: `apps/diplome/tests_bulk_generation.py`
-- App: `diplome`
-- App guide: `codex-context/apps/diplome.md`
-- Role: `test`
-- Size: 17319 bytes
-- Source SHA-256: `21ebaf5014ab19cddc3f675f16b01643530a85091a2addeaefc8719162370887`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Redacted secret-like assignments: 2
 
 ```python
 import tempfile
@@ -62,11 +51,11 @@ class BulkDiplomaGenerationTests(TestCase):
         user_model = get_user_model()
         cls.user = user_model.objects.create_user(
             username="bulk-owner",
-            password="test-password",
+            password=<redacted>
         )
         cls.other_user = user_model.objects.create_user(
             username="bulk-other",
-            password="test-password",
+            password=<redacted>
         )
         cls.participant_list = ParticipantList.objects.create(
             owner=cls.user,

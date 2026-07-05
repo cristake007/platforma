@@ -1,21 +1,8 @@
-# apps/planificator/selectors.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/selectors.py`
 
-## Scope
-
-- Real source file: `apps/planificator/selectors.py`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `backend`
-- Size: 986 bytes
-- Source SHA-256: `c23bc0da74e0c39be81730260040c6e0ec0aaa2380a42ecd18879e9ab0fa534f`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 986 B
 
 ```python
 from django.http import Http404

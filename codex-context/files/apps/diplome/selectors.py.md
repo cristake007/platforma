@@ -1,21 +1,8 @@
-# apps/diplome/selectors.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/diplome/selectors.py`
 
-## Scope
-
-- Real source file: `apps/diplome/selectors.py`
-- App: `diplome`
-- App guide: `codex-context/apps/diplome.md`
-- Role: `backend`
-- Size: 4863 bytes
-- Source SHA-256: `5d7d1d0aacf7e33379079e15505dd230019c9650d160c6f64ac5cbb9a1fdbb39`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 4.7 KB
 
 ```python
 from django.db.models import Count

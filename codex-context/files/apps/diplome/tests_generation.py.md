@@ -1,21 +1,10 @@
-# apps/diplome/tests_generation.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/diplome/tests_generation.py`
 
-## Scope
+Size: 15.3 KB
 
-- Real source file: `apps/diplome/tests_generation.py`
-- App: `diplome`
-- App guide: `codex-context/apps/diplome.md`
-- Role: `test`
-- Size: 15685 bytes
-- Source SHA-256: `e3304ee1262a55e94e4b225852217269a4e60f6017f564be2c0d773947ffdf4c`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Redacted secret-like assignments: 2
 
 ```python
 import tempfile
@@ -49,11 +38,11 @@ class DiplomaGenerationTests(TestCase):
         user_model = get_user_model()
         cls.user = user_model.objects.create_user(
             username="generation-owner",
-            password="test-password",
+            password=<redacted>
         )
         cls.other_user = user_model.objects.create_user(
             username="generation-other",
-            password="test-password",
+            password=<redacted>
         )
         cls.participant_list = ParticipantList.objects.create(
             owner=cls.user,

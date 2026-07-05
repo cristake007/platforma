@@ -1,21 +1,8 @@
-# apps/diplome/static/diplome/generation.js
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/diplome/static/diplome/generation.js`
 
-## Scope
-
-- Real source file: `apps/diplome/static/diplome/generation.js`
-- App: `diplome`
-- App guide: `codex-context/apps/diplome.md`
-- Role: `static`
-- Size: 3357 bytes
-- Source SHA-256: `22f9f0fa61627935e6c61a090b1ba8bd76fad9edfb40f3e3e02b1326a7bc9005`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 3.3 KB
 
 ```javascript
 (function () {

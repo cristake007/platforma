@@ -1,21 +1,8 @@
-# apps/tasks/forms.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/tasks/forms.py`
 
-## Scope
-
-- Real source file: `apps/tasks/forms.py`
-- App: `tasks`
-- App guide: `codex-context/apps/tasks.md`
-- Role: `backend`
-- Size: 6342 bytes
-- Source SHA-256: `cb3461e0d41b71b07af261c0afbd00aa070779542cd27ca0663bad48ef26b182`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 6.2 KB
 
 ```python
 from django import forms

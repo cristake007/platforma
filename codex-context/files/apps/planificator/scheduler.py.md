@@ -1,21 +1,8 @@
-# apps/planificator/scheduler.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/scheduler.py`
 
-## Scope
-
-- Real source file: `apps/planificator/scheduler.py`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `backend`
-- Size: 2796 bytes
-- Source SHA-256: `e0c1d554e3ae827228a92bf30121188cf6bbbf052346d2c44ffb0cf57dc0678d`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 2.7 KB
 
 ```python
 import calendar

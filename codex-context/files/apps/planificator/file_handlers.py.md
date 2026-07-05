@@ -1,21 +1,8 @@
-# apps/planificator/file_handlers.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/file_handlers.py`
 
-## Scope
-
-- Real source file: `apps/planificator/file_handlers.py`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `backend`
-- Size: 7527 bytes
-- Source SHA-256: `0506266523ea7539f49edbd6bed8c71f2004d68e4a6ff504c0bf0ece2fb22d1e`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 7.4 KB
 
 ```python
 import csv

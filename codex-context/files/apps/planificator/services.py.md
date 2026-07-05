@@ -1,21 +1,8 @@
-# apps/planificator/services.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/services.py`
 
-## Scope
-
-- Real source file: `apps/planificator/services.py`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `backend`
-- Size: 8204 bytes
-- Source SHA-256: `a475cee9f13f096850ca77a64a0180f3325afb6d9aaea176b1daa4cca8fd9bbd`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 8.0 KB
 
 ```python
 import hashlib

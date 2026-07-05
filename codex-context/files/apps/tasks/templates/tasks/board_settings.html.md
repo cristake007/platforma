@@ -1,21 +1,8 @@
-# apps/tasks/templates/tasks/board_settings.html
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/tasks/templates/tasks/board_settings.html`
 
-## Scope
-
-- Real source file: `apps/tasks/templates/tasks/board_settings.html`
-- App: `tasks`
-- App guide: `codex-context/apps/tasks.md`
-- Role: `template`
-- Size: 6334 bytes
-- Source SHA-256: `27b6018eeb06e9e0f7607246d4bc57419e8c072e307a38c44229b907673dd682`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 6.2 KB
 
 ```html
 {% extends "layouts/base.html" %}

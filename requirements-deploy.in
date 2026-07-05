@@ -1,0 +1,6 @@
+# Direct deployment dependencies layered on the base requirements.
+# Compile when pip-tools is available:
+#   python -m piptools compile requirements-deploy.in --output-file requirements-deploy.txt
+
+-r requirements.in
+gunicorn==23.0.0

@@ -1,21 +1,8 @@
-# apps/tasks/selectors.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/tasks/selectors.py`
 
-## Scope
-
-- Real source file: `apps/tasks/selectors.py`
-- App: `tasks`
-- App guide: `codex-context/apps/tasks.md`
-- Role: `backend`
-- Size: 2520 bytes
-- Source SHA-256: `41cbee0d8692a12fd39cec337d2b5b1e39f383273f7bb6003e00affe94c94d33`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 2.5 KB
 
 ```python
 from django.db.models import Q, QuerySet
@@ -85,4 +72,5 @@ def user_can_edit_task(*, user, task: Task) -> bool:
 
 def user_can_move_task(*, user, task: Task) -> bool:
     return bool(user.is_staff or task.creator_id == user.pk or task.assignee_id == user.pk)
+
 ```

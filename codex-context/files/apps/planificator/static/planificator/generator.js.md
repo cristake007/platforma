@@ -1,21 +1,8 @@
-# apps/planificator/static/planificator/generator.js
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/static/planificator/generator.js`
 
-## Scope
-
-- Real source file: `apps/planificator/static/planificator/generator.js`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `static`
-- Size: 9082 bytes
-- Source SHA-256: `763d55ef2de2ac2698c2dda2fc4ee6ab1c78b2f551bee78e89d9ffb4bba8ad66`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 8.9 KB
 
 ```javascript
 (() => {

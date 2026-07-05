@@ -1,21 +1,8 @@
-# apps/planificator/templates/planificator/word_converter.html
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/templates/planificator/word_converter.html`
 
-## Scope
-
-- Real source file: `apps/planificator/templates/planificator/word_converter.html`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `template`
-- Size: 8099 bytes
-- Source SHA-256: `62be1ec0dddf8db802b05faed32bb0f5061130cdb8f7d36a4d49450d6b55557d`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 7.9 KB
 
 ```html
 {% extends "layouts/base.html" %}

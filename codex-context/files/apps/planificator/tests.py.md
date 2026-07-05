@@ -1,21 +1,8 @@
-# apps/planificator/tests.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/tests.py`
 
-## Scope
-
-- Real source file: `apps/planificator/tests.py`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `test`
-- Size: 23227 bytes
-- Source SHA-256: `a3492b3a2fba2c6b3dc931b8163dfa262914e7d60f0053c036d84dfb15cbd84e`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 24.6 KB
 
 ```python
 import io
@@ -103,6 +90,54 @@ class PlanificatorViewTests(TestCase):
         response = self.client.get("/planificator/")
 
         self.assertEqual(response.status_code, 404)
+
+    def test_history_htmx_request_returns_page_content_fragment(self):
+        response = self.client.get(
+            reverse("planificator:istoric"),
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "includes/htmx_page.html")
+        self.assertTemplateUsed(response, "planificator/_istoric_content.html")
+        self.assertTemplateNotUsed(response, "planificator/istoric.html")
+        self.assertContains(response, 'id="page-content"', count=1)
+        self.assertContains(
+            response,
+            f'data-active-nav-url="{reverse("planificator:istoric")}"',
+        )
+
+    def test_history_restore_request_returns_full_page(self):
+        response = self.client.get(
+            reverse("planificator:istoric"),
+            HTTP_HX_REQUEST="true",
+            HTTP_HX_HISTORY_RESTORE_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "planificator/istoric.html")
+        self.assertTemplateNotUsed(response, "includes/htmx_page.html")
+
+    def test_only_pilot_history_link_has_htmx_navigation(self):
+        response = self.client.get(reverse("planificator:istoric"))
+        history_url = reverse("planificator:istoric")
+        generator_url = reverse("planificator:generator_perioade")
+
+        self.assertContains(
+            response,
+            f'href="{history_url}" data-shell-nav-url="{history_url}" '
+            f'hx-get="{history_url}" hx-target="#page-content" '
+            'hx-swap="outerHTML show:#ops-main-scroll:top" '
+            'hx-push-url="true" hx-sync="#page-content:replace"',
+        )
+        self.assertContains(
+            response,
+            f'href="{generator_url}" data-shell-nav-url="{generator_url}"',
+        )
+        self.assertNotContains(
+            response,
+            f'data-shell-nav-url="{generator_url}" hx-get=',
+        )
 
     def test_generator_uses_daisyui_year_selector(self):
         response = self.client.get(reverse("planificator:generator_perioade"))

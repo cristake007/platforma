@@ -1,21 +1,8 @@
-# apps/diplome/forms.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/diplome/forms.py`
 
-## Scope
-
-- Real source file: `apps/diplome/forms.py`
-- App: `diplome`
-- App guide: `codex-context/apps/diplome.md`
-- Role: `backend`
-- Size: 14972 bytes
-- Source SHA-256: `0340b40df2f2f731dd94799e6ca858c95308e0243a91ede4291ef4c36c67daee`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 14.6 KB
 
 ```python
 import json

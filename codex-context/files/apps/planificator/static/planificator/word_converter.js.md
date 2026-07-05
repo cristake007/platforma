@@ -1,21 +1,8 @@
-# apps/planificator/static/planificator/word_converter.js
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/static/planificator/word_converter.js`
 
-## Scope
-
-- Real source file: `apps/planificator/static/planificator/word_converter.js`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `static`
-- Size: 13740 bytes
-- Source SHA-256: `2d9ed3bddb625153adb9b250a63aa9831cbe7693ecd7430d8b61d5e6558a768a`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 13.4 KB
 
 ```javascript
 (() => {

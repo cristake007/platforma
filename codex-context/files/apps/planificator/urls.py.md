@@ -1,21 +1,8 @@
-# apps/planificator/urls.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/urls.py`
 
-## Scope
-
-- Real source file: `apps/planificator/urls.py`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `backend`
-- Size: 2332 bytes
-- Source SHA-256: `b7b45bccdc778465c38fda3ca014317eaa1cacde378f8389c140d31e58d30634`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 2.3 KB
 
 ```python
 from django.urls import path

@@ -1,20 +1,8 @@
-# theme/static_src/src/styles.css
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `theme/static_src/src/styles.css`
 
-## Scope
-
-- Real source file: `theme/static_src/src/styles.css`
-- App: none
-- Role: `theme`
-- Size: 27247 bytes
-- Source SHA-256: `b1b6e689dfb99b41432846f54b23b7c11183b747694783cf034f3408665d3a88`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 27.0 KB
 
 ```css
 @import "tailwindcss";
@@ -119,6 +107,7 @@ Use this context only when the task directly touches this file or requires this 
 @source "../../../apps/media_library/**/*.{html,py,js}";
 @source "../../../apps/tasks/**/*.{html,py,js}";
 @source "../../static/**/*.js";
+@source not "../../static/js/vendor";
 
 @font-face {
     font-family: "InterVariable";
@@ -171,6 +160,8 @@ Use this context only when the task directly touches this file or requires this 
     }
 
     .ops-topbar {
+        position: relative;
+        z-index: 50;
         height: 4rem;
         border-bottom: 1px solid var(--color-primary);
         background: var(--color-base-100);
@@ -227,6 +218,19 @@ Use this context only when the task directly touches this file or requires this 
         padding: 0.3rem;
         color: var(--sidebar-item-text);
         list-style: none;
+    }
+
+    .ops-user-flyout {
+        position: relative;
+        flex: none;
+        line-height: 0;
+    }
+
+    .ops-user-menu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        line-height: normal;
     }
 
     .ops-user-trigger::-webkit-details-marker {
@@ -611,6 +615,10 @@ Use this context only when the task directly touches this file or requires this 
         background: var(--sidebar-footer-bg);
     }
 
+}
+
+.drawer:not([data-sidebar-ready="true"]) .ops-sidebar {
+    transition: none;
 }
 
 /* Sidebar rules share daisyUI's utility layer so its menu defaults cannot

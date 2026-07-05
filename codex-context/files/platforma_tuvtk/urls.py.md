@@ -1,20 +1,8 @@
-# platforma_tuvtk/urls.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `platforma_tuvtk/urls.py`
 
-## Scope
-
-- Real source file: `platforma_tuvtk/urls.py`
-- App: none
-- Role: `project-config`
-- Size: 1567 bytes
-- Source SHA-256: `8a0525fc6f820a6d78713b49047cde471b781f7aa9d2732057aadab7081e1322`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 1.5 KB
 
 ```python
 """

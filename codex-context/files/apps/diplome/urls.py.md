@@ -1,21 +1,8 @@
-# apps/diplome/urls.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/diplome/urls.py`
 
-## Scope
-
-- Real source file: `apps/diplome/urls.py`
-- App: `diplome`
-- App guide: `codex-context/apps/diplome.md`
-- Role: `backend`
-- Size: 3645 bytes
-- Source SHA-256: `621e353c5d973916ceb6a67049fc19b9f9574e0eb75af9732a8b8dc1d005e828`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 3.6 KB
 
 ```python
 from django.urls import path

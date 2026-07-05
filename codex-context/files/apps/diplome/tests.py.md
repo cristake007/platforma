@@ -1,21 +1,10 @@
-# apps/diplome/tests.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/diplome/tests.py`
 
-## Scope
+Size: 30.2 KB
 
-- Real source file: `apps/diplome/tests.py`
-- App: `diplome`
-- App guide: `codex-context/apps/diplome.md`
-- Role: `test`
-- Size: 30955 bytes
-- Source SHA-256: `0950bacbca94966a48755786eeda990ef638dd651643fe1726b3d01734a022d0`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Redacted secret-like assignments: 2
 
 ```python
 import json
@@ -41,13 +30,13 @@ class DiplomaTemplateViewTests(TestCase):
     def setUpTestData(cls):
         cls.user = get_user_model().objects.create_user(
             username="diploma-owner",
-            password="test-password",
+            password=<redacted>
             first_name="Ana",
             last_name="Operator",
         )
         cls.other_user = get_user_model().objects.create_user(
             username="other-owner",
-            password="test-password",
+            password=<redacted>
         )
 
     def setUp(self):

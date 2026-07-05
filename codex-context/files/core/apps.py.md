@@ -1,20 +1,8 @@
-# core/apps.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `core/apps.py`
 
-## Scope
-
-- Real source file: `core/apps.py`
-- App: none
-- Role: `core`
-- Size: 152 bytes
-- Source SHA-256: `d5a6861b4953f86d3ce217c55dfb520c4d43d0d3a07e7092d323995f17ec60aa`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 149 B
 
 ```python
 from django.apps import AppConfig

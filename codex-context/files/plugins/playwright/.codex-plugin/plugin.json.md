@@ -1,0 +1,43 @@
+# Source snapshot
+
+## `plugins/playwright/.codex-plugin/plugin.json`
+
+Size: 1.2 KB
+
+```json
+{
+  "name": "playwright",
+  "version": "0.1.0",
+  "description": "Browser automation for testing the TUVTK Django application with Playwright MCP.",
+  "author": {
+    "name": "TUVTK project"
+  },
+  "homepage": "https://github.com/microsoft/playwright-mcp",
+  "repository": "https://github.com/microsoft/playwright-mcp",
+  "license": "Apache-2.0",
+  "keywords": [
+    "playwright",
+    "browser",
+    "django",
+    "testing"
+  ],
+  "interface": {
+    "displayName": "Playwright",
+    "shortDescription": "Test the TUVTK Django app in a real browser.",
+    "longDescription": "Adds Microsoft's Playwright MCP browser automation to Codex for exploratory testing, responsive checks, accessibility inspection, and frontend debugging in the TUVTK Django project.",
+    "developerName": "Microsoft / TUVTK project",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Start the Django app and test its main user flows.",
+      "Check the current page for accessibility and responsive issues.",
+      "Reproduce this frontend bug in the browser and report the cause."
+    ]
+  },
+  "mcpServers": "./.mcp.json"
+}
+```

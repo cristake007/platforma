@@ -1,21 +1,8 @@
-# apps/media_library/forms.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/media_library/forms.py`
 
-## Scope
-
-- Real source file: `apps/media_library/forms.py`
-- App: `media_library`
-- App guide: `codex-context/apps/media_library.md`
-- Role: `backend`
-- Size: 1136 bytes
-- Source SHA-256: `70e1a083cd043e44bfab7183d1f4eb2e973db1d74a195385bdebe1895259182c`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 1.1 KB
 
 ```python
 from pathlib import Path

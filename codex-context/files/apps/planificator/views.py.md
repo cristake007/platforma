@@ -1,21 +1,8 @@
-# apps/planificator/views.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/views.py`
 
-## Scope
-
-- Real source file: `apps/planificator/views.py`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `backend`
-- Size: 32362 bytes
-- Source SHA-256: `620c0702c0f3909d77905a09dd1ba6540cf981a8d226bfef2fb3f9c261f28a46`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 31.8 KB
 
 ```python
 import base64
@@ -33,6 +20,8 @@ from django.utils import timezone
 from django.views import View
 from django.views.generic import ListView, TemplateView
 from docx.opc.exceptions import PackageNotFoundError
+
+from core.mixins import HtmxPageMixin
 
 from .constants import ROMANIAN_MONTH_NAMES
 from .file_handlers import create_excel_export, read_tabular_rows
@@ -780,8 +769,11 @@ class WordMatchGenerateView(WordMatcherPermissionMixin, View):
         return response
 
 
-class ScheduleHistoryView(PlanificatorPermissionMixin, ListView):
+class ScheduleHistoryView(HtmxPageMixin, PlanificatorPermissionMixin, ListView):
     template_name = "planificator/istoric.html"
+    htmx_content_template = "planificator/_istoric_content.html"
+    shell_page_title = "Istoric generări | Platforma TUVTK"
+    shell_nav_url_name = "planificator:istoric"
     context_object_name = "generations"
     paginate_by = 20
 

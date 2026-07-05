@@ -1,21 +1,10 @@
-# apps/planificator/tests_xml_export.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/tests_xml_export.py`
 
-## Scope
+Size: 8.2 KB
 
-- Real source file: `apps/planificator/tests_xml_export.py`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `test`
-- Size: 8349 bytes
-- Source SHA-256: `4660f088c289cdfa5a0568f456a014e229ec794ad707382b49d7e58c769d951a`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Redacted secret-like assignments: 1
 
 ```python
 import xml.etree.ElementTree as ET
@@ -102,7 +91,7 @@ class XmlExportViewTests(TestCase):
     def setUpTestData(cls):
         cls.user = get_user_model().objects.create_user(
             username="xml-user",
-            password="test-pass",
+            password=<redacted>
         )
         cls.permission = Permission.objects.get(codename="use_xml_export")
         cls.user.user_permissions.add(cls.permission)

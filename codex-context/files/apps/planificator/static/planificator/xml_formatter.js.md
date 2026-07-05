@@ -1,21 +1,8 @@
-# apps/planificator/static/planificator/xml_formatter.js
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/static/planificator/xml_formatter.js`
 
-## Scope
-
-- Real source file: `apps/planificator/static/planificator/xml_formatter.js`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `static`
-- Size: 4362 bytes
-- Source SHA-256: `3c793676e0f683b511610c3b0555fdd1aa1bf9c96f48b98d2e6d1dc7672d26f9`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 4.3 KB
 
 ```javascript
 (() => {

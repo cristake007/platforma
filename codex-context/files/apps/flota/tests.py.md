@@ -1,21 +1,10 @@
-# apps/flota/tests.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/flota/tests.py`
 
-## Scope
+Size: 10.9 KB
 
-- Real source file: `apps/flota/tests.py`
-- App: `flota`
-- App guide: `codex-context/apps/flota.md`
-- Role: `test`
-- Size: 11139 bytes
-- Source SHA-256: `0865291ae71d5c3cc02f1774548e143c9b00c05860b205a247f9873b989a7057`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Redacted secret-like assignments: 2
 
 ```python
 from datetime import date, timedelta
@@ -47,14 +36,14 @@ class FlotaAppTests(TestCase):
         users = get_user_model().objects
         self.staff = users.create_user(
             username="fleet-admin",
-            password="test-password",
+            password=<redacted>
             first_name="Ana",
             last_name="Admin",
             is_staff=True,
         )
         self.driver = users.create_user(
             username="driver",
-            password="test-password",
+            password=<redacted>
             first_name="Dan",
             last_name="Ionescu",
         )

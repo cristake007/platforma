@@ -1,21 +1,8 @@
-# apps/planificator/templates/planificator/includes/upload.html
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/templates/planificator/includes/upload.html`
 
-## Scope
-
-- Real source file: `apps/planificator/templates/planificator/includes/upload.html`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `template`
-- Size: 4844 bytes
-- Source SHA-256: `dafcfb83ef83792f95ac8fad42eba3d05a644bc29dcb8174f97a4a63f1370d46`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 4.7 KB
 
 ```html
 <section id="generator-upload" class="card generator-step-card bg-base-100 shadow-none" data-generator-card="1">

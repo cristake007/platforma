@@ -1,21 +1,8 @@
-# apps/planificator/word_matching.py
+# Source snapshot
 
-Generated: `2026-07-05T22:50:42`
+## `apps/planificator/word_matching.py`
 
-## Scope
-
-- Real source file: `apps/planificator/word_matching.py`
-- App: `planificator`
-- App guide: `codex-context/apps/planificator.md`
-- Role: `backend`
-- Size: 16374 bytes
-- Source SHA-256: `1612d6f6e145ef146141bc93b7275939e4f48f9d3ddb77bfd140cedc38a65ca0`
-
-## Codex usage
-
-Use this context only when the task directly touches this file or requires this file for routing. The real source file remains the source of truth before editing.
-
-## Source
+Size: 16.0 KB
 
 ```python
 import base64
