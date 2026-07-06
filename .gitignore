@@ -12,6 +12,8 @@ playwright-report/
 tmp/
 db.sqlite3
 .env
+.env.dev
+command.sh
 .postgresql/
 media/
 private_media/
