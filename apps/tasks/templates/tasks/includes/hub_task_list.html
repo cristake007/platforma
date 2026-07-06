@@ -1,0 +1,75 @@
+<div id="task-list-results" class="space-y-3">
+    <div class="overflow-x-auto border border-base-300 bg-base-100">
+        <table class="table table-sm min-w-[980px]">
+            <thead><tr><th>Task</th><th>Board</th><th>Etapă</th><th>Prioritate</th><th>Responsabil</th><th>Termen</th><th>Timp rămas</th><th class="text-right">Acțiuni</th></tr></thead>
+            <tbody>
+            {% for task in page %}
+                <tr class="hover:bg-base-200/60">
+                    <td><div class="max-w-64"><p class="font-semibold text-base-content">{{ task.title }}</p>{% if task.origin_url %}<a href="{{ task.origin_url }}" class="text-xs text-primary hover:underline">{{ task.origin_label|default:"Deschide sursa" }} ↗</a>{% endif %}</div></td>
+                    <td><a href="{% url 'tasks:board_kanban' task.board_id %}" class="font-medium text-primary hover:underline">{{ task.board.name }}</a></td>
+                    <td><span class="badge badge-outline badge-sm">{{ task.stage.name }}</span></td>
+                    <td>{{ task.get_priority_display }}</td>
+                    <td>{{ task.assignee.get_full_name|default:task.assignee.username }}</td>
+                    <td class="whitespace-nowrap">{{ task.due_at|date:"d.m.Y H:i" }}</td>
+                    <td class="whitespace-nowrap">{% include "tasks/includes/timer.html" %}</td>
+                    <td>
+                        <div class="flex justify-end gap-1">
+                            {% if task.can_edit %}
+                                <a
+                                    href="{% url 'tasks:task_edit' task.pk %}"
+                                    class="btn btn-square btn-ghost btn-xs text-primary hover:bg-primary/10"
+                                    aria-label="Editează task-ul"
+                                    title="Editează task-ul"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m16.862 3.487 3.651 3.651M4.5 19.5l4.228-.845a2 2 0 0 0 1.024-.547L20.513 7.347a1.75 1.75 0 0 0 0-2.474l-1.386-1.386a1.75 1.75 0 0 0-2.474 0L5.892 14.248a2 2 0 0 0-.547 1.024L4.5 19.5Z" />
+                                    </svg>
+                                </a>
+                            {% endif %}
+                            <a
+                                href="{% url 'tasks:board_kanban' task.board_id %}"
+                                class="btn btn-square btn-ghost btn-xs text-primary hover:bg-primary/10"
+                                aria-label="Deschide board-ul în vizualizarea Kanban"
+                                title="Deschide board-ul în vizualizarea Kanban"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4.75 5.25h5.5v13.5h-5.5V5.25Zm9 0h5.5v8.5h-5.5v-8.5Z" />
+                                </svg>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="8" class="py-12 text-center text-muted">Nu există task-uri pentru filtrele selectate.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if page.paginator.num_pages > 1 %}
+    <div class="flex items-center justify-between text-sm text-muted">
+        <span>Pagina {{ page.number }} din {{ page.paginator.num_pages }}</span>
+        <div class="join">
+            {% if page.has_previous %}
+                <a
+                    class="btn btn-sm join-item"
+                    href="?{% if filters.urlencode %}{{ filters.urlencode }}&{% endif %}page={{ page.previous_page_number }}"
+                    hx-get="?{% if filters.urlencode %}{{ filters.urlencode }}&{% endif %}page={{ page.previous_page_number }}"
+                    hx-target="#task-list-results"
+                    hx-swap="outerHTML"
+                    hx-push-url="true"
+                >‹</a>
+            {% endif %}
+            {% if page.has_next %}
+                <a
+                    class="btn btn-sm join-item"
+                    href="?{% if filters.urlencode %}{{ filters.urlencode }}&{% endif %}page={{ page.next_page_number }}"
+                    hx-get="?{% if filters.urlencode %}{{ filters.urlencode }}&{% endif %}page={{ page.next_page_number }}"
+                    hx-target="#task-list-results"
+                    hx-swap="outerHTML"
+                    hx-push-url="true"
+                >›</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>

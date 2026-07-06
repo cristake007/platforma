@@ -1,0 +1,26 @@
+<form
+    id="task-form-panel"
+    method="post"
+    class="space-y-5 border border-base-300 bg-base-100 p-5"
+    {% if not task %}
+        hx-post="{% url 'tasks:task_create' board.pk %}"
+        hx-target="#task-form-panel"
+        hx-swap="outerHTML"
+    {% endif %}
+>
+    {% csrf_token %}
+    <div class="grid gap-x-4 sm:grid-cols-2">
+        {% include "tasks/includes/form_fields.html" %}
+    </div>
+    <div class="flex flex-wrap justify-between gap-2">
+        <div>
+            {% if task %}
+                <button type="submit" formaction="{% url 'tasks:task_archive' task.pk %}" name="archived" value="1" class="btn btn-outline btn-error btn-sm">Arhiveaz&#259;</button>
+            {% endif %}
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'tasks:board_kanban' board.pk %}" class="btn btn-ghost btn-sm">Anuleaz&#259;</a>
+            <button class="btn btn-primary btn-sm">Salveaz&#259;</button>
+        </div>
+    </div>
+</form>

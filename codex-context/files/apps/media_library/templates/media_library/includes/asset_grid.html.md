@@ -1,0 +1,114 @@
+# Source snapshot
+
+## `apps/media_library/templates/media_library/includes/asset_grid.html`
+
+Size: 8.1 KB
+
+```html
+<div id="media-asset-panel" class="border border-base-300 bg-base-100">
+    <div class="flex items-center justify-between border-b border-base-300 px-5 py-4">
+        <h2 class="font-semibold text-base-content">Fișierele mele</h2>
+        <span class="badge badge-ghost">{{ assets|length }}</span>
+    </div>
+    {% if assets %}
+        <div class="grid grid-cols-2 gap-4 p-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+            {% for asset in assets %}
+                <article class="flex h-full flex-col overflow-hidden border border-base-300 bg-base-100" x-data>
+                    <button
+                        type="button"
+                        class="group media-asset-preview relative block w-full shrink-0 cursor-pointer overflow-hidden bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                        aria-label="Deschide {{ asset.name }}"
+                        title="Deschide"
+                        x-on:click="$refs.previewDialog.showModal()"
+                    >
+                        <img src="{% url 'media_library:content' asset.pk %}" alt="{{ asset.name }}">
+                        <span class="absolute inset-0 flex items-center justify-center bg-neutral/35 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100" aria-hidden="true">
+                            <span class="flex h-10 w-10 items-center justify-center rounded-full bg-base-100/90 text-base-content shadow">
+                                <svg class="h-5 w-5" viewBox="0 0 16 16" fill="currentColor" focusable="false">
+                                    <path d="M6.5 12a5.5 5.5 0 1 1 4.389-2.185l3.148 3.148a.75.75 0 0 1-1.06 1.06l-3.148-3.148A5.475 5.475 0 0 1 6.5 12Zm0-1.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/>
+                                    <path d="M6.5 4a.5.5 0 0 1 .5.5V6h1.5a.5.5 0 0 1 0 1H7v1.5a.5.5 0 0 1-1 0V7H4.5a.5.5 0 0 1 0-1H6V4.5a.5.5 0 0 1 .5-.5Z"/>
+                                </svg>
+                            </span>
+                        </span>
+                    </button>
+                    <div class="flex flex-1 flex-col gap-3 p-3">
+                        <div class="grid h-10 min-w-0 grid-rows-2 content-start">
+                            <h3 class="h-5 truncate text-sm font-semibold leading-5 text-base-content" title="{{ asset.name }}">{{ asset.name }}</h3>
+                            <p class="h-5 truncate text-xs leading-5 text-muted" title="{{ asset.original_filename }}">{{ asset.original_filename }}</p>
+                        </div>
+                        <div class="mt-auto flex min-h-7 items-center justify-between gap-2">
+                            <span class="badge badge-outline h-7">{{ asset.extension|upper }}</span>
+                            <button
+                                type="button"
+                                class="btn btn-error btn-outline btn-square btn-sm shrink-0"
+                                aria-label="Șterge {{ asset.name }}"
+                                title="Șterge"
+                                x-on:click="$refs.deleteDialog.showModal()"
+                            >
+                                <svg class="h-4 w-4" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false">
+                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z"/>
+                                    <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1 0-2H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1ZM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118ZM2.5 3h11V2h-11v1Z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <dialog x-ref="previewDialog" class="modal" aria-labelledby="preview-media-{{ asset.pk }}-title">
+                        <div class="modal-box max-w-5xl rounded-none border border-base-300 bg-base-100 p-0 shadow-xl">
+                            <form method="dialog">
+                                <button class="btn btn-ghost btn-sm btn-circle absolute right-3 top-3 z-10 bg-base-100/80" aria-label="Închide">✕</button>
+                            </form>
+                            <div class="border-b border-base-300 px-5 py-4 pr-14">
+                                <h3 id="preview-media-{{ asset.pk }}-title" class="truncate text-lg font-semibold text-base-content" title="{{ asset.name }}">{{ asset.name }}</h3>
+                                <p class="truncate text-sm text-muted" title="{{ asset.original_filename }}">{{ asset.original_filename }}</p>
+                            </div>
+                            <div class="flex max-h-[70vh] items-center justify-center bg-base-200 p-4">
+                                <img
+                                    src="{% url 'media_library:content' asset.pk %}"
+                                    alt="{{ asset.name }}"
+                                    class="max-h-[64vh] max-w-full object-contain"
+                                >
+                            </div>
+                        </div>
+                        <form method="dialog" class="modal-backdrop"><button>Închide</button></form>
+                    </dialog>
+                    <dialog x-ref="deleteDialog" class="modal" aria-labelledby="delete-media-{{ asset.pk }}-title">
+                        <div class="modal-box max-w-md rounded-box border border-base-300 bg-base-100 shadow-xl">
+                            <form method="dialog">
+                                <button class="btn btn-ghost btn-sm btn-circle absolute right-3 top-3" aria-label="Închide">✕</button>
+                            </form>
+                            <h3 id="delete-media-{{ asset.pk }}-title" class="pr-8 text-lg font-semibold text-base-content">Șterge fișierul?</h3>
+                            <p class="mt-3 text-sm text-muted">
+                                Fișierul „{{ asset.name }}” va fi eliminat din biblioteca media dacă nu este folosit într-un template de diplomă.
+                            </p>
+                            <div class="modal-action">
+                                <form method="dialog">
+                                    <button class="btn btn-ghost btn-sm">Anulează</button>
+                                </form>
+                                <form
+                                    method="post"
+                                    action="{% url 'media_library:delete' asset.pk %}"
+                                    hx-post="{% url 'media_library:delete' asset.pk %}"
+                                    hx-target="#media-asset-panel"
+                                    hx-swap="outerHTML"
+                                >
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-error btn-sm">
+                                        <svg class="h-4 w-4" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false">
+                                            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z"/>
+                                            <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1 0-2H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1ZM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118ZM2.5 3h11V2h-11v1Z"/>
+                                        </svg>
+                                        Șterge
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        <form method="dialog" class="modal-backdrop"><button>Închide</button></form>
+                    </dialog>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="p-10 text-center text-sm text-muted">Biblioteca este goală.</div>
+    {% endif %}
+</div>
+```

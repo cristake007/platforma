@@ -1,0 +1,24 @@
+# Source snapshot
+
+## `apps/media_library/templates/media_library/includes/messages.html`
+
+Size: 754 B
+
+```html
+<div
+    id="media-library-messages"
+    class="toast toast-top toast-end z-50{% if not messages %} hidden{% endif %}"
+    aria-live="polite"
+    aria-atomic="true"
+    {% if messages %}x-data="{ visible: true }" x-init="setTimeout(() => visible = false, 4000)" x-show="visible" x-transition.opacity.duration.500ms{% endif %}
+    {% if messages_oob %}hx-swap-oob="true"{% endif %}
+>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %} py-2 text-sm shadow-lg" role="{% if message.tags == 'error' %}alert{% else %}status{% endif %}">
+                <span>{{ message }}</span>
+            </div>
+        {% endfor %}
+    {% endif %}
+</div>
+```

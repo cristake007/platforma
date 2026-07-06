@@ -1,0 +1,107 @@
+# Source snapshot
+
+## `.github/workflows/ci.yml`
+
+Size: 2.7 KB
+
+Redacted secret-like assignments: 3
+
+```yaml
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Django checks and tests
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && contains(github.event.head_commit.message, '[run-ci]')) ||
+      (github.event_name == 'pull_request' && contains(format('{0} {1}', github.event.pull_request.title, github.event.pull_request.body), '[run-ci]'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:17-bookworm
+        env:
+          POSTGRES_DB: platforma_tuvtk
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: <redacted>
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d platforma_tuvtk"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DJANGO_DEPLOYMENT_MODE: development
+      DJANGO_DEBUG: "true"
+      DJANGO_SECRET_KEY: <redacted>
+      DJANGO_ALLOWED_HOSTS: 127.0.0.1,localhost,testserver
+      POSTGRES_DB: platforma_tuvtk
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: <redacted>
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: "5432"
+      POSTGRES_CONN_MAX_AGE: "0"
+      POSTGRES_CONN_HEALTH_CHECKS: "true"
+      NPM_BIN_PATH: npm
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+            requirements-deploy.txt
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: theme/static_src/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm --prefix theme/static_src ci
+
+      - name: Build frontend assets
+        run: npm --prefix theme/static_src run build
+
+      - name: Check Django configuration
+        run: python manage.py check
+
+      - name: Check for missing migrations
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Run tests
+        run: python manage.py test --verbosity 2
+```

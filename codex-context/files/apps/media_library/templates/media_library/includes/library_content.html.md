@@ -1,0 +1,16 @@
+# Source snapshot
+
+## `apps/media_library/templates/media_library/includes/library_content.html`
+
+Size: 318 B
+
+```html
+<div id="media-library-content" class="space-y-6">
+    {% include "media_library/includes/messages.html" %}
+
+    <div class="grid gap-6 lg:grid-cols-[22rem_minmax(0,1fr)]">
+        {% include "media_library/includes/upload_form.html" %}
+        {% include "media_library/includes/asset_grid.html" %}
+    </div>
+</div>
+```
