@@ -1,0 +1,56 @@
+# Source snapshot
+
+## `apps/flota/templates/flota/includes/maintenance_type_panel.html`
+
+Size: 4.1 KB
+
+```html
+<div id="maintenance-type-panel" class="space-y-5">
+    {% include "flota/includes/messages.html" %}
+    <div class="overflow-x-auto border border-base-300 bg-base-100" aria-live="polite">
+        <table class="table table-xs min-w-[680px]">
+            <thead><tr><th>Denumire</th><th>Cod</th><th>Ordine</th><th>Tip</th><th>Status</th><th class="text-right">Acțiuni</th></tr></thead>
+            <tbody>
+            {% for item in maintenance_types %}
+                <tr>
+                    <td class="font-semibold">{{ item.name }}</td>
+                    <td><code class="text-xs">{{ item.code }}</code></td>
+                    <td>{{ item.display_order }}</td>
+                    <td>{% if item.is_system %}Sistem{% else %}Personalizat{% endif %}</td>
+                    <td><span class="badge badge-sm {% if item.is_active %}badge-success badge-outline{% else %}badge-ghost{% endif %}">{% if item.is_active %}Activ{% else %}Arhivat{% endif %}</span></td>
+                    <td>
+                        <div class="flex justify-end gap-1">
+                            <a href="{% url 'flota:maintenance_type_edit' item.pk %}" class="btn btn-outline btn-primary btn-square btn-xs" aria-label="Editează {{ item.name }}" title="Editează">
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m14.7 5.3 4 4M4 20l4.35-.85L19.4 8.1a1.9 1.9 0 0 0 0-2.7l-.8-.8a1.9 1.9 0 0 0-2.7 0L4.85 15.65 4 20Z"/></svg>
+                            </a>
+                            {% if not item.is_system and item.is_active %}
+                            <form
+                                method="post"
+                                action="{% url 'flota:maintenance_type_archive' item.pk %}"
+                                class="flex gap-1"
+                                hx-post="{% url 'flota:maintenance_type_archive' item.pk %}"
+                                hx-target="#maintenance-type-panel"
+                                hx-swap="outerHTML show:top"
+                                x-data="{ confirming: false }"
+                                @submit="if (!confirming) { $event.preventDefault(); confirming = true; }"
+                                @keydown.escape.window="confirming = false"
+                            >
+                                {% csrf_token %}
+                                <button class="btn btn-outline btn-error btn-square btn-xs" type="submit" aria-label="Arhivează {{ item.name }}" title="Arhivează" :title="confirming ? 'Confirmă' : 'Arhivează'">
+                                    <svg class="h-4 w-4" x-show="!confirming" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 7.5h15M9 7.5V5.25A1.25 1.25 0 0 1 10.25 4h3.5A1.25 1.25 0 0 1 15 5.25V7.5m-8.5 0 1 12.25A1.5 1.5 0 0 0 9 21h6a1.5 1.5 0 0 0 1.5-1.25l1-12.25"/></svg>
+                                    <svg class="h-4 w-4" style="display: none;" x-show="confirming" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7"/></svg>
+                                </button>
+                                <button class="btn btn-ghost btn-square btn-xs" type="button" style="display: none;" x-show="confirming" @click="confirming = false" aria-label="Anulează arhivarea" title="Anulează">
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6 6 18"/></svg>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+            {% empty %}<tr><td colspan="6" class="py-10 text-center text-muted">Nu există tipuri de mentenanță.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+```
