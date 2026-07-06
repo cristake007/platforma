@@ -1,194 +1,144 @@
 # Platforma TUVTK
 
-Platforma TUVTK is a server-rendered Django application using PostgreSQL, Tailwind CSS, daisyUI, Gunicorn, and Nginx. Linux and Docker are the supported development and deployment environment.
+Platforma TUVTK is a server-rendered Django application using PostgreSQL, Tailwind CSS, daisyUI, Gunicorn, and Nginx. It has one command vocabulary across Windows development and Debian 12 development/production.
 
-## Fresh development installation
+## Start From a Clone
 
-From a fresh clone:
+Debian/Linux:
 
 ```bash
-cd /opt
 git clone https://github.com/OWNER/REPOSITORY.git tuvtk
-cd /opt/tuvtk
-sudo bash install.sh --dev --yes
-sudo ./command.sh dev
-sudo ./command.sh dev-logs web
-sudo ./command.sh django createsuperuser
+cd tuvtk
+./install.sh dev
 ```
 
-`--dev` installs/verifies prerequisites, creates `.env.dev` from `.env.example` when needed, generates missing development secrets, and installs the command launchers. It does not require a domain and does not start production or development services.
+Windows PowerShell, without administrator rights:
 
-The development stack uses the `tuvtk-dev` Compose project. Its PostgreSQL, media, private media, static, Bootstrap cache, and Node modules are isolated named volumes. Django is published at `http://127.0.0.1:8000` by default; select another port during installation with `--dev-port=PORT`.
+```powershell
+git clone https://github.com/OWNER/REPOSITORY.git tuvtk
+Set-Location tuvtk
+.\install.ps1 dev
+```
 
-## Production preparation
+Windows Command Prompt may use `install.cmd dev`. Git Bash may use `./install.sh dev`; it delegates to PowerShell. The first `dev` run prepares dependencies, initializes PostgreSQL, installs Python and frontend packages, applies migrations, builds CSS, and starts development at `http://127.0.0.1:8000`.
 
-Prepare production configuration later with:
+Choose another development port with `dev --port=8001`.
+
+## Platform Backends
+
+On Windows, the wrapper uses user-space resources and does not register services or require administrator access:
+
+- Python 3.12+ is installed privately when no compatible interpreter exists;
+- `.venv` contains project Python packages;
+- pinned Node 22 binaries are checksum-verified and downloaded under `.tuvtk/runtime` when unavailable;
+- pinned PostgreSQL 17 binaries are checksum-verified and downloaded under `.postgresql`, with data kept in `.postgresql/data`;
+- Django and Tailwind run as background processes with PID and log files under `.tuvtk`.
+
+PostgreSQL listens only on `127.0.0.1` and uses password authentication. Windows supports development, tests, SQL, backup, and restore operations. Production deployment is intentionally refused on Windows.
+
+On Debian 12, the shell launcher bootstraps Python 3 when necessary, then installs/verifies Docker Engine and the Compose plugin through the existing installer. Development uses isolated Compose volumes. Production keeps configuration in `/etc/tuvtk/tuvtk.env` and persistent data under `/var/lib/tuvtk` by default.
+
+## Commands
+
+Use `./install.sh` below on Linux. Replace it with `.\install.ps1` on Windows.
 
 ```bash
-sudo bash install.sh --production --yes --domain=example.com
-sudo ./command.sh start
-sudo ./command.sh status
-sudo ./command.sh logs
-sudo ./command.sh backup /opt/tuvtk-backups
+./install.sh help
+./install.sh doctor
+./install.sh status
+./install.sh logs web
+./install.sh restart
+./install.sh stop
+
+./install.sh django createsuperuser
+./install.sh check
+./install.sh test apps.dashboard
+./install.sh migrate
+./install.sh makemigrations APP
+./install.sh collectstatic
+./install.sh shell
+
+./install.sh tailwind
+./install.sh npm run build
+./install.sh context --max-file-kb 80
 ```
 
-Production preparation creates or updates `/etc/tuvtk/tuvtk.env`, generates missing secrets, prepares bind-mount data directories, and changes the installed command's default mode to production. It does not start, build, migrate, or collect static files. The current Nginx/Compose deployment is HTTP-only; SSL installer options are refused.
+`test` defaults to verbosity 0 unless a verbosity option is supplied. `setup dev` prepares dependencies without starting Django or Tailwind. On Windows, `dev` runs Django and Tailwind in the current terminal and `Ctrl+C` stops both without opening additional console windows. Use `start` for hidden background processes; their output is written under `.tuvtk/logs`.
 
-## Installer actions
+## Debian Production
+
+Deploy and start production from a clone:
 
 ```bash
-sudo bash install.sh --dev --yes
-sudo bash install.sh --production --yes --domain=example.com
-sudo bash install.sh --environment
-sudo bash install.sh --command
-sudo bash install.sh --clean
+sudo ./install.sh deploy --domain=example.com
+sudo ./install.sh status
+sudo ./install.sh logs web
 ```
 
-- `--environment` installs or verifies Debian/Ubuntu, Docker Engine, and Docker Compose prerequisites only.
-- `--command` updates only `APP_DIR/command.sh` and `/usr/local/bin/tuvtk`. It preserves the existing default mode when the installed command was generated by this installer; use `--default-mode=dev|prod` to select it explicitly.
-- `--clean` removes only generated caches and test artifacts after confirmation. It does not delete databases, volumes, media, environment files, source, or `.git`.
-- `--dry-run` validates paths and options and prints intended work without changing files, packages, or services.
+Production remains HTTP-only. The wrapper refuses the previous SSL compatibility flags because Compose/Nginx does not currently configure TLS.
 
-Use `bash install.sh --help` for path, port, database, and dry-run options.
-
-## One command interface
-
-All normal operations use the generated local command:
+Explicit production and development commands remain available on Debian:
 
 ```bash
-sudo ./command.sh help
-sudo ./command.sh status
-sudo ./command.sh restart
-sudo ./command.sh start
-sudo ./command.sh build
-sudo ./command.sh stop
-sudo ./command.sh rebuild
-sudo ./command.sh logs
-sudo ./command.sh backup /opt/tuvtk-backups
-sudo ./command.sh restore BACKUP_ARCHIVE
-sudo ./command.sh dev-db-reset --yes
+sudo ./install.sh prod-status
+sudo ./install.sh prod-start
+sudo ./install.sh prod-stop
+sudo ./install.sh dev-status
+sudo ./install.sh dev-stop
 ```
 
-The installer also creates `/usr/local/bin/tuvtk` as a convenience launcher that executes the configured `APP_DIR/command.sh`. Manual `TUVTK_*` exports are not required after installation. `bin/tuvtk` remains the implementation and pre-install fallback, not the normal installed interface.
+Legacy installer invocations such as `sudo bash install.sh --dev --yes` and `sudo bash install.sh --production --yes --domain=example.com` remain temporarily supported. They may still generate the deprecated `command.sh`; the new command workflow does not generate or use it.
 
-The generated command embeds:
+## Backup, Restore, and SQL
 
-- application, production environment, and development environment paths;
-- production and development Compose files;
-- Compose project name and development port;
-- default mode (`dev` or `prod`);
-- default backup directory.
-
-Unprefixed lifecycle, Django, backup, restore, and SQL commands use that default mode. Explicit `prod-*` and `dev-*` commands always target their named stack.
-
-## Lifecycle commands
-
-Production can always be addressed explicitly:
+Unprefixed commands target the configured default mode. On Windows that mode is always development.
 
 ```bash
-sudo ./command.sh prod-status
-sudo ./command.sh prod-start
-sudo ./command.sh prod-stop
-sudo ./command.sh prod-restart
-sudo ./command.sh prod-logs web
+./install.sh backup BACKUP_DIRECTORY
+./install.sh restore BACKUP_ARCHIVE
+./install.sh export-sql OUTPUT_PATH
+./install.sh import-sql DATABASE.sql
 ```
 
-Development commands are:
+Restore and SQL import require confirmation unless `--yes` is supplied. Imports replace the selected database and leave application services stopped. Mode-marked production data is refused by Windows development.
+
+Debian also supports explicit `prod-*` and `dev-*` variants. Production reset remains deliberately difficult to invoke:
 
 ```bash
-sudo ./command.sh dev
-sudo ./command.sh dev-build
-sudo ./command.sh dev-status
-sudo ./command.sh dev-logs web
-sudo ./command.sh dev-stop
+sudo ./install.sh prod-db-reset --yes-i-understand-this-deletes-production-data
 ```
 
-## Django, Tailwind, and tests
+It creates a backup first unless `--no-backup` is explicitly supplied. Development reset is:
 
 ```bash
-sudo ./command.sh django createsuperuser
-sudo ./command.sh check
-sudo ./command.sh test apps.dashboard
-sudo ./command.sh migrate
-sudo ./command.sh collectstatic
-sudo ./command.sh tailwind
-sudo ./command.sh npm run build
+./install.sh dev-db-reset --yes --start
 ```
-
-These Django commands target the installed default mode. Use `prod-django` or `dev-django` when the target must be explicit. Tests default to verbosity 0 unless a verbosity option is supplied.
-
-## Backup and restore
-
-Production and development backups are separate:
-
-```bash
-sudo ./command.sh backup /opt/tuvtk-backups
-sudo ./command.sh prod-backup /opt/tuvtk-backups
-sudo ./command.sh dev-backup /opt/tuvtk-backups
-```
-
-Archives are named like `2026-07-06_153000-tuvtk-prod.tar.gz` or `2026-07-06_153000-tuvtk-dev.tar.gz`. They contain a mode-marked PostgreSQL dump, the mode environment file, Compose/deployment configuration, installed `command.sh` when present, and media/private-media archives when accessible. Regenerable static output is excluded.
-
-Restore with:
-
-```bash
-sudo ./command.sh restore /opt/tuvtk-backups/ARCHIVE.tar.gz
-sudo ./command.sh prod-restore /opt/tuvtk-backups/ARCHIVE.tar.gz
-sudo ./command.sh dev-restore /opt/tuvtk-backups/ARCHIVE.tar.gz
-```
-
-Restore requires confirmation unless `--yes` is supplied. It rejects unknown archive structures, opposing modes, and mismatched Compose project names; stops only the target stack; backs up the current environment; restores the database and included media; and leaves application services stopped. Production archives cannot be restored through `dev-restore`, and development archives cannot be restored through `prod-restore` or a production-default `restore`.
 
 Test backups and restores in a disposable environment before relying on them for disaster recovery.
 
-## SQL export and import
+## Local State
+
+These paths are generated and ignored by Git:
+
+- `.tuvtk/`: downloaded runtime state, configuration, logs, and PIDs;
+- `.venv/`: Windows Python virtual environment;
+- `.postgresql/`: Windows PostgreSQL binaries and database cluster;
+- `.env`: Windows-native development environment;
+- `.env.dev`: Docker development environment;
+- `media/`, `private_media/`, and `staticfiles/`: local generated or uploaded data.
+
+Do not delete `.postgresql`, media, private media, production bind mounts, environment files, or Docker volumes unless the associated data is no longer required.
+
+## Safe Validation
 
 ```bash
-sudo ./command.sh export-sql /opt/tuvtk-backups
-sudo ./command.sh import-sql /path/to/db.sql
-sudo ./command.sh dev-export-sql /opt/tuvtk-backups
-sudo ./command.sh dev-import-sql /path/to/db.sql
-```
-
-Exports are named `tuvtk-prod-<timestamp>.sql` or `tuvtk-dev-<timestamp>.sql` and include a mode marker. Imports replace the selected database, require confirmation unless `--yes` is supplied, print the target project/service/database, and refuse a dump marked for the other mode. Unmarked third-party SQL triggers an explicit warning before confirmation. Application services are not restarted after import.
-
-## Database reset
-
-Reset isolated development data with:
-
-```bash
-sudo ./command.sh dev-db-reset
-sudo ./command.sh dev-db-reset --yes
-sudo ./command.sh dev-db-reset --yes --start
-```
-
-This removes only volumes belonging to the `tuvtk-dev` Compose project. Production data is not addressed.
-
-Production reset is intentionally difficult to invoke:
-
-```bash
-sudo ./command.sh prod-db-reset --yes-i-understand-this-deletes-production-data
-```
-
-Before deletion it prints the production project, database service, and known bind-mount paths. It creates a production backup first and refuses to continue if that fails. Only `--no-backup` explicitly bypasses the backup. The command stops production and clears only the configured PostgreSQL, media, private-media, and static data directories while preserving the directories themselves, application source, `.git`, and environment files. `--yes` alone is rejected.
-
-## Context generation
-
-```bash
-./command.sh context
-./command.sh context --max-file-kb 80
-```
-
-Before installation, use `./bin/tuvtk context`. The compatibility shell, batch, and PowerShell context launchers remain available, but `command.sh context` is the installed workflow.
-
-## Safe validation
-
-```bash
+python3 -m py_compile scripts/tuvtk_cli.py
+python3 -m py_compile scripts/generate_codex_context.py
 bash -n install.sh
 bash -n bin/tuvtk
-./bin/tuvtk help
-sudo bash install.sh --dev --yes --app-dir="$(pwd)" --dev-port=8001 --dry-run
+./install.sh help
+./install.sh context --max-file-kb 80
 git diff --check
 ```
 
-Do not use production start/stop/restart, Docker builds, migrations, collectstatic, restore, SQL import, clean, or production reset as validation commands.
+On Windows, validate the PowerShell launcher with `.\install.ps1 help`. Do not use production lifecycle commands, builds, migrations, restore, SQL import, clean, or database reset merely as validation.

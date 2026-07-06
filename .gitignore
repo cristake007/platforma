@@ -1,6 +1,7 @@
 # Editor and local environment
 .vscode/
 .venv/
+.tuvtk/
 
 node_modules/
 __pycache__/
