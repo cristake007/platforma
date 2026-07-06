@@ -1,28 +1,30 @@
 # Platforma TUVTK — Agent Router
 
+Operating rules for coding agents working in this repository.
+
+Working code only. Minimal context. Verified changes.
+
 ## Project
 
 - Server-rendered Django application.
 - Stack: Django, PostgreSQL, Tailwind CSS, daisyUI, HTMX, Alpine.js.
 - Django templates and PostgreSQL are the source of truth.
-- HTMX is for server-rendered partial HTML updates.
-- Alpine.js is for local UI state only.
-- Existing custom JavaScript may remain when it is safer or clearer.
+- HTMX returns server-rendered partial HTML.
+- Alpine.js owns local browser state only.
+- Existing scoped custom JavaScript may remain when it is safer or clearer.
 - Do not convert the project into a SPA.
 - Do not add another frontend framework unless explicitly requested.
 
-## Scope
+## Required reading order
 
-These rules apply to the whole repository.
+Read only what the task needs:
 
-A deeper `AGENTS.md` adds app-specific rules for files below its directory.
-
-Before editing, read only:
-
-1. this file;
-2. the deeper app `AGENTS.md` for the target app;
-3. the exact files named by the user;
-4. files directly imported, included, extended, or referenced by those files when required.
+1. `AGENTS.md`.
+2. `coding-standards.md`.
+3. `frontend.md` when templates, CSS, JavaScript, HTMX, Alpine, UX, or UI are involved.
+4. The deeper `apps/<app>/AGENTS.md` for the target app.
+5. The exact source files needed for the requested workflow.
+6. Directly referenced imports, includes, templates, forms, services, selectors, or tests only when required.
 
 Do not preload:
 
@@ -40,8 +42,6 @@ Use `codex-file-map.txt` only to locate an unknown file.
 
 Open real source files before editing. Generated context is navigation support, not authority.
 
-If required context is missing, stop and ask for scope expansion.
-
 ## App boundaries
 
 - `platforma_tuvtk/`: settings, root URLs, ASGI, WSGI.
@@ -49,22 +49,27 @@ If required context is missing, stop and ask for scope expansion.
 - `theme/`: Tailwind/daisyUI theme, global frontend assets.
 - `apps/`: domain apps. Each app owns its routes, views, forms, services, selectors, templates, static files, and tests.
 
-Do not duplicate an existing model, service, selector, route, template, or workflow.
+Do not duplicate an existing model, service, selector, route, template, include, component pattern, or workflow.
 
-## Django rules
+## Coding standards
 
-- Keep views thin.
-- Put writes and multi-step workflows in `services.py`.
-- Put permission-filtered reads in `selectors.py`.
-- Put request/form validation in `forms.py`.
-- Put reusable validation in `validators.py`.
-- Keep validation, authorization, ownership checks, and persistence server-side.
-- Use POST with CSRF for state changes.
-- Return 404 for cross-owner access where the app already follows that pattern.
-- Use namespaced app URLs.
-- Add migrations for schema changes, but do not inspect old migrations unless needed.
+Detailed coding standards live in `coding-standards.md`.
 
-## Frontend rules
+Default split:
+
+- Views orchestrate HTTP only.
+- `forms.py` validates request/form input.
+- `services.py` performs writes, transactions, and multi-step workflows.
+- `selectors.py` performs permission-filtered reads.
+- `validators.py` contains reusable validation rules.
+- Templates render state and submit forms; they do not own business rules.
+- JavaScript improves interaction only.
+
+Before adding new code, search the target app for an existing form, include, table, action-button, message, service, selector, or validator pattern.
+
+If the same pattern appears twice and is stable, reuse or extract it. If it appears once, keep it explicit.
+
+## Frontend standards
 
 Detailed frontend rules live in `frontend.md`.
 
@@ -75,13 +80,13 @@ Default frontend split:
 - Alpine.js: local toggles, dialogs, selected state, loading flags, upload labels.
 - Custom JavaScript: complex JSON, downloads, drag/drop, file parsing, canvas/editor workflows.
 
-Pages should extend `core/templates/layouts/base.html` unless intentionally standalone.
-
 Use shared semantic theme tokens. Do not introduce app-local color systems.
+
+New business screens should use sharp, professional, enterprise-grade layouts. Avoid childish, oversized, rounded card-heavy screens.
 
 ## Commands
 
-Use the repository wrapper.
+Use the repository wrapper. `install.sh` routes ordinary commands through the Python command router.
 
 Linux/Debian:
 
@@ -103,13 +108,22 @@ Windows:
 
 Do not reconstruct raw Docker Compose commands unless the task is Compose-specific.
 
+## Verification
+
+- Prefer the smallest focused test or check.
+- Do not run full test suites by default.
+- Do not claim tests passed unless you ran them and read the output.
+- If verification cannot be run, say why.
+- For UI changes, report the manual browser checks still needed.
+- For visual work, inspect before/after behavior when tooling allows it.
+- Do not weaken tests to make a failure disappear.
+
 ## Safety
 
 - Preserve unrelated tracked and untracked changes.
 - Never inspect or expose `.env` or `/etc/tuvtk/tuvtk.env` unless explicitly authorized.
 - Do not delete database volumes, PostgreSQL data, media, private media, secrets, or environment files.
 - Do not run clean, restore, SQL import, database reset, production restart, or destructive commands unless explicitly requested.
-- Do not run full test suites by default. Use the smallest focused check.
 - Do not claim HTTPS works; current production Compose/Nginx is HTTP-only.
 
 Avoid generated, runtime, dependency, binary, and local-tool paths unless directly required:
@@ -137,7 +151,8 @@ Stop and ask before expanding scope when:
 - another app must be changed but was not listed;
 - a schema migration is needed but not requested;
 - a workflow would require a broad rewrite;
-- validation would require destructive commands or full test suites.
+- validation would require destructive commands or full test suites;
+- two attempted fixes fail for the same issue.
 
 ## Completion report
 
@@ -147,6 +162,6 @@ Always report:
 - behavior changed;
 - migrations created, if any;
 - checks run;
-- checks skipped;
+- checks skipped and why;
 - context regeneration status;
 - manual checks still needed.

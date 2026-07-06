@@ -2,7 +2,29 @@
 
 Copy one prompt, replace the placeholders, and use it in Codex.
 
-Use short prompts. Keep each Codex session limited to one app, one workflow, and one safe change.
+Keep each Codex session limited to one app, one workflow, and one safe change.
+
+## Required reading for normal tasks
+
+```text
+Read only:
+- AGENTS.md
+- coding-standards.md
+- frontend.md if UI/templates/CSS/JS/HTMX/Alpine are involved
+- apps/<app>/AGENTS.md
+- exact files needed for this workflow
+```
+
+Do not read:
+
+```text
+- the whole repository
+- all codex-context files
+- unrelated apps
+- unrelated tests
+- migration history unless schema is involved
+- Docker/deployment files unless deployment is the task
+```
 
 ## Daily Safe Task
 
@@ -16,26 +38,26 @@ Target app:
 
 Read only:
 - AGENTS.md
+- coding-standards.md
 - frontend.md if frontend is involved
 - apps/<app>/AGENTS.md
 - exact files needed for this workflow
-
-Do not read:
-- the whole repository
-- all codex-context files
-- unrelated apps
-- unrelated tests
-- migration history
-- Docker/deployment files
 
 Before editing, report:
 - files you need to inspect
 - why each file is needed
 - whether this is app-local or cross-app
 
-Implement the smallest safe change and stop.
+Rules:
+- Implement the smallest safe change.
+- Reuse existing forms, selectors, services, templates, partials, tables, action buttons, and message patterns.
+- Do not create a new abstraction unless the pattern is already repeated and stable.
+- Stop if another app, schema migration, or broad rewrite becomes necessary.
 
-Stop if another app, schema migration, or broad rewrite becomes necessary.
+Checks:
+- focused check for the changed app/workflow
+- ./install.sh check if backend behavior changed
+- git diff --check
 ```
 
 ## Investigation Only
@@ -51,6 +73,7 @@ Target app:
 
 Read only:
 - AGENTS.md
+- coding-standards.md
 - frontend.md if frontend is involved
 - apps/<app>/AGENTS.md
 - exact files directly related to this workflow
@@ -58,6 +81,7 @@ Read only:
 Output:
 - recommended approach
 - files that would need editing
+- existing patterns to reuse
 - HTMX vs Alpine vs custom JS decision, if frontend is involved
 - risks
 - focused test commands
@@ -81,6 +105,7 @@ Target page:
 
 Read only:
 - AGENTS.md
+- coding-standards.md
 - frontend.md
 - apps/<app>/AGENTS.md
 - <template path>
@@ -89,6 +114,11 @@ Read only:
 
 Rules:
 - Use Django templates, Tailwind, and daisyUI.
+- Use shared `tuvtk` semantic tokens.
+- Keep the page sharp, compact, professional, and enterprise-grade.
+- Use `rounded-none` for new business panels, settings rows, menus, and tables.
+- Avoid childish rounded card-heavy layouts.
+- Reuse existing form, table, action-button, empty-state, and message/toast patterns.
 - Use HTMX only if server-rendered partial updates are needed.
 - Use Alpine only for local UI state.
 - Do not introduce a SPA pattern.
@@ -118,6 +148,7 @@ Workflow:
 
 Read only:
 - AGENTS.md
+- coding-standards.md
 - frontend.md
 - apps/<app>/AGENTS.md
 - the view file for this workflow
@@ -162,6 +193,7 @@ Target template:
 
 Read only:
 - AGENTS.md
+- coding-standards.md
 - frontend.md
 - apps/<app>/AGENTS.md
 - <template path>
@@ -191,234 +223,42 @@ Checks:
 Report manual browser checks needed.
 ```
 
-## Media Library Demo
+## UI Consistency Cleanup
 
 ```text
-Work only on Media Library upload/list/delete UX.
+Clean up UI consistency only.
 
 Target app:
-- apps/media_library
+- apps/<app>
+
+Target page or workflow:
+- <path/workflow>
 
 Read only:
 - AGENTS.md
+- coding-standards.md
 - frontend.md
-- apps/media_library/AGENTS.md
-- apps/media_library/views.py
-- apps/media_library/urls.py
-- apps/media_library/forms.py
-- apps/media_library/templates/media_library/library.html
-- apps/media_library/tests.py
+- apps/<app>/AGENTS.md
+- exact templates/includes/static files for this page
 
-Goal:
-Add HTMX partial refresh for upload and delete so the form, messages, and asset grid update without a full page reload.
+Goals:
+- remove childish rounded card-heavy layout
+- use sharp bordered sections
+- unify forms, tables, action buttons, and messages
+- reuse existing partials where practical
+- keep behavior unchanged
 
-Use Alpine only for:
-- selected upload filename
-- local loading state
-
-Preserve:
-- normal full-page fallback
-- JSON API endpoints
-- private asset serving
-- ownership checks
-- POST + CSRF
-
-Do not touch:
-- apps/diplome
-- apps/tasks
-- apps/planificator
-- apps/flota
-- Docker/deployment files
-- generated context
+Do not:
+- change models
+- change services/selectors unless a template contract requires it
+- touch unrelated pages
+- add a frontend framework
+- introduce app-local colors
 
 Checks:
-- ./install.sh test apps.media_library
 - ./install.sh check
+- app test only if rendered behavior changed
 - git diff --check
-
-Stop after this workflow.
-```
-
-## Tasks List Demo
-
-```text
-Work only on Tasks list pages, not Kanban drag-and-drop.
-
-Target app:
-- apps/tasks
-
-Read only:
-- AGENTS.md
-- frontend.md
-- apps/tasks/AGENTS.md
-- apps/tasks/views.py
-- apps/tasks/urls.py
-- apps/tasks/forms.py
-- apps/tasks/templates/tasks/hub.html
-- apps/tasks/templates/tasks/board_list.html
-- apps/tasks/templates/tasks/board_settings.html
-- apps/tasks/templates/tasks/includes/messages.html
-- apps/tasks/templates/tasks/includes/form_fields.html
-- apps/tasks/tests.py
-
-Goal:
-Identify and implement small HTMX improvements for non-Kanban task list/settings workflows.
-
-Use HTMX for:
-- filters
-- local list refreshes
-- form sections that can return server-rendered partials
-
-Use Alpine for:
-- confirmation state
-- local dialog/disclosure state
-- loading indicators
-
-Do not touch:
-- board_kanban.html
-- drag-and-drop logic
-- BoardStateView JSON polling unless strictly required
-- unrelated apps
-
-Preserve:
-- native form fallback
-- permissions
-- POST + CSRF
-- existing task movement behavior
-
-Checks:
-- ./install.sh test apps.tasks
-- ./install.sh check
-- git diff --check
-
-Stop before Kanban work.
-```
-
-## Planificator Investigation Demo
-
-```text
-Investigate Planificator generator/history only. Do not edit files.
-
-Target app:
-- apps/planificator
-
-Read only:
-- AGENTS.md
-- frontend.md
-- apps/planificator/AGENTS.md
-- apps/planificator/views.py
-- apps/planificator/forms.py
-- apps/planificator/templates/planificator/generator_perioade.html
-- apps/planificator/templates/planificator/includes/upload.html
-- apps/planificator/templates/planificator/includes/settings.html
-- apps/planificator/templates/planificator/includes/result_table.html
-- apps/planificator/templates/planificator/includes/actions.html
-- apps/planificator/templates/planificator/includes/messages.html
-- apps/planificator/templates/planificator/istoric.html
-- apps/planificator/static/planificator/generator.js
-- apps/planificator/tests.py
-- apps/planificator/tests_scheduler.py
-
-Output only:
-- HTMX targets
-- Alpine targets
-- custom JavaScript to preserve
-- risks around exports/downloads
-- exact implementation plan
-- focused tests
-
-Do not inspect:
-- XML converter
-- Word converter
-- course updater
-- diplome
-- tasks
-- flota
-- media_library
-
-Do not implement.
-```
-
-## Planificator Implementation Demo
-
-```text
-Implement only the Planificator generator/history improvements approved in the previous investigation.
-
-Target app:
-- apps/planificator
-
-Read only the files listed in the approved investigation.
-
-Use HTMX for:
-- server-rendered form/message/result sections where safe
-- history list/detail partial refreshes only if native fallback remains clean
-
-Use Alpine for:
-- month selection UI
-- holiday row UI
-- upload filename state
-- local step/disclosure state
-
-Preserve:
-- schedule export behavior
-- file download behavior
-- server-side validation
-- horizontal scrolling result tables
-- existing permissions
-
-Do not touch:
-- XML converter
-- Word converter
-- course updater
-- unrelated apps
-
-Checks:
-- ./install.sh test apps.planificator.tests
-- ./install.sh test apps.planificator.tests_scheduler
-- ./install.sh check
-- git diff --check
-
-Stop after this workflow.
-```
-
-## Diplome Investigation Demo
-
-```text
-Investigate ordinary Diplome pages only. Do not edit files.
-
-Target app:
-- apps/diplome
-
-Read only:
-- AGENTS.md
-- frontend.md
-- apps/diplome/AGENTS.md
-- apps/diplome/views.py
-- apps/diplome/urls.py
-- apps/diplome/forms.py
-- apps/diplome/templates/diplome/template_list.html
-- apps/diplome/templates/diplome/template_form.html
-- apps/diplome/templates/diplome/history_index.html
-- apps/diplome/templates/diplome/batch_detail.html
-- apps/diplome/templates/diplome/participant_list.html
-- apps/diplome/templates/diplome/participant_list_detail.html
-- relevant diplome tests only
-
-Output:
-- which pages can safely use HTMX
-- which UI state can use Alpine
-- what must remain custom JavaScript
-- what must not be touched
-- risks around downloads/PDF/history snapshots
-- exact next implementation prompt
-
-Do not inspect:
-- template_editor.js
-- template_renderer.js
-- template_editor.html
-unless you find a direct dependency and explain why.
-
-Do not implement.
 ```
 
 ## Bug Fix
@@ -434,20 +274,20 @@ Target app:
 
 Read only:
 - AGENTS.md
+- coding-standards.md
 - apps/<app>/AGENTS.md
+- frontend.md if UI is involved
 - exact files needed to reproduce or fix the bug
-
-Do not read:
-- unrelated apps
-- generated context unless file paths are unknown
-- migration history unless schema is involved
 
 Before editing:
 - identify likely cause
 - list files to inspect
 - say whether this is frontend, backend, or template-only
 
-Implement the smallest safe fix.
+Rules:
+- Implement the smallest safe fix.
+- Reuse existing patterns.
+- Do not weaken tests to make the failure disappear.
 
 Checks:
 - focused test for the changed app/file
@@ -464,6 +304,7 @@ Update documentation only.
 
 Read only:
 - AGENTS.md
+- coding-standards.md
 - README.md
 - frontend.md
 - the exact docs mentioned below

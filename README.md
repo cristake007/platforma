@@ -89,43 +89,23 @@ Windows equivalents:
 
 `test` defaults to low verbosity.
 
-## Frontend Rules
+## Coding and Agent Rules
 
-See:
-
-```text
-frontend.md
-```
-
-Additional focused guides:
-
-```text
-docs/frontend/table-patterns.md
-codex-prompt-demos/custom-js-to-alpine.md
-codex-prompt-demos/htmx-alpine-phased-migration.md
-```
-
-Short version:
-
-- Tailwind/daisyUI: layout and components.
-- HTMX: server-rendered partial updates.
-- Alpine.js: local UI state only.
-- Custom JavaScript: complex workflows where safer.
-- Django/PostgreSQL: real business state.
-
-## Codex Rules
-
-See:
+Read these first for coding-agent work:
 
 ```text
 AGENTS.md
-```
-
-For app-specific work, also read the target app file:
-
-```text
+coding-standards.md
+frontend.md
 apps/<app>/AGENTS.md
 ```
+
+Guidance split:
+
+- `AGENTS.md`: context budget, routing, safety, verification, and completion report.
+- `coding-standards.md`: Django structure, reuse rules, forms, services, selectors, templates, buttons, tables, and messages.
+- `frontend.md`: Tailwind/daisyUI, brand tokens, sharp enterprise UI, HTMX, Alpine, custom JavaScript, and visual checks.
+- `apps/<app>/AGENTS.md`: app-specific ownership, contracts, focused files, and tests.
 
 Prompt examples live in:
 
@@ -141,6 +121,27 @@ codex-file-map.txt
 ```
 
 Do not load the whole generated context for normal work.
+
+## Frontend Rules
+
+See:
+
+```text
+frontend.md
+docs/frontend/table-patterns.md
+```
+
+Short version:
+
+- Tailwind/daisyUI: layout, components, and shared theme tokens.
+- Brand colors come from the `tuvtk` theme.
+- New business screens should be sharp, compact, and professional.
+- Use `rounded-none` for new business panels, settings rows, menus, and tables unless an existing component contract requires otherwise.
+- Avoid childish, decorative, rounded card-heavy layouts.
+- HTMX: server-rendered partial updates.
+- Alpine.js: local UI state only.
+- Custom JavaScript: complex workflows where safer.
+- Django/PostgreSQL: real business state.
 
 ## Debian Production
 
