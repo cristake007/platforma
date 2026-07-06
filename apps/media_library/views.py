@@ -19,22 +19,35 @@ def _json_form_errors(form) -> dict[str, list[str]]:
 
 class MediaLibraryView(LoginRequiredMixin, View):
     template_name = "media_library/library.html"
+    partial_template_name = "media_library/includes/library_content.html"
 
-    def get(self, request):
+    def _is_htmx(self, request) -> bool:
+        return request.headers.get("HX-Request") == "true"
+
+    def _render(self, request, *, form, assets, status=200):
+        template_name = self.partial_template_name if self._is_htmx(request) else self.template_name
         return render(
             request,
-            self.template_name,
-            {"form": MediaAssetUploadForm(), "assets": list_owned_media_assets(user=request.user)},
+            template_name,
+            {"form": form, "assets": assets},
+            status=status,
+        )
+
+    def get(self, request):
+        return self._render(
+            request,
+            form=MediaAssetUploadForm(),
+            assets=list_owned_media_assets(user=request.user),
         )
 
     def post(self, request):
         form = MediaAssetUploadForm(request.POST, request.FILES)
         if not form.is_valid():
-            return render(
+            return self._render(
                 request,
-                self.template_name,
-                {"form": form, "assets": list_owned_media_assets(user=request.user)},
-                status=400,
+                form=form,
+                assets=list_owned_media_assets(user=request.user),
+                status=200 if self._is_htmx(request) else 400,
             )
         create_media_asset(
             owner=request.user,
@@ -43,6 +56,12 @@ class MediaLibraryView(LoginRequiredMixin, View):
             prepared_media=form.prepared_media,
         )
         messages.success(request, "Fișierul a fost adăugat în biblioteca media.")
+        if self._is_htmx(request):
+            return self._render(
+                request,
+                form=MediaAssetUploadForm(),
+                assets=list_owned_media_assets(user=request.user),
+            )
         return redirect("media_library:index")
 
 
@@ -89,6 +108,11 @@ class MediaAssetContentView(LoginRequiredMixin, View):
 
 
 class MediaAssetDeleteView(LoginRequiredMixin, View):
+    partial_template_name = "media_library/includes/asset_grid.html"
+
+    def _is_htmx(self, request) -> bool:
+        return request.headers.get("HX-Request") == "true"
+
     def post(self, request, *args, **kwargs):
         try:
             delete_media_asset(owner=request.user, asset_id=kwargs["asset_id"])
@@ -96,4 +120,10 @@ class MediaAssetDeleteView(LoginRequiredMixin, View):
             messages.error(request, exc.messages[0])
         else:
             messages.success(request, "Fișierul a fost șters din biblioteca media.")
+        if self._is_htmx(request):
+            return render(
+                request,
+                self.partial_template_name,
+                {"assets": list_owned_media_assets(user=request.user)},
+            )
         return redirect("media_library:index")

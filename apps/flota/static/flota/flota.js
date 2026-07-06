@@ -51,9 +51,31 @@
         });
     }
 
+    function fleetPanelFromEvent(event) {
+        const element = event.target;
+        if (!(element instanceof Element)) return null;
+        return element.closest("#fleet-panel");
+    }
+
+    function setFleetBusy(panel, isBusy) {
+        if (!panel) return;
+        panel.querySelectorAll("[data-fleet-loading-region]").forEach((region) => {
+            region.setAttribute("aria-busy", isBusy ? "true" : "false");
+        });
+    }
+
     refreshDeadlines();
     document.addEventListener("visibilitychange", () => {
         if (!document.hidden) refreshDeadlines();
+    });
+    document.body.addEventListener("htmx:beforeRequest", (event) => {
+        setFleetBusy(fleetPanelFromEvent(event), true);
+    });
+    document.body.addEventListener("htmx:afterRequest", (event) => {
+        setFleetBusy(fleetPanelFromEvent(event), false);
+    });
+    document.body.addEventListener("htmx:responseError", (event) => {
+        setFleetBusy(fleetPanelFromEvent(event), false);
     });
     document.body.addEventListener("htmx:afterSwap", (event) => {
         refreshDeadlines(event.detail?.target || document);
