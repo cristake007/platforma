@@ -97,6 +97,14 @@ See:
 frontend.md
 ```
 
+Additional focused guides:
+
+```text
+docs/frontend/table-patterns.md
+codex-prompt-demos/custom-js-to-alpine.md
+codex-prompt-demos/htmx-alpine-phased-migration.md
+```
+
 Short version:
 
 - Tailwind/daisyUI: layout and components.
@@ -117,6 +125,12 @@ For app-specific work, also read the target app file:
 
 ```text
 apps/<app>/AGENTS.md
+```
+
+Prompt examples live in:
+
+```text
+codex-prompt-demos/README.md
 ```
 
 Use generated context only for discovery:
