@@ -2,12 +2,10 @@
 
 ## `core/context_processors.py`
 
-Size: 3.6 KB
+Size: 2.9 KB
 
 ```python
 import re
-
-from django.urls import reverse
 
 from .navigation import NAVIGATION
 
@@ -71,24 +69,8 @@ def build_application_shell(request, profile=None, permissions: set[str] | None 
             user_initials = username[:2].upper() or "U"
         if profile and profile.avatar:
             user_avatar_url = profile.avatar.url
-    navigation = build_navigation(request, permissions)
-    active_navigation_url = ""
-    for section in navigation:
-        for item in section["items"]:
-            active_child = next(
-                (child for child in item["children"] if child["is_active"]),
-                None,
-            )
-            active_item = active_child or (item if item["is_active"] else None)
-            if active_item and active_item.get("url_name"):
-                active_navigation_url = reverse(active_item["url_name"])
-                break
-        if active_navigation_url:
-            break
-
     return {
-        "app_navigation": navigation,
-        "active_navigation_url": active_navigation_url,
+        "app_navigation": build_navigation(request, permissions),
         "app_name": "Platforma TUVTK",
         "app_tagline": "Operațiuni interne",
         "user_display_name": user_display_name,

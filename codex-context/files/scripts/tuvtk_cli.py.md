@@ -1,3 +1,10 @@
+# Source snapshot
+
+## `scripts/tuvtk_cli.py`
+
+Size: 46.0 KB
+
+```python
 #!/usr/bin/env python3
 """Cross-platform TUVTK setup and command router."""
 
@@ -1091,3 +1098,4 @@ if __name__ == "__main__":
     except (CliError, ValueError) as exc:
         print(f"tuvtk: ERROR: {exc}", file=sys.stderr)
         raise SystemExit(1)
+```

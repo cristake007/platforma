@@ -2,7 +2,7 @@
 
 ## `generate_codex_context.bat`
 
-Size: 82 B
+Size: 85 B
 
 ```batch
 @echo off

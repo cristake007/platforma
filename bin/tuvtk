@@ -27,7 +27,7 @@ warn() {
 
 usage() {
     cat <<EOF
-Usage: ./command.sh COMMAND [ARGS...]
+Usage: ./install.sh COMMAND [ARGS...]
 
 Default mode: $DEFAULT_MODE
 
@@ -85,7 +85,8 @@ Backup, restore, and SQL:
   dev-import-sql FILE [--yes]    Replace development from SQL
 
 Database reset:
-  dev-db-reset [--yes] [--start]
+  fresh-db [--yes] [--start]     Reset the development database only
+  dev-db-reset [--yes] [--start] Same as fresh-db
   prod-db-reset --yes-i-understand-this-deletes-production-data
                 [--no-backup] [--backup-dir=PATH]
 
@@ -160,7 +161,7 @@ prepare_docker() {
         DOCKER_COMMAND=(sudo docker)
         return
     fi
-    fail "Docker is unavailable to this user. Run command.sh through sudo or grant Docker access."
+    fail "Docker is unavailable to this user. Run ./install.sh through sudo or grant Docker access."
 }
 
 prepare_mode() {
@@ -246,7 +247,9 @@ mode_start() {
         compose_for dev run --rm init
         compose_for dev up -d web tailwind
     else
-        compose_for prod up -d
+        compose_for prod up -d --wait "$DB_SERVICE"
+        compose_for prod run --rm init
+        compose_for prod up -d "$WEB_SERVICE" nginx
     fi
 }
 
@@ -266,7 +269,7 @@ mode_build() {
         else
             compose_for prod build
         fi
-        compose_for prod up -d
+        mode_start prod
     fi
 }
 
@@ -467,9 +470,9 @@ create_backup() (
     for relative in "${included[@]}"; do printf 'Included: %s\n' "$relative"; done
     for relative in "${skipped[@]}"; do printf 'Skipped: %s\n' "$relative"; done
     if [[ "$mode" == dev ]]; then
-        printf 'Restore with: sudo ./command.sh dev-restore %q\n' "$archive"
+        printf 'Restore with: sudo ./install.sh dev-restore %q\n' "$archive"
     else
-        printf 'Restore with: sudo ./command.sh restore %q\n' "$archive"
+        printf 'Restore with: sudo ./install.sh restore %q\n' "$archive"
     fi
 )
 
@@ -561,9 +564,9 @@ restore_backup() (
     fi
     printf 'Application services were not restarted.\n'
     if [[ "$mode" == dev ]]; then
-        printf 'Next command: sudo ./command.sh dev\n'
+        printf 'Next command: sudo ./install.sh dev\n'
     else
-        printf 'Next command: sudo ./command.sh start\n'
+        printf 'Next command: sudo ./install.sh start\n'
     fi
 )
 
@@ -592,14 +595,15 @@ dev_db_reset() {
     local confirmed="$1" start_after="$2"
     prepare_mode dev
     printf 'Development project: %s\n' "$(mode_project_name dev)"
-    printf 'Volumes removed: dev-postgres, dev-media, dev-private-media, dev-static, dev-bootstrap-cache, dev-node-modules\n'
-    confirm_action "$confirmed" "Delete all isolated development database/media/static/Node volumes?"
-    compose_for dev down --volumes --remove-orphans
-    printf 'Development data reset completed. Production was not changed.\n'
+    printf 'Volume removed: dev-postgres\n'
+    confirm_action "$confirmed" "Delete and recreate the isolated development database?"
+    compose_for dev down --remove-orphans
+    "${DOCKER_COMMAND[@]}" volume rm "$(mode_project_name dev)_dev-postgres" >/dev/null 2>&1 || true
+    printf 'Development database reset completed. Media, private media, static output, and Node modules were not deleted. Production was not changed.\n'
     if [[ "$start_after" == true ]]; then
         mode_start dev
     else
-        printf 'Next command: sudo ./command.sh dev\n'
+        printf 'Next command: sudo ./install.sh dev\n'
     fi
 }
 
@@ -632,10 +636,10 @@ prod_db_reset() {
     printf 'Production data reset completed. Application source, .git, and environment files were not deleted.\n'
     printf '%s\n' \
         'Next commands:' \
-        '  sudo ./command.sh start' \
-        '  sudo ./command.sh migrate' \
-        '  sudo ./command.sh collectstatic' \
-        '  sudo ./command.sh django createsuperuser'
+        '  sudo ./install.sh start' \
+        '  sudo ./install.sh migrate' \
+        '  sudo ./install.sh collectstatic' \
+        '  sudo ./install.sh django createsuperuser'
 }
 
 clean_generated() {
@@ -738,10 +742,10 @@ case "$command_name" in
     prod-restore) parse_confirmed_file "prod-restore ARCHIVE [--yes]" "$@"; restore_backup prod "$TARGET_FILE" "$CONFIRMED" ;;
     dev-restore) parse_confirmed_file "dev-restore ARCHIVE [--yes]" "$@"; restore_backup dev "$TARGET_FILE" "$CONFIRMED" ;;
 
-    dev-db-reset)
+    fresh-db|dev-db-reset)
         confirmed=false; start_after=false
         for argument in "$@"; do
-            case "$argument" in --yes) confirmed=true ;; --start) start_after=true ;; *) fail "usage: dev-db-reset [--yes] [--start]" ;; esac
+            case "$argument" in --yes) confirmed=true ;; --start) start_after=true ;; *) fail "usage: $command_name [--yes] [--start]" ;; esac
         done
         dev_db_reset "$confirmed" "$start_after"
         ;;
@@ -761,5 +765,5 @@ case "$command_name" in
 
     context) run_context "$@" ;;
     clean) (($# == 0)) || fail "usage: clean"; clean_generated ;;
-    *) fail "unknown command: $command_name (run './command.sh help')" ;;
+    *) fail "unknown command: $command_name (run './install.sh help')" ;;
 esac

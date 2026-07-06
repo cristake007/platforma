@@ -2,7 +2,7 @@
 
 ## `core/templates/layouts/base.html`
 
-Size: 8.1 KB
+Size: 6.7 KB
 
 ```html
 {% load static tailwind_tags optional_browser_reload %}
@@ -12,11 +12,9 @@ Size: 8.1 KB
     <title>{% block title %}Platforma TUVTK{% endblock %}</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="htmx-config" content='{"historyRestoreAsHxRequest": false}'>
     <link rel="preload" href="{% static 'fonts/inter/InterVariable.woff2' %}" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="{% static 'bootstrap_icons/css/bootstrap_icons.css' %}">
     {% tailwind_css %}
-    <script src="{% static 'js/vendor/htmx.min.js' %}" defer></script>
     {% block page_styles %}{% endblock %}
 </head>
 <body class="h-dvh overflow-hidden">
@@ -98,49 +96,18 @@ Size: 8.1 KB
                 class="drawer-toggle"
                 data-sidebar-start-collapsed="{% block sidebar_start_collapsed %}false{% endblock %}"
             >
-            <script>
-                (() => {
-                    const toggle = document.getElementById("ops-sidebar");
-                    const drawer = toggle?.closest(".drawer");
-                    if (!toggle || !drawer) return;
-
-                    const desktop = window.matchMedia("(min-width: 1024px)");
-                    const startsCollapsed = toggle.dataset.sidebarStartCollapsed === "true";
-                    let savedState = null;
-
-                    try {
-                        savedState = sessionStorage.getItem("ops-sidebar-expanded");
-                    } catch {
-                        // Storage can be unavailable in restricted browser contexts.
-                    }
-
-                    toggle.checked = desktop.matches
-                        && !startsCollapsed
-                        && (savedState === null || savedState === "true");
-
-                    requestAnimationFrame(() => {
-                        requestAnimationFrame(() => drawer.dataset.sidebarReady = "true");
-                    });
-                })();
-            </script>
-            {% include "includes/sidebar.html" %}
+            <script src="{% static 'js/sidebar_state.js' %}"></script>
             <div class="drawer-content h-full min-h-0 overflow-hidden">
-                <main id="ops-main-scroll" class="ops-scrollbar h-full overflow-y-auto">
-                    <div
-                        id="page-content"
-                        class="mx-auto w-full max-w-[1600px] px-4 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-5"
-                        data-active-nav-url="{{ active_navigation_url }}"
-                        hx-history-elt
-                        hx-history="false"
-                    >
+                <main class="ops-scrollbar h-full overflow-y-auto">
+                    <div class="mx-auto w-full max-w-[1600px] px-4 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-5">
                         {% block content %}{% endblock %}
                     </div>
                 </main>
             </div>
+            {% include "includes/sidebar.html" %}
         </div>
     </div>
     <script src="{% static 'js/sidebar.js' %}" defer></script>
-    <script src="{% static 'js/shell_htmx.js' %}" defer></script>
     {% block page_scripts %}{% endblock %}
     {% optional_browser_reload_script %}
 </body>

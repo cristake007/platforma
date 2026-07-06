@@ -2,7 +2,7 @@
 
 ## `core/tests.py`
 
-Size: 3.0 KB
+Size: 2.9 KB
 
 ```python
 from django.contrib.auth.models import AnonymousUser
@@ -32,7 +32,6 @@ class ApplicationShellTests(TestCase):
 
         self.assertTrue(dashboard_item['is_active'])
         self.assertEqual(dashboard_item['url_name'], 'dashboard:index')
-        self.assertEqual(context['active_navigation_url'], '/')
 
     def test_context_processor_does_not_query_the_database(self):
         user = get_user_model().objects.create_user(username="shell-user")

@@ -4,7 +4,7 @@ Project-level, configuration, deployment, shared Django, and frontend source fil
 
 ## `AGENTS.md`
 
-Size: 8.8 KB
+Size: 9.2 KB
 
 ````markdown
 # Platforma TUVTK — Agent Router
@@ -13,17 +13,17 @@ Size: 8.8 KB
 
 These instructions apply to the whole repository. A deeper `AGENTS.md` adds app-specific rules for files below its directory.
 
-The repository is Linux/Docker-first. Use `bin/tuvtk` for normal Django, Compose, development, test, and context commands. Do not reconstruct long raw Compose commands unless validating Compose configuration itself.
+The repository has a unified cross-platform command surface. Use `./install.sh` on Debian/Linux or `./install.ps1` on native Windows for setup, lifecycle, Django, frontend, test, data, and context commands. Linux production uses Docker Compose; Windows development uses user-space Python, Node, and PostgreSQL runtimes. `bin/tuvtk` is the Linux Compose implementation and is not the normal user entry point. Do not reconstruct long raw Compose commands unless validating Compose configuration itself.
 
 Primary agent commands:
 
 ```bash
-bin/tuvtk context --max-file-kb 80
-bin/tuvtk check
-bin/tuvtk test apps.dashboard
+./install.sh context --max-file-kb 80
+./install.sh check
+./install.sh test apps.dashboard
 ```
 
-The shell, batch, and PowerShell context launchers are compatibility entry points only. `scripts/generate_codex_context.py` is the implementation; `bin/tuvtk context` is the primary workflow.
+On Windows use the equivalent `./install.ps1` commands. `scripts/tuvtk_cli.py` is the shared router and `scripts/generate_codex_context.py` is the context implementation. Shell, batch, and PowerShell compatibility launchers delegate to these tracked entry points.
 
 ## Smallest sufficient context
 
@@ -41,7 +41,7 @@ Do not preload the file map, context index, project core, every app guide, migra
 Generated context is navigation support, not a second source of truth. If stale, inspect real source and regenerate with:
 
 ```bash
-bin/tuvtk context
+./install.sh context
 ```
 
 ## Repository boundaries
@@ -61,7 +61,7 @@ Do not duplicate a model, route, service, selector, template, or workflow before
 * Use CSRF protection and non-GET methods for state changes.
 * Use namespaced app URLs. Include them from `platforma_tuvtk/urls.py` and update `core/navigation.py` only for global navigation.
 * Create and review a Django migration for every schema change. Do not inspect all old migrations unless schema history is relevant.
-* Normal Django execution occurs in Docker through `bin/tuvtk`; host Python is only required for the standard-library context generator.
+* Normal execution goes through `install.sh`/`install.ps1`. Debian uses Docker; Windows development uses `.venv` and the repository-local PostgreSQL runtime. Do not invoke implementation scripts directly unless diagnosing the wrapper.
 
 ## Shared frontend contract
 
@@ -75,20 +75,20 @@ Do not duplicate a model, route, service, selector, template, or workflow before
 * Use vanilla JavaScript with progressive enhancement. Preserve server-side validation and native navigation/scrolling.
 * Every app whose templates/scripts use Tailwind classes needs an `@source` entry in `theme/static_src/src/styles.css`.
 * Read `frontend.md` and the exact template/static files for frontend changes. Read shared base/theme files only when changing global layout or tokens.
-* Tailwind/npm development runs through the dedicated Node service: `bin/tuvtk tailwind` and `bin/tuvtk npm ...`.
+* Run Tailwind/npm through `./install.sh tailwind` and `./install.sh npm ...`, or the equivalent `install.ps1` commands on Windows.
 
 ## Safety and preservation
 
 * Preserve all unrelated tracked and untracked user changes. Never reset, discard, or overwrite them to simplify a task.
 * Inspect `.env.example`; never inspect or expose `.env` or `/etc/tuvtk/tuvtk.env` contents unless explicitly required and authorized.
 * Do not delete database volumes, persistent PostgreSQL storage, uploads, private media, secrets, or environment files.
-* Do not run `install.sh --clean`, `bin/tuvtk clean`, restore, SQL import, or other destructive database/filesystem commands unless explicitly requested.
+* Do not run `install.sh clean`, restore, SQL import, or other destructive database/filesystem commands unless explicitly requested.
 * Do not run full Docker rebuilds, production starts/restarts, migrations, collectstatic, npm installation, or service-changing commands merely for validation.
 * Do not claim SSL works. Current Compose/Nginx is HTTP-only and installer SSL modes intentionally refuse.
-* Do not reintroduce the removed Windows-local virtualenv, PostgreSQL, runserver, or Tailwind workflows. Windows batch/PowerShell files are context-generator compatibility launchers only.
-* Preserve the Linux/Docker-first workflow and existing production lifecycle: build, start/wait for `db`, run `init`, then start `web` and `nginx`.
+* Preserve the unified router. Do not add standalone Windows lifecycle scripts or duplicate setup logic outside `scripts/tuvtk_cli.py`.
+* Preserve the Linux production lifecycle: build, start/wait for `db`, run `init`, then start `web` and `nginx`.
 
-Avoid generated, runtime, dependency, binary, and local-tool paths unless directly required: `.venv/`, `.git/`, `.postgresql/`, `node_modules/`, `staticfiles/`, `media/`, `private_media/`, `.playwright-mcp/`, `test-results/`, `playwright-report/`, `apps/planificator-main/`, `theme/static/css/dist/`, `theme/static/fonts/`, and `theme/static/images/`.
+Avoid generated, runtime, dependency, binary, and local-tool paths unless directly required: `.tuvtk/`, `.venv/`, `.git/`, `.postgresql/`, `node_modules/`, `staticfiles/`, `media/`, `private_media/`, `.playwright-mcp/`, `test-results/`, `playwright-report/`, `apps/planificator-main/`, `theme/static/css/dist/`, `theme/static/fonts/`, and `theme/static/images/`.
 
 ## Verification policy
 
@@ -97,8 +97,8 @@ Choose the smallest checks that exercise the changed boundary. Do not run automa
 Primary project checks:
 
 ```bash
-bin/tuvtk check
-bin/tuvtk test <app-or-test-path>
+./install.sh check
+./install.sh test <app-or-test-path>
 ```
 
 The wrapper defaults tests to `-v 0`. Never run the full database-backed suite automatically.
@@ -109,9 +109,10 @@ Safe workflow checks:
 bash -n install.sh
 bash -n bin/tuvtk
 bash -n generate_codex_context.sh
+python3 -m py_compile scripts/tuvtk_cli.py
 python3 -m py_compile scripts/generate_codex_context.py
-bin/tuvtk help
-bin/tuvtk context --max-file-kb 80
+./install.sh help
+./install.sh context --max-file-kb 80
 git diff --check
 ```
 
@@ -122,15 +123,15 @@ Optional read-only Compose rendering, only when Docker CLI and the deployment en
 ```bash
 docker compose \
   --env-file /etc/tuvtk/tuvtk.env \
-  --project-directory /opt/tuvtk/app \
-  -f /opt/tuvtk/app/compose.yaml \
+  --project-directory /opt/tuvtk \
+  -f /opt/tuvtk/compose.yaml \
   -p tuvtk config --quiet
 
 docker compose \
   --env-file /etc/tuvtk/tuvtk.env \
-  --project-directory /opt/tuvtk/app \
-  -f /opt/tuvtk/app/compose.yaml \
-  -f /opt/tuvtk/app/compose.dev.yaml \
+  --project-directory /opt/tuvtk \
+  -f /opt/tuvtk/compose.yaml \
+  -f /opt/tuvtk/compose.dev.yaml \
   -p tuvtk-dev config --quiet
 ```
 
@@ -152,7 +153,7 @@ Completion reports must state:
 After source or instruction changes, regenerate context from the repository root when the active task permits it:
 
 ```bash
-bin/tuvtk context
+./install.sh context
 ```
 ````
 
@@ -404,7 +405,7 @@ CMD ["/app/docker/start-web.sh"]
 
 ## `install.sh`
 
-Size: 29.5 KB
+Size: 23.8 KB
 
 Redacted secret-like assignments: 1
 
@@ -412,52 +413,77 @@ Redacted secret-like assignments: 1
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-readonly DEFAULT_APP_DIR="/opt/tuvtk/app"
-readonly DEFAULT_ENV_FILE="/etc/tuvtk/tuvtk.env"
+readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+
+if [[ "${TUVTK_LEGACY_INSTALL:-false}" != true ]]; then
+    legacy_action=false
+    for argument in "$@"; do
+        case "$argument" in
+            --dev|--production|--environment|--command|--clean) legacy_action=true ;;
+        esac
+    done
+    if [[ "$legacy_action" != true ]]; then
+        case "${OSTYPE:-}" in
+            msys*|mingw*|cygwin*)
+                exec powershell.exe -NoProfile -ExecutionPolicy Bypass \
+                    -File "$(cygpath -w "$SCRIPT_DIR/install.ps1")" "$@"
+                ;;
+        esac
+        if command -v python3 >/dev/null 2>&1; then
+            exec python3 "$SCRIPT_DIR/scripts/tuvtk_cli.py" "$@"
+        elif command -v python >/dev/null 2>&1; then
+            exec python "$SCRIPT_DIR/scripts/tuvtk_cli.py" "$@"
+        fi
+        if command -v apt-get >/dev/null 2>&1; then
+            printf '[tuvtk] Installing Python 3 for the command router.\n'
+            if [[ "$EUID" -eq 0 ]]; then
+                apt-get update
+                apt-get install --yes python3
+            elif command -v sudo >/dev/null 2>&1; then
+                sudo apt-get update
+                sudo apt-get install --yes python3
+            else
+                printf '[tuvtk] ERROR: sudo is required to install Python 3.\n' >&2
+                exit 1
+            fi
+            exec python3 "$SCRIPT_DIR/scripts/tuvtk_cli.py" "$@"
+        fi
+        printf '[tuvtk] ERROR: Python 3 is required and no supported package manager was found.\n' >&2
+        exit 1
+    fi
+fi
+
+readonly DEFAULT_PROD_ENV_FILE="/etc/tuvtk/tuvtk.env"
 readonly DEFAULT_PROJECT_NAME="tuvtk"
 readonly DEFAULT_DATA_DIR="/var/lib/tuvtk"
 readonly DEFAULT_BACKUP_PATH="/opt/tuvtk-backups"
-readonly WRAPPER_SYSTEM_PATH="/usr/local/bin/tuvtk"
+readonly SYSTEM_COMMAND_PATH="/usr/local/bin/tuvtk"
 readonly POSTGRES_IMAGE="postgres:17-bookworm"
 
-APP_DIR="${TUVTK_APP_DIR:-$DEFAULT_APP_DIR}"
-ENV_FILE="${TUVTK_ENV_FILE:-$DEFAULT_ENV_FILE}"
-PROJECT_NAME="${TUVTK_PROJECT_NAME:-$DEFAULT_PROJECT_NAME}"
-if [[ -n "${TUVTK_COMPOSE_FILE+x}" ]]; then
-    COMPOSE_FILE="$TUVTK_COMPOSE_FILE"
-    COMPOSE_FILE_EXPLICIT=true
-else
-    COMPOSE_FILE="$APP_DIR/compose.yaml"
-    COMPOSE_FILE_EXPLICIT=false
-fi
+APP_DIR="$SCRIPT_DIR"
+ENV_FILE=""
+ENV_FILE_EXPLICIT=false
+PROD_ENV_FILE="$DEFAULT_PROD_ENV_FILE"
+DEV_ENV_FILE=""
+COMPOSE_FILE=""
+DEV_COMPOSE_FILE=""
+PROJECT_NAME="$DEFAULT_PROJECT_NAME"
 DATA_DIR="$DEFAULT_DATA_DIR"
-DATA_DIR_EXPLICIT=false
 BACKUP_PATH="$DEFAULT_BACKUP_PATH"
-REPO_URL=""
-REPO_BRANCH="main"
-SSH_KEY=""
+DEFAULT_MODE=""
+DEV_PORT="8000"
 DOMAIN=""
-EMAIL=""
 HTTP_PORT="80"
-HTTPS_PORT="443"
 DB_NAME=""
 DB_USER=""
 DB_PASSWORD=""
 SECRET_KEY=<redacted>
-ADMIN_USERNAME=""
-ADMIN_EMAIL=""
-ADMIN_PASSWORD=""
-ACTION="install"
+ACTION=""
 YES=false
-CLEAN=false
+DRY_RUN=false
 SSL=false
 LETSENCRYPT=false
 OWN_CERTIFICATE=false
-PUBLIC_IP=false
-PRIVATE_IP=false
-NETWORK_REQUESTED=false
-ACTION_EXPLICIT=false
-LAST_BACKUP=""
 
 log() {
     printf '[tuvtk] %s\n' "$*"
@@ -474,118 +500,95 @@ fail() {
 
 usage() {
     cat <<'EOF'
-Usage: install.sh [ACTION] [OPTIONS]
+Usage: install.sh ACTION [OPTIONS]
 
 Actions:
-  --environment              Install/check server prerequisites only
-  --command                  Install/update only the tuvtk command wrapper
-  --network                  Check external-network requirements (currently no-op)
-  --clean                    Back up, then safely refresh deployment files
+  --dev                      Prepare development config and install command.sh
+  --production               Prepare production config and install command.sh
+  --environment              Install/verify server prerequisites only
+  --command                  Update command.sh and /usr/local/bin/tuvtk only
+  --clean                    Remove safe generated caches only; never data/media
 
 General options:
   -h, --help                 Show this help
-  -y, --yes                  Skip confirmation prompts
-  --backup-path=PATH         Backup destination (default: /opt/tuvtk-backups)
-  --app-dir=PATH             Application directory (default: /opt/tuvtk/app)
-  --install-dir=PATH         Backward-compatible alias for --app-dir
-  --env-file=PATH            Environment file (default: /etc/tuvtk/tuvtk.env)
-  --compose-file=PATH        Compose file (default: APP_DIR/compose.yaml)
+  -y, --yes                  Skip ordinary confirmation prompts
+  --dry-run                  Validate and print planned actions without changes
+  --app-dir=PATH             Application checkout (default: directory containing install.sh)
+  --env-file=PATH            Active mode environment path
   --project-name=NAME        Compose project name (default: tuvtk)
-  --data-dir=PATH            Persistent data root (default: /var/lib/tuvtk)
+  --backup-path=PATH         Default backup directory (default: /opt/tuvtk-backups)
+  --dev-port=PORT            Published development port (default: 8000)
+  --default-mode=dev|prod    Mode embedded by --command (existing mode is preferred)
 
-Repository options:
-  --repo-url=URL             Git repository URL; existing origin is used if omitted
-  --repo-branch=BRANCH       Branch, tag, or commit (default: main)
-  --ref=REF                  Backward-compatible alias for --repo-branch
-  --ssh-key=PATH             Read-only SSH deploy key for a private repository
-
-Public endpoint options:
-  --domain=HOST              Public DNS name or IPv4 address
-  --public-host=HOST         Backward-compatible alias for --domain
-  --public-ip                Detect and use the public IPv4 address
-  --private-ip               Detect and use the private IPv4 address
-  --http-port=PORT           HTTP port (default: 80)
-  --https-port=PORT          HTTPS port (default: 443)
-  --ssl                      Request HTTPS mode
-  --letsencrypt              Request Let's Encrypt mode (requires --ssl)
-  --owncertificate           Request own-certificate mode (requires --ssl)
-  --email=EMAIL              Let's Encrypt contact email
-
-Database and Django options:
+Production options:
+  --domain=HOST              Required production domain or IPv4 address
+  --http-port=PORT           Production HTTP port (default: 80)
+  --data-dir=PATH            Production bind-mount root (default: /var/lib/tuvtk)
   --db-name=NAME
   --db-user=USER
   --db-password=PASSWORD
   --secret-key=KEY
-  --admin-username=USERNAME
-  --admin-email=EMAIL
-  --admin-password=PASSWORD
+
+Compatibility options:
+  --install-dir=PATH         Alias for --app-dir
+  --public-host=HOST         Alias for --domain
+  --ssl --letsencrypt       Refused: current deployment is HTTP-only
+  --ssl --owncertificate    Refused: current deployment is HTTP-only
 
 Examples:
+  sudo bash install.sh --dev --yes
+  sudo bash install.sh --production --yes --domain=example.com
   sudo bash install.sh --environment
   sudo bash install.sh --command
-  sudo bash install.sh --yes --domain=example.com
-  sudo bash install.sh --clean --backup-path=/opt/tuvtk-backups --domain=example.com
+  sudo bash install.sh --clean
+  sudo bash install.sh --dev --yes --app-dir="$(pwd)" --dev-port=8001 --dry-run
 
-HTTPS certificate automation is not present in the current Compose/Nginx design.
-HTTPS requests are rejected before files, packages, or services are changed.
+The installer prepares configuration and command launchers. It does not start,
+stop, build, migrate, restore, or reset an application stack.
 EOF
 }
 
 require_option_value() {
-    local option="$1"
-    local value="${2:-}"
+    local option="$1" value="${2:-}"
     [[ -n "$value" && "$value" != --* ]] || fail "$option requires a value."
 }
 
 set_action() {
     local requested="$1"
-    if [[ "$ACTION_EXPLICIT" == true && "$ACTION" != "$requested" ]]; then
-        fail "actions --$ACTION and --$requested cannot be combined."
-    fi
+    [[ -z "$ACTION" || "$ACTION" == "$requested" ]] \
+        || fail "installer actions --$ACTION and --$requested cannot be combined."
     ACTION="$requested"
-    ACTION_EXPLICIT=true
 }
 
 parse_arguments() {
     while (($#)); do
         case "$1" in
-            -h|--help) ACTION="help"; ACTION_EXPLICIT=true; shift ;;
+            -h|--help) set_action help; shift ;;
             -y|--yes) YES=true; shift ;;
+            --dry-run) DRY_RUN=true; shift ;;
+            --dev) set_action dev; DEFAULT_MODE=dev; shift ;;
+            --production) set_action production; DEFAULT_MODE=prod; shift ;;
             --environment) set_action environment; shift ;;
             --command) set_action command; shift ;;
-            --network) set_action network; NETWORK_REQUESTED=true; shift ;;
-            --clean) CLEAN=true; shift ;;
-            --backup-path=*) BACKUP_PATH="${1#*=}"; shift ;;
-            --backup-path) require_option_value "$1" "${2:-}"; BACKUP_PATH="$2"; shift 2 ;;
+            --clean) set_action clean; shift ;;
             --app-dir=*|--install-dir=*) APP_DIR="${1#*=}"; shift ;;
             --app-dir|--install-dir) require_option_value "$1" "${2:-}"; APP_DIR="$2"; shift 2 ;;
-            --env-file=*) ENV_FILE="${1#*=}"; shift ;;
-            --env-file) require_option_value "$1" "${2:-}"; ENV_FILE="$2"; shift 2 ;;
-            --compose-file=*) COMPOSE_FILE="${1#*=}"; COMPOSE_FILE_EXPLICIT=true; shift ;;
-            --compose-file) require_option_value "$1" "${2:-}"; COMPOSE_FILE="$2"; COMPOSE_FILE_EXPLICIT=true; shift 2 ;;
+            --env-file=*) ENV_FILE="${1#*=}"; ENV_FILE_EXPLICIT=true; shift ;;
+            --env-file) require_option_value "$1" "${2:-}"; ENV_FILE="$2"; ENV_FILE_EXPLICIT=true; shift 2 ;;
             --project-name=*) PROJECT_NAME="${1#*=}"; shift ;;
             --project-name) require_option_value "$1" "${2:-}"; PROJECT_NAME="$2"; shift 2 ;;
-            --data-dir=*) DATA_DIR="${1#*=}"; DATA_DIR_EXPLICIT=true; shift ;;
-            --data-dir) require_option_value "$1" "${2:-}"; DATA_DIR="$2"; DATA_DIR_EXPLICIT=true; shift 2 ;;
-            --repo-url=*) REPO_URL="${1#*=}"; shift ;;
-            --repo-url) require_option_value "$1" "${2:-}"; REPO_URL="$2"; shift 2 ;;
-            --repo-branch=*|--ref=*) REPO_BRANCH="${1#*=}"; shift ;;
-            --repo-branch|--ref) require_option_value "$1" "${2:-}"; REPO_BRANCH="$2"; shift 2 ;;
-            --ssh-key=*) SSH_KEY="${1#*=}"; shift ;;
-            --ssh-key) require_option_value "$1" "${2:-}"; SSH_KEY="$2"; shift 2 ;;
+            --backup-path=*) BACKUP_PATH="${1#*=}"; shift ;;
+            --backup-path) require_option_value "$1" "${2:-}"; BACKUP_PATH="$2"; shift 2 ;;
+            --data-dir=*) DATA_DIR="${1#*=}"; shift ;;
+            --data-dir) require_option_value "$1" "${2:-}"; DATA_DIR="$2"; shift 2 ;;
+            --dev-port=*) DEV_PORT="${1#*=}"; shift ;;
+            --dev-port) require_option_value "$1" "${2:-}"; DEV_PORT="$2"; shift 2 ;;
+            --default-mode=*) DEFAULT_MODE="${1#*=}"; shift ;;
+            --default-mode) require_option_value "$1" "${2:-}"; DEFAULT_MODE="$2"; shift 2 ;;
             --domain=*|--public-host=*) DOMAIN="${1#*=}"; shift ;;
             --domain|--public-host) require_option_value "$1" "${2:-}"; DOMAIN="$2"; shift 2 ;;
-            --public-ip) PUBLIC_IP=true; shift ;;
-            --private-ip) PRIVATE_IP=true; shift ;;
-            --email=*) EMAIL="${1#*=}"; shift ;;
-            --email) require_option_value "$1" "${2:-}"; EMAIL="$2"; shift 2 ;;
-            --ssl) SSL=true; shift ;;
-            --letsencrypt) LETSENCRYPT=true; shift ;;
-            --owncertificate) OWN_CERTIFICATE=true; shift ;;
             --http-port=*) HTTP_PORT="${1#*=}"; shift ;;
             --http-port) require_option_value "$1" "${2:-}"; HTTP_PORT="$2"; shift 2 ;;
-            --https-port=*) HTTPS_PORT="${1#*=}"; shift ;;
-            --https-port) require_option_value "$1" "${2:-}"; HTTPS_PORT="$2"; shift 2 ;;
             --db-name=*) DB_NAME="${1#*=}"; shift ;;
             --db-name) require_option_value "$1" "${2:-}"; DB_NAME="$2"; shift 2 ;;
             --db-user=*) DB_USER="${1#*=}"; shift ;;
@@ -594,73 +597,104 @@ parse_arguments() {
             --db-password) require_option_value "$1" "${2:-}"; DB_PASSWORD="$2"; shift 2 ;;
             --secret-key=*) SECRET_KEY="${1#*=}"; shift ;;
             --secret-key) require_option_value "$1" "${2:-}"; SECRET_KEY="$2"; shift 2 ;;
-            --admin-username=*) ADMIN_USERNAME="${1#*=}"; shift ;;
-            --admin-username) require_option_value "$1" "${2:-}"; ADMIN_USERNAME="$2"; shift 2 ;;
-            --admin-email=*) ADMIN_EMAIL="${1#*=}"; shift ;;
-            --admin-email) require_option_value "$1" "${2:-}"; ADMIN_EMAIL="$2"; shift 2 ;;
-            --admin-password=*) ADMIN_PASSWORD="${1#*=}"; shift ;;
-            --admin-password) require_option_value "$1" "${2:-}"; ADMIN_PASSWORD="$2"; shift 2 ;;
+            --ssl) SSL=true; shift ;;
+            --letsencrypt) LETSENCRYPT=true; shift ;;
+            --owncertificate) OWN_CERTIFICATE=true; shift ;;
             *) fail "unknown argument: $1" ;;
         esac
     done
+}
 
-    if [[ "$ACTION" == help ]]; then
-        return 0
+read_env_value_from() {
+    local file="$1" key="$2"
+    [[ -f "$file" ]] || return 0
+    awk -v key="$key" '
+        $0 ~ "^[[:space:]]*" key "=" {
+            sub("^[[:space:]]*" key "=", "")
+            sub("\\r$", "")
+            value=$0
+        }
+        END { print value }
+    ' "$file"
+}
+
+read_installed_mode() {
+    local file="$APP_DIR/command.sh"
+    [[ -f "$file" ]] || return 0
+    sed -n 's/^export TUVTK_DEFAULT_MODE=\(dev\|prod\)$/\1/p' "$file" | head -n 1
+}
+
+resolve_paths_and_mode() {
+    COMPOSE_FILE="$APP_DIR/compose.yaml"
+    DEV_COMPOSE_FILE="$APP_DIR/compose.dev.yaml"
+    DEV_ENV_FILE="$APP_DIR/.env.dev"
+
+    if [[ "$ACTION" == command && -z "$DEFAULT_MODE" ]]; then
+        DEFAULT_MODE="$(read_installed_mode)"
     fi
-    if [[ "$COMPOSE_FILE_EXPLICIT" == false ]]; then
-        COMPOSE_FILE="$APP_DIR/compose.yaml"
+    if [[ -z "$DEFAULT_MODE" ]]; then
+        DEFAULT_MODE=prod
     fi
-    if [[ "$ACTION" == install && "$DATA_DIR_EXPLICIT" == false && -f "$ENV_FILE" ]]; then
-        local existing_data_dir
-        existing_data_dir="$(read_env_value_from "$ENV_FILE" TUVTK_DATA_DIR)"
-        if [[ -n "$existing_data_dir" ]]; then
-            DATA_DIR="$existing_data_dir"
-        fi
+    case "$DEFAULT_MODE" in dev|prod) ;; *) fail "--default-mode must be dev or prod." ;; esac
+
+    if [[ "$ENV_FILE_EXPLICIT" == true ]]; then
+        if [[ "$DEFAULT_MODE" == dev ]]; then DEV_ENV_FILE="$ENV_FILE"; else PROD_ENV_FILE="$ENV_FILE"; fi
+    fi
+    if [[ "$DEFAULT_MODE" == dev ]]; then
+        ENV_FILE="$DEV_ENV_FILE"
+    else
+        ENV_FILE="$PROD_ENV_FILE"
     fi
 }
 
 validate_absolute_path() {
     local label="$1" path="$2"
     [[ "$path" == /* && "$path" != "/" ]] || fail "$label must be an absolute path other than /."
-    [[ "$path" != *$'\n'* ]] || fail "$label contains a newline."
+    [[ "$path" != *$'\n'* && "$path" != *$'\r'* ]] || fail "$label contains a newline."
 }
 
-validate_common_options() {
+validate_domain() {
+    [[ -n "$DOMAIN" ]] || fail "--production requires --domain (or --public-host)."
+    [[ ${#DOMAIN} -le 253 ]] || fail "domain/public host is too long."
+    [[ "$DOMAIN" =~ ^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$ && "$DOMAIN" != *".."* ]] \
+        || fail "invalid domain or IPv4 address: $DOMAIN"
+}
+
+validate_options() {
+    [[ -n "$ACTION" ]] || fail "choose one action: --dev, --production, --environment, --command, or --clean."
+    [[ "$ACTION" == help ]] && return 0
     validate_absolute_path "application directory" "$APP_DIR"
-    validate_absolute_path "environment file" "$ENV_FILE"
-    validate_absolute_path "Compose file" "$COMPOSE_FILE"
-    validate_absolute_path "data directory" "$DATA_DIR"
+    validate_absolute_path "production environment file" "$PROD_ENV_FILE"
+    validate_absolute_path "development environment file" "$DEV_ENV_FILE"
     validate_absolute_path "backup path" "$BACKUP_PATH"
-    [[ "$PROJECT_NAME" =~ ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$ ]] || fail "invalid project name: $PROJECT_NAME"
+    validate_absolute_path "production data directory" "$DATA_DIR"
+    [[ "$PROJECT_NAME" =~ ^[A-Za-z0-9][A-Za-z0-9_.-]*$ ]] || fail "invalid project name: $PROJECT_NAME"
+    [[ "$DEV_PORT" =~ ^[0-9]+$ && "$DEV_PORT" -ge 1 && "$DEV_PORT" -le 65535 ]] || fail "invalid development port: $DEV_PORT"
     [[ "$HTTP_PORT" =~ ^[0-9]+$ && "$HTTP_PORT" -ge 1 && "$HTTP_PORT" -le 65535 ]] || fail "invalid HTTP port: $HTTP_PORT"
-    [[ "$HTTPS_PORT" =~ ^[0-9]+$ && "$HTTPS_PORT" -ge 1 && "$HTTPS_PORT" -le 65535 ]] || fail "invalid HTTPS port: $HTTPS_PORT"
-    [[ "$REPO_BRANCH" =~ ^[A-Za-z0-9][A-Za-z0-9._/@+-]*$ ]] || fail "unsafe repository branch/ref: $REPO_BRANCH"
     [[ "$DATA_DIR" != "$APP_DIR" && "$DATA_DIR" != "$APP_DIR/"* && "$APP_DIR" != "$DATA_DIR/"* ]] \
-        || fail "application and persistent data directories must not overlap."
-    if [[ -n "$REPO_URL" ]]; then
-        [[ "$REPO_URL" == https://* || "$REPO_URL" == git@*:* ]] \
-            || fail "repository URL must use HTTPS or git@host:path SSH syntax."
-    fi
-    if [[ -n "$SSH_KEY" ]]; then
-        validate_absolute_path "SSH key" "$SSH_KEY"
-        [[ -f "$SSH_KEY" ]] || fail "SSH key not found: $SSH_KEY"
-    fi
+        || fail "application and production data directories must not overlap."
+    case "$(readlink -m -- "$DATA_DIR")" in
+        /bin|/boot|/dev|/etc|/home|/lib|/lib64|/media|/mnt|/opt|/proc|/root|/run|/sbin|/srv|/sys|/tmp|/usr|/var|/var/lib)
+            fail "production data directory is too broad or system-critical: $DATA_DIR"
+            ;;
+    esac
     if [[ -n "$DB_NAME" ]]; then
         [[ "$DB_NAME" =~ ^[A-Za-z_][A-Za-z0-9_.-]*$ ]] || fail "invalid database name."
     fi
     if [[ -n "$DB_USER" ]]; then
         [[ "$DB_USER" =~ ^[A-Za-z_][A-Za-z0-9_.-]*$ ]] || fail "invalid database user."
     fi
-}
-
-validate_ssl_request() {
-    [[ "$LETSENCRYPT" == false || "$SSL" == true ]] || fail "--letsencrypt requires --ssl."
-    [[ "$OWN_CERTIFICATE" == false || "$SSL" == true ]] || fail "--owncertificate requires --ssl."
-    [[ "$LETSENCRYPT" == false || "$OWN_CERTIFICATE" == false ]] || fail "choose either --letsencrypt or --owncertificate, not both."
-    if [[ "$SSL" == true ]]; then
-        [[ "$LETSENCRYPT" == true || "$OWN_CERTIFICATE" == true ]] \
-            || fail "--ssl requires --letsencrypt or --owncertificate."
-        fail "SSL mode requested, but the current Compose/Nginx deployment has no certificate automation or HTTPS listener. No changes were made."
+    if [[ "$SSL" == true || "$LETSENCRYPT" == true || "$OWN_CERTIFICATE" == true ]]; then
+        fail "SSL was requested, but current Compose/Nginx is HTTP-only. No changes were made."
+    fi
+    if [[ "$ACTION" == production ]]; then validate_domain; fi
+    if [[ "$ACTION" == dev || "$ACTION" == production || "$ACTION" == command ]]; then
+        [[ -f "$APP_DIR/bin/tuvtk" && -f "$COMPOSE_FILE" ]] \
+            || fail "application checkout is missing bin/tuvtk or compose.yaml: $APP_DIR"
+    fi
+    if [[ "$ACTION" == dev ]]; then
+        [[ -f "$DEV_COMPOSE_FILE" && -f "$APP_DIR/.env.example" ]] \
+            || fail "development install requires compose.dev.yaml and .env.example."
     fi
 }
 
@@ -672,25 +706,15 @@ load_supported_os() {
     [[ -r /etc/os-release ]] || fail "/etc/os-release is missing; Debian or Ubuntu is required."
     # shellcheck disable=SC1091
     . /etc/os-release
-    case "${ID:-}" in
-        debian|ubuntu) ;;
-        *) fail "unsupported distribution '${ID:-unknown}'; full installation supports Debian and Ubuntu only." ;;
-    esac
-    command -v dpkg >/dev/null 2>&1 || fail "dpkg is required on Debian/Ubuntu."
-    case "$(dpkg --print-architecture)" in
-        amd64|arm64) ;;
-        *) fail "unsupported architecture; only amd64 and arm64 are supported." ;;
-    esac
+    case "${ID:-}" in debian|ubuntu) ;; *) fail "unsupported distribution '${ID:-unknown}'; Debian or Ubuntu is required." ;; esac
+    command -v dpkg >/dev/null 2>&1 || fail "dpkg is required."
+    case "$(dpkg --print-architecture)" in amd64|arm64) ;; *) fail "only amd64 and arm64 are supported." ;; esac
 }
 
 configure_docker_repository() {
-    local docker_distribution="$ID"
-    local docker_codename="${VERSION_CODENAME:-}"
-    if [[ "$ID" == ubuntu && -n "${UBUNTU_CODENAME:-}" ]]; then
-        docker_codename="$UBUNTU_CODENAME"
-    fi
-    [[ -n "$docker_codename" ]] || fail "could not determine the distribution codename."
-
+    local docker_distribution="$ID" docker_codename="${VERSION_CODENAME:-}"
+    if [[ "$ID" == ubuntu && -n "${UBUNTU_CODENAME:-}" ]]; then docker_codename="$UBUNTU_CODENAME"; fi
+    [[ -n "$docker_codename" ]] || fail "could not determine distribution codename."
     install -d -m 0755 /etc/apt/keyrings
     curl -fsSL "https://download.docker.com/linux/${docker_distribution}/gpg" -o /etc/apt/keyrings/docker.asc
     chmod a+r /etc/apt/keyrings/docker.asc
@@ -708,269 +732,107 @@ install_prerequisites() {
     load_supported_os
     export DEBIAN_FRONTEND=noninteractive
     apt-get update
-    apt-get install --yes ca-certificates curl git openssh-client openssl iproute2
-
+    apt-get install --yes ca-certificates curl git openssh-client openssl iproute2 python3
     if ! command -v docker >/dev/null 2>&1; then
-        log "Installing Docker Engine and the Compose plugin from Docker's official repository..."
-        local conflicting=() package
-        for package in docker.io docker-compose docker-compose-v2 podman-docker containerd runc; do
-            if dpkg-query --show --showformat='${Status}' "$package" 2>/dev/null | grep -q 'install ok installed'; then
-                conflicting+=("$package")
-            fi
-        done
-        if ((${#conflicting[@]})); then
-            apt-get remove --yes "${conflicting[@]}"
-        fi
         configure_docker_repository
         apt-get update
         apt-get install --yes docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
     elif ! docker compose version >/dev/null 2>&1; then
-        log "Installing the Docker Compose plugin from Docker's official repository..."
         configure_docker_repository
         apt-get update
         apt-get install --yes docker-compose-plugin
-    else
-        log "Docker Engine and the Compose plugin are already installed."
     fi
-
-    if command -v systemctl >/dev/null 2>&1; then
-        systemctl enable --now docker
-    fi
-    docker info >/dev/null 2>&1 || fail "Docker is installed but its daemon is unavailable."
-    docker compose version >/dev/null 2>&1 || fail "the Docker Compose plugin is unavailable."
-}
-
-read_env_value_from() {
-    local file="$1" key="$2"
-    [[ -f "$file" ]] || return 0
-    awk -v key="$key" '
-        $0 ~ "^[[:space:]]*" key "=" {
-            sub("^[[:space:]]*" key "=", "")
-            sub("\\r$", "")
-            value=$0
-        }
-        END { print value }
-    ' "$file"
+    if command -v systemctl >/dev/null 2>&1; then systemctl enable --now docker; fi
+    docker info >/dev/null 2>&1 || fail "Docker daemon is unavailable."
+    docker compose version >/dev/null 2>&1 || fail "Docker Compose plugin is unavailable."
 }
 
 set_env_value() {
-    local key="$1" value="$2" temporary
+    local file="$1" key="$2" value="$3" temporary
     [[ "$value" != *$'\n'* && "$value" != *$'\r'* ]] || fail "environment value for $key contains a newline."
-    temporary="$(mktemp "${ENV_FILE}.tmp.XXXXXX")"
-    awk -v key="$key" '
-        $0 ~ "^[[:space:]]*" key "=" { next }
-        { print }
-    ' "$ENV_FILE" >"$temporary"
+    temporary="$(mktemp "${file}.tmp.XXXXXX")"
+    awk -v key="$key" '$0 ~ "^[[:space:]]*" key "=" { next } { print }' "$file" >"$temporary"
     printf '%s=%s\n' "$key" "$value" >>"$temporary"
     chmod 0600 "$temporary"
-    mv -f "$temporary" "$ENV_FILE"
+    mv -f -- "$temporary" "$file"
 }
 
 ensure_env_value() {
-    local key="$1" default_value="$2" existing
-    existing="$(read_env_value_from "$ENV_FILE" "$key")"
-    if [[ -z "$existing" ]]; then
-        set_env_value "$key" "$default_value"
+    local file="$1" key="$2" value="$3"
+    [[ -n "$(read_env_value_from "$file" "$key")" ]] || set_env_value "$file" "$key" "$value"
+}
+
+backup_environment() {
+    local file="$1" backup
+    [[ -f "$file" ]] || return 0
+    install -d -m 0700 "$BACKUP_PATH"
+    backup="$BACKUP_PATH/$(basename "$file").$(date -u +%Y-%m-%d_%H%M%S).bak"
+    cp -p -- "$file" "$backup"
+    chmod 0600 "$backup"
+    log "Environment backed up: $backup"
+}
+
+prepare_dev_environment() {
+    if [[ ! -f "$DEV_ENV_FILE" ]]; then
+        install -m 0600 "$APP_DIR/.env.example" "$DEV_ENV_FILE"
+        log "Created development environment from .env.example: $DEV_ENV_FILE"
+    else
+        chmod 0600 "$DEV_ENV_FILE"
+    fi
+    ensure_env_value "$DEV_ENV_FILE" TUVTK_DATA_DIR "/var/lib/${PROJECT_NAME}-dev"
+    ensure_env_value "$DEV_ENV_FILE" TUVTK_IMAGE_TAG local
+    ensure_env_value "$DEV_ENV_FILE" TUVTK_PUBLIC_HOST localhost
+    set_env_value "$DEV_ENV_FILE" TUVTK_HTTP_PORT "$DEV_PORT"
+    ensure_env_value "$DEV_ENV_FILE" POSTGRES_DB platforma_tuvtk
+    ensure_env_value "$DEV_ENV_FILE" POSTGRES_USER postgres
+    ensure_env_value "$DEV_ENV_FILE" POSTGRES_PASSWORD "$(openssl rand -hex 32)"
+    ensure_env_value "$DEV_ENV_FILE" DJANGO_SECRET_KEY "$(openssl rand -hex 48)"
+    ensure_env_value "$DEV_ENV_FILE" DJANGO_ALLOWED_HOSTS "127.0.0.1,localhost,[::1]"
+    set_env_value "$DEV_ENV_FILE" DJANGO_CSRF_TRUSTED_ORIGINS "http://127.0.0.1:${DEV_PORT},http://localhost:${DEV_PORT}"
+    chmod 0600 "$DEV_ENV_FILE"
+    if [[ -n "${SUDO_UID:-}" && -n "${SUDO_GID:-}" ]]; then
+        chown "$SUDO_UID:$SUDO_GID" "$DEV_ENV_FILE"
     fi
 }
 
-backup_existing_environment() {
-    [[ -f "$ENV_FILE" ]] || return 0
-    install -d -m 0700 "$BACKUP_PATH"
-    local backup_file="$BACKUP_PATH/tuvtk.env.$(date -u +%Y%m%dT%H%M%SZ).bak"
-    cp -p -- "$ENV_FILE" "$backup_file"
-    chmod 0600 "$backup_file"
-    log "Existing environment backed up to $backup_file"
-}
-
-write_environment() {
-    local env_dir csrf_origin
-    env_dir="$(dirname "$ENV_FILE")"
-    install -d -m 0700 "$env_dir"
-    if [[ -f "$ENV_FILE" ]]; then
-        backup_existing_environment
-        chmod 0600 "$ENV_FILE"
+prepare_prod_environment() {
+    local csrf_origin="http://$DOMAIN"
+    if [[ "$HTTP_PORT" != 80 ]]; then csrf_origin="${csrf_origin}:$HTTP_PORT"; fi
+    install -d -m 0700 "$(dirname "$PROD_ENV_FILE")"
+    if [[ -f "$PROD_ENV_FILE" ]]; then
+        backup_environment "$PROD_ENV_FILE"
     else
         umask 077
-        : >"$ENV_FILE"
+        : >"$PROD_ENV_FILE"
     fi
-
-    csrf_origin="http://$DOMAIN"
-    if [[ "$HTTP_PORT" != 80 ]]; then
-        csrf_origin="${csrf_origin}:$HTTP_PORT"
-    fi
-    ensure_env_value TUVTK_DATA_DIR "$DATA_DIR"
-    ensure_env_value TUVTK_IMAGE_TAG local
-    set_env_value TUVTK_PUBLIC_HOST "$DOMAIN"
-    set_env_value TUVTK_HTTP_PORT "$HTTP_PORT"
-    ensure_env_value NGINX_PROXY_TIMEOUT 900s
-    ensure_env_value DJANGO_DEPLOYMENT_MODE container
-    if [[ -n "$SECRET_KEY" ]]; then
-        set_env_value DJANGO_SECRET_KEY "$SECRET_KEY"
-    else
-        ensure_env_value DJANGO_SECRET_KEY "$(openssl rand -hex 48)"
-    fi
-    set_env_value DJANGO_DEBUG false
-    set_env_value DJANGO_ALLOWED_HOSTS "$DOMAIN"
-    set_env_value DJANGO_CSRF_TRUSTED_ORIGINS "$csrf_origin"
-    set_env_value DJANGO_TRUST_PROXY_HEADERS true
-    set_env_value DJANGO_USE_X_FORWARDED_HOST true
-    set_env_value DJANGO_SECURE_SSL_REDIRECT false
-    set_env_value DJANGO_SESSION_COOKIE_SECURE false
-    set_env_value DJANGO_CSRF_COOKIE_SECURE false
-    if [[ -n "$DB_NAME" ]]; then set_env_value POSTGRES_DB "$DB_NAME"; else ensure_env_value POSTGRES_DB platforma_tuvtk; fi
-    if [[ -n "$DB_USER" ]]; then set_env_value POSTGRES_USER "$DB_USER"; else ensure_env_value POSTGRES_USER tuvtk; fi
-    if [[ -n "$DB_PASSWORD" ]]; then set_env_value POSTGRES_PASSWORD "$DB_PASSWORD"; else ensure_env_value POSTGRES_PASSWORD "$(openssl rand -hex 32)"; fi
-    set_env_value POSTGRES_HOST db
-    set_env_value POSTGRES_PORT 5432
-    ensure_env_value POSTGRES_CONN_MAX_AGE 60
-    ensure_env_value POSTGRES_CONN_HEALTH_CHECKS true
-    ensure_env_value GUNICORN_WORKERS 2
-    ensure_env_value GUNICORN_TIMEOUT 900
-    chmod 0600 "$ENV_FILE"
-}
-
-validate_domain() {
-    [[ -n "$DOMAIN" ]] || fail "a domain or IPv4 address is required."
-    [[ ${#DOMAIN} -le 253 ]] || fail "domain/public host is too long."
-    [[ "$DOMAIN" =~ ^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$ ]] || fail "invalid domain or IPv4 address: $DOMAIN"
-    [[ "$DOMAIN" != *".."* ]] || fail "invalid domain or IPv4 address: $DOMAIN"
-}
-
-detect_public_ip() {
-    local detected
-    detected="$(curl -4fsS --max-time 10 https://api.ipify.org || true)"
-    [[ "$detected" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] || fail "unable to detect a public IPv4 address."
-    printf '%s' "$detected"
-}
-
-detect_private_ip() {
-    local detected
-    detected="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i=1; i<=NF; i++) if ($i == "src") {print $(i+1); exit}}')"
-    [[ "$detected" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] || fail "unable to detect a private IPv4 address."
-    printf '%s' "$detected"
-}
-
-resolve_domain() {
-    [[ "$PUBLIC_IP" == false || "$PRIVATE_IP" == false ]] || fail "--public-ip and --private-ip cannot be combined."
-    if [[ -z "$DOMAIN" && "$PUBLIC_IP" == true ]]; then
-        DOMAIN="$(detect_public_ip)"
-    elif [[ -z "$DOMAIN" && "$PRIVATE_IP" == true ]]; then
-        DOMAIN="$(detect_private_ip)"
-    elif [[ -z "$DOMAIN" && -f "$ENV_FILE" ]]; then
-        DOMAIN="$(read_env_value_from "$ENV_FILE" TUVTK_PUBLIC_HOST)"
-    fi
-
-    if [[ -z "$DOMAIN" && "$YES" == false ]]; then
-        [[ -t 0 ]] || fail "no domain/public host was supplied and input is not interactive."
-        read -r -p "Public domain or IPv4 address: " DOMAIN
-    fi
-    [[ -n "$DOMAIN" ]] || fail "--yes requires --domain, --public-ip, --private-ip, or an existing TUVTK_PUBLIC_HOST."
-    validate_domain
-}
-
-confirm_full_install() {
-    [[ "$YES" == true ]] && return 0
-    [[ -t 0 ]] || fail "confirmation is required; rerun interactively or pass --yes."
-    local answer
-    printf 'Install/update TUVTK in %s for http://%s:%s? [y/N] ' "$APP_DIR" "$DOMAIN" "$HTTP_PORT"
-    read -r answer
-    [[ "$answer" == y || "$answer" == Y || "$answer" == yes || "$answer" == YES ]] || fail "installation cancelled."
-}
-
-configure_ssh() {
-    [[ -n "$SSH_KEY" ]] || return 0
-    [[ -s /etc/ssh/ssh_known_hosts ]] || fail "/etc/ssh/ssh_known_hosts must contain the repository host key."
-    local escaped
-    printf -v escaped '%q' "$SSH_KEY"
-    export GIT_SSH_COMMAND="ssh -i ${escaped} -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/etc/ssh/ssh_known_hosts"
-}
-
-resolve_repository_url() {
-    if [[ -z "$REPO_URL" && -d "$APP_DIR/.git" ]]; then
-        REPO_URL="$(git -C "$APP_DIR" remote get-url origin 2>/dev/null || true)"
-    fi
-    [[ -n "$REPO_URL" ]] || fail "--repo-url is required when the application directory is not an existing Git checkout with an origin remote."
-}
-
-create_deployment_backup() {
-    [[ -e "$APP_DIR" || -f "$ENV_FILE" ]] || return 0
-    install -d -m 0700 "$BACKUP_PATH"
-    local timestamp work archive relative
-    timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
-    work="$(mktemp -d "${TMPDIR:-/tmp}/tuvtk-installer-backup.XXXXXX")"
-    archive="$BACKUP_PATH/tuvtk-deployment-${timestamp}.tar.gz"
-    mkdir -p "$work/env" "$work/app"
-    if [[ -f "$ENV_FILE" ]]; then
-        cp -p -- "$ENV_FILE" "$work/env/tuvtk.env"
-    fi
-    for relative in compose.yaml Dockerfile bin/tuvtk docker/nginx.conf.template docker/start-web.sh; do
-        if [[ -f "$APP_DIR/$relative" ]]; then
-            mkdir -p "$work/app/$(dirname "$relative")"
-            cp -p -- "$APP_DIR/$relative" "$work/app/$relative"
-        fi
-    done
-    if [[ -f "$COMPOSE_FILE" && "$COMPOSE_FILE" != "$APP_DIR/compose.yaml" ]]; then
-        cp -p -- "$COMPOSE_FILE" "$work/app/compose.yaml"
-    fi
-    printf 'format=tuvtk-installer-deployment-v1\ncreated_utc=%s\napp_dir=%s\nenv_file=%s\n' \
-        "$timestamp" "$APP_DIR" "$ENV_FILE" >"$work/manifest"
-    tar -C "$work" -czf "$archive" .
-    rm -rf -- "$work"
-    chmod 0600 "$archive"
-    LAST_BACKUP="$archive"
-    log "Deployment backup created: $archive"
-    log "Database and media are excluded. For a full operational backup use: tuvtk backup $BACKUP_PATH"
-}
-
-ensure_clean_is_safe() {
-    [[ -d "$APP_DIR/.git" ]] || fail "--clean requires an existing Git checkout; refusing ambiguous deletion."
-    local changed path
-    changed="$(git -C "$APP_DIR" status --porcelain --untracked-files=no)"
-    while IFS= read -r path; do
-        [[ -n "$path" ]] || continue
-        path="${path:3}"
-        case "$path" in
-            compose.yaml|Dockerfile|bin/tuvtk|docker/*) ;;
-            *) fail "--clean found tracked changes outside deployment files ($path); backup was created, but cleanup was refused." ;;
-        esac
-    done <<<"$changed"
-}
-
-checkout_source() {
-    resolve_repository_url
-    configure_ssh
-    install -d -m 0755 "$(dirname "$APP_DIR")"
-
-    if [[ ! -d "$APP_DIR/.git" ]]; then
-        if [[ -e "$APP_DIR" && -n "$(find "$APP_DIR" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]]; then
-            fail "application directory exists and is not an empty Git checkout: $APP_DIR"
-        fi
-        if [[ -d "$APP_DIR" ]]; then rmdir "$APP_DIR"; fi
-        log "Cloning $REPO_URL..."
-        git clone --no-checkout -- "$REPO_URL" "$APP_DIR"
-    else
-        local existing_remote
-        existing_remote="$(git -C "$APP_DIR" remote get-url origin)"
-        [[ "$existing_remote" == "$REPO_URL" ]] || fail "existing origin '$existing_remote' does not match '$REPO_URL'."
-        if [[ "$CLEAN" == false && -n "$(git -C "$APP_DIR" status --porcelain --untracked-files=normal)" ]]; then
-            fail "existing checkout has local changes; refusing to overwrite them."
-        fi
-    fi
-
-    log "Fetching $REPO_BRANCH..."
-    git -C "$APP_DIR" fetch --force --prune --tags origin "$REPO_BRANCH"
-    if [[ "$CLEAN" == true ]]; then
-        ensure_clean_is_safe
-        rm -rf -- "$APP_DIR/Dockerfile" "$APP_DIR/compose.yaml" "$APP_DIR/docker" "$APP_DIR/bin/tuvtk"
-    fi
-    git -C "$APP_DIR" checkout --detach --force FETCH_HEAD
-    [[ -f "$COMPOSE_FILE" && -f "$APP_DIR/Dockerfile" && -f "$APP_DIR/bin/tuvtk" ]] \
-        || fail "selected revision is missing compose.yaml, Dockerfile, or bin/tuvtk."
+    ensure_env_value "$PROD_ENV_FILE" TUVTK_IMAGE_TAG local
+    set_env_value "$PROD_ENV_FILE" TUVTK_DATA_DIR "$DATA_DIR"
+    set_env_value "$PROD_ENV_FILE" TUVTK_PUBLIC_HOST "$DOMAIN"
+    set_env_value "$PROD_ENV_FILE" TUVTK_HTTP_PORT "$HTTP_PORT"
+    ensure_env_value "$PROD_ENV_FILE" NGINX_PROXY_TIMEOUT 900s
+    if [[ -n "$SECRET_KEY" ]]; then set_env_value "$PROD_ENV_FILE" DJANGO_SECRET_KEY "$SECRET_KEY"; else ensure_env_value "$PROD_ENV_FILE" DJANGO_SECRET_KEY "$(openssl rand -hex 48)"; fi
+    set_env_value "$PROD_ENV_FILE" DJANGO_DEPLOYMENT_MODE container
+    set_env_value "$PROD_ENV_FILE" DJANGO_DEBUG false
+    set_env_value "$PROD_ENV_FILE" DJANGO_ALLOWED_HOSTS "$DOMAIN"
+    set_env_value "$PROD_ENV_FILE" DJANGO_CSRF_TRUSTED_ORIGINS "$csrf_origin"
+    set_env_value "$PROD_ENV_FILE" DJANGO_TRUST_PROXY_HEADERS true
+    set_env_value "$PROD_ENV_FILE" DJANGO_USE_X_FORWARDED_HOST true
+    set_env_value "$PROD_ENV_FILE" DJANGO_SECURE_SSL_REDIRECT false
+    set_env_value "$PROD_ENV_FILE" DJANGO_SESSION_COOKIE_SECURE false
+    set_env_value "$PROD_ENV_FILE" DJANGO_CSRF_COOKIE_SECURE false
+    if [[ -n "$DB_NAME" ]]; then set_env_value "$PROD_ENV_FILE" POSTGRES_DB "$DB_NAME"; else ensure_env_value "$PROD_ENV_FILE" POSTGRES_DB platforma_tuvtk; fi
+    if [[ -n "$DB_USER" ]]; then set_env_value "$PROD_ENV_FILE" POSTGRES_USER "$DB_USER"; else ensure_env_value "$PROD_ENV_FILE" POSTGRES_USER tuvtk; fi
+    if [[ -n "$DB_PASSWORD" ]]; then set_env_value "$PROD_ENV_FILE" POSTGRES_PASSWORD "$DB_PASSWORD"; else ensure_env_value "$PROD_ENV_FILE" POSTGRES_PASSWORD "$(openssl rand -hex 32)"; fi
+    set_env_value "$PROD_ENV_FILE" POSTGRES_HOST db
+    set_env_value "$PROD_ENV_FILE" POSTGRES_PORT 5432
+    ensure_env_value "$PROD_ENV_FILE" POSTGRES_CONN_MAX_AGE 60
+    ensure_env_value "$PROD_ENV_FILE" POSTGRES_CONN_HEALTH_CHECKS true
+    ensure_env_value "$PROD_ENV_FILE" GUNICORN_WORKERS 2
+    ensure_env_value "$PROD_ENV_FILE" GUNICORN_TIMEOUT 900
+    chmod 0600 "$PROD_ENV_FILE"
 }
 
 prepare_data_directories() {
-    log "Preparing persistent directories under $DATA_DIR..."
     docker pull "$POSTGRES_IMAGE" >/dev/null
     local postgres_uid postgres_gid
     postgres_uid="$(docker run --rm --entrypoint sh "$POSTGRES_IMAGE" -c 'id -u postgres')"
@@ -980,207 +842,157 @@ prepare_data_directories() {
     install -d -m 0750 -o 10001 -g 10001 "$DATA_DIR/private-media"
 }
 
-install_wrapper() {
-    local source="$APP_DIR/bin/tuvtk"
-    [[ -f "$source" ]] || fail "wrapper source not found: $source"
-    chmod 0755 "$source" || fail "unable to make wrapper executable: $source"
-    if [[ ! -w "$(dirname "$WRAPPER_SYSTEM_PATH")" && "$EUID" -ne 0 ]]; then
-        fail "writing $WRAPPER_SYSTEM_PATH requires root; rerun through sudo."
-    fi
-    local launcher
-    launcher="$(mktemp "${TMPDIR:-/tmp}/tuvtk-launcher.XXXXXX")"
+write_command_launchers() {
+    local command_path="$APP_DIR/command.sh" command_tmp global_tmp
+    command_tmp="$(mktemp "${TMPDIR:-/tmp}/tuvtk-command.XXXXXX")"
     {
-        printf '#!/usr/bin/env bash\n'
+        printf '#!/usr/bin/env bash\nset -Eeuo pipefail\n'
         printf 'export TUVTK_APP_DIR=%q\n' "$APP_DIR"
         printf 'export TUVTK_ENV_FILE=%q\n' "$ENV_FILE"
+        printf 'export TUVTK_PROD_ENV_FILE=%q\n' "$PROD_ENV_FILE"
+        printf 'export TUVTK_DEV_ENV_FILE=%q\n' "$DEV_ENV_FILE"
         printf 'export TUVTK_COMPOSE_FILE=%q\n' "$COMPOSE_FILE"
+        printf 'export TUVTK_DEV_COMPOSE_FILE=%q\n' "$DEV_COMPOSE_FILE"
         printf 'export TUVTK_PROJECT_NAME=%q\n' "$PROJECT_NAME"
-        printf 'exec %q "$@"\n' "$source"
-    } >"$launcher"
-    local staged_system_path="${WRAPPER_SYSTEM_PATH}.tmp.$$"
-    install -m 0755 "$launcher" "$staged_system_path" || {
-        rm -f -- "$launcher"
-        fail "unable to install wrapper launcher: $WRAPPER_SYSTEM_PATH"
-    }
-    mv -f -- "$staged_system_path" "$WRAPPER_SYSTEM_PATH" || {
-        rm -f -- "$launcher" "$staged_system_path"
-        fail "unable to activate wrapper launcher: $WRAPPER_SYSTEM_PATH"
-    }
-    rm -f -- "$launcher"
-    [[ -x "$WRAPPER_SYSTEM_PATH" ]] || fail "installed wrapper is not executable: $WRAPPER_SYSTEM_PATH"
+        printf 'export TUVTK_DEFAULT_MODE=%q\n' "$DEFAULT_MODE"
+        printf 'export TUVTK_DEV_PORT=%q\n' "$DEV_PORT"
+        printf 'export TUVTK_BACKUP_DIR=%q\n' "$BACKUP_PATH"
+        printf 'exec %q "$@"\n' "$APP_DIR/bin/tuvtk"
+    } >"$command_tmp"
+    install -m 0755 "$command_tmp" "${command_path}.tmp.$$"
+    mv -f -- "${command_path}.tmp.$$" "$command_path"
+    rm -f -- "$command_tmp"
+
+    global_tmp="$(mktemp "${TMPDIR:-/tmp}/tuvtk-global.XXXXXX")"
+    {
+        printf '#!/usr/bin/env bash\nset -Eeuo pipefail\n'
+        printf 'exec %q "$@"\n' "$command_path"
+    } >"$global_tmp"
+    install -m 0755 "$global_tmp" "${SYSTEM_COMMAND_PATH}.tmp.$$"
+    mv -f -- "${SYSTEM_COMMAND_PATH}.tmp.$$" "$SYSTEM_COMMAND_PATH"
+    rm -f -- "$global_tmp"
+    chmod 0755 "$APP_DIR/bin/tuvtk"
 }
 
-compose() {
-    docker compose --env-file "$ENV_FILE" --project-directory "$APP_DIR" \
-        -f "$COMPOSE_FILE" -p "$PROJECT_NAME" "$@"
-}
-
-port_is_listening() {
-    local port="$1"
-    ss -H -ltn "sport = :$port" 2>/dev/null | grep -q .
-}
-
-current_nginx_is_running() {
-    [[ -f "$ENV_FILE" && -f "$COMPOSE_FILE" ]] || return 1
-    compose ps --status running --services 2>/dev/null | grep -qx nginx
-}
-
-check_public_port() {
-    local port="$1"
-    if port_is_listening "$port"; then
-        if current_nginx_is_running; then
-            log "Port $port is currently used by this TUVTK deployment; continuing with update."
-        else
-            fail "public port $port is already in use. Stop the conflicting service before installation."
-        fi
+maybe_write_command_launchers() {
+    if [[ "${TUVTK_SKIP_COMMAND:-false}" == true ]]; then
+        log "Skipped legacy command.sh generation; install.sh remains the command entry point."
+        return 0
     fi
+    write_command_launchers
 }
 
-deploy_application() {
-    log "Validating Compose configuration..."
-    compose config --quiet
-    log "Building application images..."
-    compose build --pull
-    log "Starting PostgreSQL and waiting for readiness..."
-    compose up -d --wait --wait-timeout 180 db
-    log "Applying migrations and collecting static files..."
-    compose run --rm init
-    log "Starting Gunicorn and Nginx..."
-    compose up -d --wait --wait-timeout 180 --remove-orphans web nginx
-    log "Running Django system checks..."
-    compose exec -T web python manage.py check
+confirm_clean() {
+    [[ "$YES" == true ]] && return 0
+    [[ -t 0 ]] || fail "--clean requires interactive confirmation or --yes."
+    local answer
+    printf 'Remove only generated caches under %s? [y/N] ' "$APP_DIR"
+    read -r answer
+    [[ "$answer" == y || "$answer" == Y || "$answer" == yes || "$answer" == YES ]] || fail "clean cancelled."
 }
 
-admin_follow_up() {
-    local supplied=0
-    [[ -n "$ADMIN_USERNAME" ]] && ((supplied+=1))
-    [[ -n "$ADMIN_EMAIL" ]] && ((supplied+=1))
-    [[ -n "$ADMIN_PASSWORD" ]] && ((supplied+=1))
-    if ((supplied > 0 && supplied < 3)); then
-        fail "admin creation requires --admin-username, --admin-email, and --admin-password together."
-    fi
-    if ((supplied == 3)); then
-        warn "Non-interactive superuser creation is intentionally deferred; the supplied admin credentials were not used."
-        warn "Create the administrator with: tuvtk django createsuperuser"
-    fi
+confirm_install() {
+    [[ "$YES" == true ]] && return 0
+    [[ -t 0 ]] || fail "confirmation is required; rerun interactively or pass --yes."
+    local answer
+    printf 'Prepare TUVTK %s mode in %s without starting services? [y/N] ' "$ACTION" "$APP_DIR"
+    read -r answer
+    [[ "$answer" == y || "$answer" == Y || "$answer" == yes || "$answer" == YES ]] \
+        || fail "installation cancelled."
 }
 
-print_command_summary() {
+print_dry_run() {
     cat <<EOF
-
-TUVTK command wrapper installed.
-
-Wrapper source: $APP_DIR/bin/tuvtk
-System command: $WRAPPER_SYSTEM_PATH
-
-Examples:
-  tuvtk status
-  tuvtk logs
-  tuvtk check
-  tuvtk test apps.dashboard
+[tuvtk] Dry run; no files, packages, or services will be changed.
+[tuvtk] Action: $ACTION
+[tuvtk] Application: $APP_DIR
+[tuvtk] Default mode: $DEFAULT_MODE
+[tuvtk] Production environment: $PROD_ENV_FILE
+[tuvtk] Development environment: $DEV_ENV_FILE
+[tuvtk] Installed command: $APP_DIR/command.sh
+[tuvtk] Global shortcut: $SYSTEM_COMMAND_PATH
 EOF
+    case "$ACTION" in
+        dev) log "Would install prerequisites, create/update missing dev config, and install launchers. No stack would start." ;;
+        production) log "Would install prerequisites, prepare production config/data directories, and install launchers. No stack would start." ;;
+        environment) log "Would install or verify Debian/Ubuntu, Docker Engine, and Docker Compose prerequisites only." ;;
+        command) log "Would update command launchers only." ;;
+        clean) log "Would remove safe generated caches only; database, media, env, source, and .git would remain." ;;
+    esac
 }
 
-print_environment_summary() {
-    cat <<'EOF'
+print_summary() {
+    if [[ "${TUVTK_SKIP_COMMAND:-false}" == true ]]; then
+        cat <<EOF
 
-TUVTK server prerequisites are ready.
+TUVTK $ACTION preparation completed.
 
-Docker Engine and the Docker Compose plugin are available.
-No application files were cloned or updated, and no services were started.
+Application:  $APP_DIR
+Default mode: $DEFAULT_MODE
+Environment:  $ENV_FILE
+
+No application stack was started.
+Next command: $APP_DIR/install.sh $([[ "$DEFAULT_MODE" == dev ]] && printf dev || printf start)
 EOF
-}
-
-print_install_summary() {
-    local public_url="http://$DOMAIN"
-    if [[ "$HTTP_PORT" != 80 ]]; then
-        public_url="${public_url}:$HTTP_PORT"
+        return 0
     fi
     cat <<EOF
 
-TUVTK installation completed.
+TUVTK $ACTION preparation completed.
 
-URL:             $public_url
-Mode:            HTTP
-Application:     $APP_DIR
-Environment:     $ENV_FILE
-Compose file:    $COMPOSE_FILE
-Project name:    $PROJECT_NAME
-Command wrapper: $WRAPPER_SYSTEM_PATH
-Backup path:     $BACKUP_PATH
-${LAST_BACKUP:+Deployment backup: $LAST_BACKUP}
+Application:      $APP_DIR
+Default mode:     $DEFAULT_MODE
+Environment:      $ENV_FILE
+Installed command: $APP_DIR/command.sh
+Global shortcut:   $SYSTEM_COMMAND_PATH -> $APP_DIR/command.sh
 
-Useful commands:
-  tuvtk status
-  tuvtk logs
-  tuvtk check
-  tuvtk test apps.dashboard
-  tuvtk restart
-  tuvtk backup $BACKUP_PATH
-
-WARNING: HTTP does not encrypt credentials, cookies, or application data.
-Do not use this mode for sensitive production traffic until HTTPS support is added.
+No application stack was started.
+Next command: sudo $APP_DIR/command.sh $([[ "$DEFAULT_MODE" == dev ]] && printf dev || printf start)
 EOF
 }
 
-run_environment_action() {
+run_action() {
+    if [[ "$DRY_RUN" == true ]]; then print_dry_run; return 0; fi
     require_root
-    install -d -m 0755 "$APP_DIR"
-    install -d -m 0700 "$(dirname "$ENV_FILE")"
-    install_prerequisites
-    print_environment_summary
-}
-
-run_command_action() {
-    install_wrapper
-    print_command_summary
-}
-
-run_network_action() {
-    require_root
-    log "compose.yaml does not declare an external Docker network; no network creation is required."
-}
-
-run_full_install() {
-    validate_ssl_request
-    resolve_domain
-    confirm_full_install
-    require_root
-    admin_follow_up
-    install_prerequisites
-    check_public_port "$HTTP_PORT"
-    create_deployment_backup
-    checkout_source
-    write_environment
-    prepare_data_directories
-    install_wrapper
-    deploy_application
-    print_install_summary
+    case "$ACTION" in
+        environment)
+            install_prerequisites
+            log "Server prerequisites are ready. No application files or services were changed."
+            ;;
+        command)
+            write_command_launchers
+            print_summary
+            ;;
+        dev)
+            confirm_install
+            install_prerequisites
+            prepare_dev_environment
+            maybe_write_command_launchers
+            print_summary
+            ;;
+        production)
+            confirm_install
+            install_prerequisites
+            prepare_prod_environment
+            prepare_data_directories
+            maybe_write_command_launchers
+            print_summary
+            ;;
+        clean)
+            confirm_clean
+            TUVTK_APP_DIR="$APP_DIR" "$APP_DIR/bin/tuvtk" clean
+            log "Database, media, static data, environments, application source, and .git were not deleted."
+            ;;
+        *) fail "internal error: unsupported action $ACTION" ;;
+    esac
 }
 
 main() {
     parse_arguments "$@"
-    if [[ "$ACTION" == help ]]; then
-        usage
-        return 0
-    fi
-    validate_common_options
-    case "$ACTION" in
-        environment)
-            [[ "$CLEAN" == false ]] || fail "--clean cannot be combined with --environment."
-            run_environment_action
-            ;;
-        command)
-            [[ "$CLEAN" == false ]] || fail "--clean cannot be combined with --command."
-            run_command_action
-            ;;
-        network)
-            [[ "$CLEAN" == false ]] || fail "--clean cannot be combined with --network."
-            run_network_action
-            ;;
-        install) run_full_install ;;
-        *) fail "internal error: unsupported action $ACTION" ;;
-    esac
+    if [[ "$ACTION" == help ]]; then usage; return 0; fi
+    resolve_paths_and_mode
+    validate_options
+    run_action
 }
 
 main "$@"
@@ -3463,227 +3275,164 @@ Size: 155 B
 
 ## `README.md`
 
-Size: 8.8 KB
+Size: 6.3 KB
 
 ````markdown
 # Platforma TUVTK
 
-Platforma TUVTK is a server-rendered Django application for TUVTK operational tools. It uses PostgreSQL, Tailwind CSS, daisyUI, Gunicorn, and Nginx.
+Platforma TUVTK is a server-rendered Django application using PostgreSQL, Tailwind CSS, daisyUI, Gunicorn, and Nginx. It has one command vocabulary across Windows development and Debian 12 development/production.
 
-## Primary workflow
+## Start From a Clone
 
-Linux and Docker are the primary development and deployment environment. Normal operations should use the permanent wrapper:
+Debian/Linux:
 
 ```bash
-tuvtk status
+git clone https://github.com/OWNER/REPOSITORY.git tuvtk
+cd tuvtk
+./install.sh dev
 ```
 
-From a repository checkout, use the equivalent local path:
+Windows Command Prompt, without administrator rights:
 
-```bash
-./bin/tuvtk status
+```bat
+git clone https://github.com/OWNER/REPOSITORY.git tuvtk
+cd tuvtk
+install.cmd dev
 ```
 
-The wrapper supplies the environment file, project directory, Compose files, and project name. Long raw `docker compose` commands are not needed for normal operation.
+PowerShell may use `.\install.ps1 dev`. Git Bash may use `./install.sh dev`; it delegates to PowerShell. The first `dev` run prepares dependencies, initializes PostgreSQL, installs Python and frontend packages, applies migrations, builds CSS, and starts development at `http://127.0.0.1:8000`.
 
-## Server paths
+Choose another development port with `dev --port=8001`.
 
-| Purpose | Default path |
-| --- | --- |
-| Application checkout | `/opt/tuvtk/app` |
-| Environment and secrets | `/etc/tuvtk/tuvtk.env` |
-| System command | `/usr/local/bin/tuvtk` |
-| Backups | `/opt/tuvtk-backups` |
-| Production Compose | `/opt/tuvtk/app/compose.yaml` |
-| Development override | `/opt/tuvtk/app/compose.dev.yaml` |
+## Platform Backends
 
-Paths can be overridden with `TUVTK_APP_DIR`, `TUVTK_ENV_FILE`, `TUVTK_COMPOSE_FILE`, `TUVTK_DEV_COMPOSE_FILE`, and `TUVTK_PROJECT_NAME`.
+On Windows, the wrapper uses user-space resources and does not register services or require administrator access:
 
-## Fresh installation
+- Python 3.12+ is installed privately when no compatible interpreter exists;
+- `.venv` contains project Python packages;
+- pinned Node 22 binaries are checksum-verified and downloaded under `.tuvtk/runtime` when unavailable;
+- pinned PostgreSQL 17 binaries are checksum-verified and downloaded under `.postgresql`, with data kept in `.postgresql/data`;
+- Django and Tailwind run as background processes with PID and log files under `.tuvtk`.
 
-On a supported Debian or Ubuntu server, run an HTTP installation as root:
+PostgreSQL listens only on `127.0.0.1` and uses password authentication. Windows supports development, tests, SQL, backup, and restore operations. Production deployment is intentionally refused on Windows.
+
+On Debian 12, the shell launcher bootstraps Python 3 when necessary, then installs/verifies Docker Engine and the Compose plugin through the existing installer. Development uses isolated Compose volumes. Production keeps configuration in `/etc/tuvtk/tuvtk.env` and persistent data under `/var/lib/tuvtk` by default.
+
+## Commands
+
+Use `./install.sh` below on Linux. Replace it with `install.cmd` on Windows.
 
 ```bash
-sudo bash install.sh --yes \
-  --repo-url=https://github.com/OWNER/REPOSITORY.git \
-  --repo-branch=main \
-  --domain=example.com
+./install.sh help
+./install.sh doctor
+./install.sh status
+./install.sh logs web
+./install.sh restart
+./install.sh stop
+
+./install.sh django createsuperuser
+./install.sh check
+./install.sh test apps.dashboard
+./install.sh migrate
+./install.sh makemigrations APP
+./install.sh collectstatic
+./install.sh shell
+
+./install.sh fresh-db --yes --start
+./install.sh tailwind
+./install.sh npm run build
+./install.sh context --max-file-kb 80
 ```
 
-For an existing checkout with a configured `origin`, update and deploy with:
+`test` defaults to verbosity 0 unless a verbosity option is supplied. `setup dev` prepares dependencies without starting Django or Tailwind. On Windows, `dev` runs Django and Tailwind in the current terminal and `Ctrl+C` stops both without opening additional console windows. Use `start` for hidden background processes; their output is written under `.tuvtk/logs`.
+
+## Debian Production
+
+Deploy and start production from a clone:
 
 ```bash
-sudo bash install.sh --yes --domain=example.com
+sudo ./install.sh deploy --domain=example.com
+sudo ./install.sh status
+sudo ./install.sh logs web
 ```
 
-`--public-host` is a backward-compatible alias for `--domain`. The installer preserves existing environment values where possible, backs up configuration before overwriting it, builds the image, starts PostgreSQL, runs migrations/static collection through `init`, and starts Gunicorn and Nginx.
-
-Use `bash install.sh --help` for all path, repository, database, IP-detection, and clean-install options. Treat `--clean` as an exceptional operation: review its backup and safety behavior before using it.
-
-## Environment-only setup
-
-Prepare or verify Debian/Ubuntu prerequisites without cloning the application or starting services:
+`deploy` prepares the environment, builds the image, starts and waits for
+PostgreSQL, runs the `init` migration/static step, then starts `web` and
+`nginx`. Optional installer settings pass through the wrapper:
 
 ```bash
-sudo bash install.sh --environment
+sudo ./install.sh deploy --domain=example.com --http-port=8080 --data-dir=/var/lib/tuvtk
 ```
 
-This checks or installs the required system packages, Docker Engine, and the Docker Compose plugin.
+Production remains HTTP-only. The wrapper refuses the previous SSL compatibility flags because Compose/Nginx does not currently configure TLS.
 
-## Update command wrapper only
-
-Update `/usr/local/bin/tuvtk` for an existing installation:
+Explicit production and development commands remain available on Debian:
 
 ```bash
-sudo bash install.sh --command
+sudo ./install.sh prod-status
+sudo ./install.sh prod-start
+sudo ./install.sh prod-stop
+sudo ./install.sh dev-status
+sudo ./install.sh dev-stop
 ```
 
-This action only installs the permanent command launcher. It does not reinstall the application, rebuild images, migrate the database, or restart services.
+Legacy installer invocations such as `sudo bash install.sh --dev --yes` and `sudo bash install.sh --production --yes --domain=example.com` remain temporarily supported. They may still generate the deprecated `command.sh`; the new command workflow does not generate or use it.
 
-## Production operations
+## Backup, Restore, and SQL
+
+Unprefixed commands target the configured default mode. On Windows that mode is always development.
 
 ```bash
-tuvtk status
-tuvtk start
-tuvtk stop
-tuvtk restart
-tuvtk logs
-tuvtk logs web
-tuvtk build
-tuvtk rebuild
-tuvtk check
+./install.sh backup BACKUP_DIRECTORY
+./install.sh restore BACKUP_ARCHIVE
+./install.sh export-sql OUTPUT_PATH
+./install.sh import-sql DATABASE.sql
 ```
 
-`start` starts the production stack detached, `stop` runs Compose down without deleting persistent data, and `logs` follows all services or one named service. `check` runs `python manage.py check` in the `web` container. `rebuild` disables the image build cache and should be used deliberately.
+Restore and SQL import require confirmation unless `--yes` is supplied. Imports replace the selected database and leave application services stopped. Mode-marked production data is refused by Windows development.
 
-## Development workflow
+`fresh-db` and `dev-db-reset` reset only the development database. On Windows this recreates `.postgresql/data`; on Debian development it removes the isolated `dev-postgres` Compose volume. Media, private media, static output, and Node modules are preserved.
 
-Development combines `compose.yaml` with `compose.dev.yaml` under the `tuvtk-dev` project name:
+Debian also supports explicit `prod-*` and `dev-*` variants. Production reset remains deliberately difficult to invoke:
 
 ```bash
-tuvtk dev
-tuvtk dev-build
-tuvtk dev-logs
-tuvtk dev-logs web
+sudo ./install.sh prod-db-reset --yes-i-understand-this-deletes-production-data
 ```
 
-`dev` starts isolated development PostgreSQL, runs the existing `init` migration/static step, then starts Django `runserver` and the Tailwind watcher. Development database, media, private media, static, Bootstrap cache, and Node modules use development-specific volumes. Production Nginx is not started by these commands, and PostgreSQL is not exposed publicly.
-
-The Django development server listens on port `${TUVTK_DEV_PORT:-8000}`. For example, set `TUVTK_DEV_PORT=8080` before running `tuvtk dev` to publish port 8080.
-
-## Tailwind and npm commands
+It creates a backup first unless `--no-backup` is explicitly supplied. Development reset can also be written as:
 
 ```bash
-tuvtk tailwind
-tuvtk npm install
-tuvtk npm run build
+./install.sh fresh-db --yes --start
 ```
 
-Node/npm run in the dedicated Node 22 development service, not in the production Python runtime image. The first Tailwind start runs `npm ci` when the development dependency volume is empty. `tuvtk tailwind` starts and follows the watcher logs.
+Test backups and restores in a disposable environment before relying on them for disaster recovery.
 
-## Django management commands
+## Local State
 
-```bash
-tuvtk migrate
-tuvtk collectstatic
-tuvtk django createsuperuser
-tuvtk django <management-command> [arguments...]
-```
+These paths are generated and ignored by Git:
 
-Automated superuser creation in the installer is intentionally deferred. Use `tuvtk django createsuperuser` as the normal administrator-creation workflow.
+- `.tuvtk/`: downloaded runtime state, configuration, logs, and PIDs;
+- `.venv/`: Windows Python virtual environment;
+- `.postgresql/`: Windows PostgreSQL binaries and database cluster;
+- `.env`: Windows-native development environment;
+- `.env.dev`: Docker development environment;
+- `media/`, `private_media/`, and `staticfiles/`: local generated or uploaded data.
 
-## Testing
+Do not delete `.postgresql`, media, private media, production bind mounts, environment files, or Docker volumes unless the associated data is no longer required.
 
-Run the full suite or a focused app/test path inside Docker:
-
-```bash
-tuvtk test
-tuvtk test apps.dashboard
-tuvtk test apps.dashboard -v 1
-```
-
-The wrapper adds `-v 0` by default. If `-v`, `--verbosity`, or `--verbosity=...` is supplied, it does not add another verbosity option.
-
-## Backup and restore
+## Safe Validation
 
 ```bash
-tuvtk backup /opt/tuvtk-backups
-tuvtk restore /opt/tuvtk-backups/tuvtk-backup-<timestamp>.tar.gz
-tuvtk export-sql /opt/tuvtk-backups
-tuvtk import-sql /path/to/database.sql
-```
-
-The wrapper backup contains a plain PostgreSQL dump, environment/configuration files, a manifest, and basic deployment files. It intentionally excludes media, private media, static files, and Docker volumes. Installer backups made before `--clean` are narrower deployment backups and do not include the database.
-
-Restore is currently conservative: it validates the wrapper archive format and then refuses automated mutation until the restoration model receives dedicated operational testing. `import-sql` does mutate the active database and must be used only with an independently verified backup and an explicit recovery plan.
-
-These commands do not by themselves provide complete disaster-recovery coverage. Test backup contents and restoration procedures before relying on them.
-
-## Context generation for Codex
-
-The primary generator is `scripts/generate_codex_context.py`:
-
-```bash
-tuvtk context
-tuvtk context --verbose
-tuvtk context --max-file-kb 80
-```
-
-Thin compatibility launchers are also available:
-
-```bash
-./generate_codex_context.sh
-generate_codex_context.bat
-generate_codex_context.ps1
-```
-
-Generated navigation files include `codex-context/`, `codex-context-index.md`, and `codex-file-map.txt`. The generator excludes environment files, secrets, media, binaries, node modules, migrations, and other generated/runtime content, and redacts common secret assignments.
-
-## Dependency management
-
-Direct dependency inputs and current installation manifests are paired as follows:
-
-* `requirements.in` → `requirements.txt`
-* `requirements-dev.in` → `requirements-dev.txt`
-* `requirements-deploy.in` → `requirements-deploy.txt`
-
-The `.in` files are readable direct-dependency inputs. Pip-tools was unavailable when this structure was introduced, so the `.txt` files currently remain pinned direct manifests rather than fabricated transitive locks. When pip-tools is available in an isolated maintenance environment, compile and review real locks with:
-
-```bash
-python -m piptools compile requirements.in --output-file requirements.txt
-python -m piptools compile requirements-dev.in --output-file requirements-dev.txt
-python -m piptools compile requirements-deploy.in --output-file requirements-deploy.txt
-```
-
-Do not claim a transitive lock exists until those commands have been run and their output reviewed. Direct pins include `psycopg[binary]==3.3.4`, `python-docx==1.2.0`, and `rapidfuzz==3.14.5`.
-
-Docker images use versioned but patch-floating tags, including `python:3.12-slim-bookworm`, `node:22-bookworm-slim`, `postgres:17-bookworm`, and `nginx:1.28-alpine`. This allows upstream security/base-image patch updates. Digest pinning can be adopted later if byte-for-byte image reproducibility is required.
-
-## SSL and domain notes
-
-The current production deployment is HTTP-only. The installer accepts SSL-related options for future compatibility, but current Compose/Nginx does not implement certificate automation or an HTTPS listener. Requests using `--ssl --letsencrypt` or `--ssl --owncertificate` are safely refused before partial changes.
-
-Implement and validate HTTPS explicitly in Compose and Nginx before enabling SSL options. Do not expose credentials or sensitive production data over the current HTTP mode.
-
-## Removed legacy Windows workflow
-
-The old Windows-local virtualenv, bundled PostgreSQL, runserver, and Tailwind watcher scripts were removed. Use Docker development mode instead. Windows support is limited to thin context-generator compatibility launchers; application development and deployment remain Docker-first.
-
-## Validation and troubleshooting basics
-
-Safe local checks:
-
-```bash
+python3 -m py_compile scripts/tuvtk_cli.py
+python3 -m py_compile scripts/generate_codex_context.py
 bash -n install.sh
 bash -n bin/tuvtk
-bash -n generate_codex_context.sh
-python3 -m py_compile scripts/generate_codex_context.py
-./bin/tuvtk help
-./bin/tuvtk context --max-file-kb 80
+./install.sh help
+./install.sh context --max-file-kb 80
 git diff --check
 ```
 
-If `tuvtk` reports that Docker access requires sudo, either run it interactively where sudo can prompt or grant the operator appropriate Docker access. If a required path differs from the defaults, set the corresponding `TUVTK_*` environment variable. Use `tuvtk status` and `tuvtk logs [SERVICE]` before attempting rebuilds or restarts.
+On Windows, validate the launcher with `install.cmd help`. Do not use production lifecycle commands, builds, migrations, restore, SQL import, clean, or database reset merely as validation.
 ````
 
 ## `requirements-deploy.txt`
@@ -3786,7 +3535,7 @@ apps/planificator-main
 
 ## `.gitattributes`
 
-Size: 122 B
+Size: 167 B
 
 ```text
 *.sh text eol=lf
@@ -3794,17 +3543,20 @@ Dockerfile text eol=lf
 *.yaml text eol=lf
 *.template text eol=lf
 *.bat text eol=crlf
+*.cmd text eol=crlf
 *.ps1 text eol=crlf
+*.py text eol=lf
 ```
 
 ## `.gitignore`
 
-Size: 268 B
+Size: 296 B
 
 ```text
 # Editor and local environment
 .vscode/
 .venv/
+.tuvtk/
 
 node_modules/
 __pycache__/
@@ -3816,12 +3568,41 @@ playwright-report/
 tmp/
 db.sqlite3
 .env
+.env.dev
+command.sh
 .postgresql/
 media/
 private_media/
 staticfiles/
 theme/static/css/dist/
 repomix-output.*
+```
+
+## `.tuvtk/config.json`
+
+Size: 84 B
+
+```json
+{
+  "backend": "windows-native",
+  "default_mode": "dev",
+  "dev_port": 8000
+}
+```
+
+## `activate_venv.bat`
+
+Size: 358 B
+
+```batch
+@echo off
+setlocal
+set "ROOT=%~dp0"
+if not exist "%ROOT%.venv\Scripts\Activate.ps1" (
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%ROOT%install.ps1" setup dev
+    if errorlevel 1 exit /b %ERRORLEVEL%
+)
+powershell.exe -NoExit -ExecutionPolicy Bypass -Command "Set-Location -LiteralPath '%ROOT%'; & '%ROOT%.venv\Scripts\Activate.ps1'"
 ```
 
 ## `apps/__init__.py`
@@ -3833,20 +3614,24 @@ Size: 0 B
 
 ## `bin/tuvtk`
 
-Size: 14.6 KB
+Size: 32.0 KB
 
 ```text
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-readonly APP_DIR="${TUVTK_APP_DIR:-/opt/tuvtk/app}"
-readonly ENV_FILE="${TUVTK_ENV_FILE:-/etc/tuvtk/tuvtk.env}"
-readonly COMPOSE_FILE="${TUVTK_COMPOSE_FILE:-/opt/tuvtk/app/compose.yaml}"
+readonly APP_DIR="${TUVTK_APP_DIR:-/opt/tuvtk}"
+readonly COMPOSE_FILE="${TUVTK_COMPOSE_FILE:-$APP_DIR/compose.yaml}"
 readonly DEV_COMPOSE_FILE="${TUVTK_DEV_COMPOSE_FILE:-$APP_DIR/compose.dev.yaml}"
 readonly PROJECT_NAME="${TUVTK_PROJECT_NAME:-tuvtk}"
+readonly DEFAULT_MODE="${TUVTK_DEFAULT_MODE:-prod}"
+readonly DEV_PORT="${TUVTK_DEV_PORT:-8000}"
+readonly PROD_ENV_FILE="${TUVTK_PROD_ENV_FILE:-${TUVTK_ENV_FILE:-/etc/tuvtk/tuvtk.env}}"
+readonly DEV_ENV_FILE="${TUVTK_DEV_ENV_FILE:-$APP_DIR/.env.dev}"
+readonly DEFAULT_BACKUP_DIR="${TUVTK_BACKUP_DIR:-/opt/tuvtk-backups}"
 readonly DB_SERVICE="db"
 readonly WEB_SERVICE="web"
-readonly BACKUP_FORMAT="tuvtk-backup-v1"
+readonly BACKUP_FORMAT="tuvtk-backup-v2"
 
 DOCKER_COMMAND=()
 
@@ -3855,136 +3640,186 @@ fail() {
     exit 1
 }
 
+warn() {
+    printf 'tuvtk: WARNING: %s\n' "$*" >&2
+}
+
 usage() {
-    cat <<'EOF'
-Usage: tuvtk COMMAND [ARGS...]
+    cat <<EOF
+Usage: ./install.sh COMMAND [ARGS...]
 
-Docker lifecycle:
-  status, ps                    Show service status
-  up, start                     Start services in the background
-  down, stop                    Stop and remove service containers
-  restart                       Restart services
-  build                         Build images and start services
-  rebuild                       Rebuild without cache and start services
-  logs [SERVICE]                Follow all logs or one service's logs
+Default mode: $DEFAULT_MODE
 
-Django:
+Default-mode lifecycle:
+  status, ps                     Show service status
+  start, up                      Start the configured default stack
+  stop, down                     Stop the configured default stack
+  restart                        Restart the configured default stack
+  build                          Build and start the configured default stack
+  rebuild                        Rebuild without cache and start the default stack
+  logs [SERVICE]                 Follow logs
+
+Explicit production lifecycle:
+  prod-status                    Show production status
+  prod-start                     Start production
+  prod-stop                      Stop production
+  prod-restart                   Restart production
+  prod-build                     Build and start production
+  prod-rebuild                   Rebuild production without cache and start it
+  prod-logs [SERVICE]            Follow production logs
+
+Development:
+  dev, dev-start                 Start isolated db, Django, and Tailwind
+  dev-build                      Build and start development
+  dev-stop                       Stop development without deleting volumes
+  dev-status                     Show development status
+  dev-logs [SERVICE]             Follow development logs
+  tailwind                       Start and follow the Tailwind watcher
+  npm COMMAND...                 Run npm in the development Node service
+
+Django (uses the default mode):
   check                          Run Django system checks
   test [TARGET] [ARGS...]        Run tests; defaults to verbosity 0
   migrate [ARGS...]              Apply migrations
   makemigrations [APP] [ARGS...] Create migrations
   collectstatic                  Collect static files non-interactively
-  shell                          Open the Django shell
-  dbshell                        Open the Django database shell
-  django COMMAND [ARGS...]       Run an arbitrary manage.py command
-  exec SERVICE COMMAND [ARGS...] Run a command in a service
+  shell, dbshell                 Open a Django or database shell
+  django COMMAND [ARGS...]       Run any manage.py command
+  exec SERVICE COMMAND [ARGS...] Run a command in a default-mode service
+  prod-django COMMAND [ARGS...]  Run manage.py in production
+  dev-django COMMAND [ARGS...]   Run manage.py in development
 
-Data and maintenance:
-  backup DIRECTORY               Create a database/configuration archive
-  restore ARCHIVE                Validate a backup; restore is deferred
-  export-sql PATH                Export PostgreSQL as plain SQL
-  import-sql SQL_FILE            Import a plain SQL dump
-  context                        Generate Codex context when supported
-  clean                          Remove safe local generated caches
+Backup, restore, and SQL:
+  backup DIRECTORY               Back up the default mode
+  restore ARCHIVE [--yes]        Restore the default mode
+  export-sql PATH                Export default-mode PostgreSQL
+  import-sql FILE [--yes]        Replace the default-mode database from SQL
+  prod-backup DIRECTORY          Back up production
+  prod-restore ARCHIVE [--yes]   Restore production
+  prod-export-sql PATH           Export production SQL
+  prod-import-sql FILE [--yes]   Replace production from SQL
+  dev-backup DIRECTORY           Back up development
+  dev-restore ARCHIVE [--yes]    Restore development
+  dev-export-sql PATH            Export development SQL
+  dev-import-sql FILE [--yes]    Replace development from SQL
 
-Development:
-  dev                            Start db, Django, and Tailwind detached
-  dev-build                      Build Django and start the development stack
-  dev-logs [SERVICE]             Follow development logs
-  tailwind                       Start and follow the Tailwind watcher
-  npm COMMAND...                 Run npm in the dedicated Node service
+Database reset:
+  fresh-db [--yes] [--start]     Reset the development database only
+  dev-db-reset [--yes] [--start] Same as fresh-db
+  prod-db-reset --yes-i-understand-this-deletes-production-data
+                [--no-backup] [--backup-dir=PATH]
 
-Configuration environment variables:
-  TUVTK_APP_DIR       (default: /opt/tuvtk/app)
-  TUVTK_ENV_FILE      (default: /etc/tuvtk/tuvtk.env)
-  TUVTK_COMPOSE_FILE  (default: /opt/tuvtk/app/compose.yaml)
-  TUVTK_DEV_COMPOSE_FILE (default: APP_DIR/compose.dev.yaml)
-  TUVTK_PROJECT_NAME  (default: tuvtk)
-  TUVTK_DEV_PORT      (default: 8000)
+Maintenance:
+  context [ARGS...]              Generate Codex context
+  clean                          Remove safe local generated caches only
 
-Examples:
-  tuvtk status
-  tuvtk logs web
-  tuvtk test apps.dashboard
-  tuvtk dev
-  tuvtk dev-logs web
-  tuvtk npm run build
-  tuvtk django createsuperuser
-  tuvtk backup /var/backups/tuvtk
+Installed configuration:
+  Application:      $APP_DIR
+  Production env:  $PROD_ENV_FILE
+  Development env: $DEV_ENV_FILE
+  Production project: $PROJECT_NAME
+  Development project: ${PROJECT_NAME}-dev
+  Development port: $DEV_PORT
 EOF
 }
 
-require_app_dir() {
-    [[ -d "$APP_DIR" ]] || fail "application directory not found: $APP_DIR (set TUVTK_APP_DIR to override)"
+validate_mode() {
+    case "$1" in
+        prod|dev) ;;
+        *) fail "invalid mode '$1'; expected prod or dev." ;;
+    esac
 }
 
-require_deployment_paths() {
+validate_mode "$DEFAULT_MODE"
+
+mode_env_file() {
+    case "$1" in
+        prod) printf '%s\n' "$PROD_ENV_FILE" ;;
+        dev) printf '%s\n' "$DEV_ENV_FILE" ;;
+        *) fail "invalid mode: $1" ;;
+    esac
+}
+
+mode_project_name() {
+    if [[ "$1" == dev ]]; then
+        printf '%s-dev\n' "$PROJECT_NAME"
+    else
+        printf '%s\n' "$PROJECT_NAME"
+    fi
+}
+
+require_app_dir() {
+    [[ -d "$APP_DIR" ]] || fail "application directory not found: $APP_DIR"
+}
+
+require_mode_paths() {
+    local mode="$1" env_file
+    env_file="$(mode_env_file "$mode")"
     require_app_dir
-    [[ -f "$ENV_FILE" ]] || fail "environment file not found: $ENV_FILE (set TUVTK_ENV_FILE to override)"
-    [[ -f "$COMPOSE_FILE" ]] || fail "Compose file not found: $COMPOSE_FILE (set TUVTK_COMPOSE_FILE to override)"
+    [[ -f "$env_file" ]] || fail "$mode environment file not found: $env_file"
+    [[ -f "$COMPOSE_FILE" ]] || fail "Compose file not found: $COMPOSE_FILE"
+    if [[ "$mode" == dev ]]; then
+        [[ -f "$DEV_COMPOSE_FILE" ]] || fail "development Compose file not found: $DEV_COMPOSE_FILE"
+    fi
 }
 
 prepare_docker() {
     command -v docker >/dev/null 2>&1 || fail "Docker is not installed or is not in PATH."
-    docker compose version >/dev/null 2>&1 || fail "the Docker Compose plugin is unavailable; install 'docker compose' (not legacy docker-compose)."
+    docker compose version >/dev/null 2>&1 || fail "the Docker Compose plugin is unavailable."
 
     if docker info >/dev/null 2>&1; then
         DOCKER_COMMAND=(docker)
         return
     fi
-
-    command -v sudo >/dev/null 2>&1 || fail "Docker is unavailable to this user and sudo is not installed."
-    if sudo -n docker info >/dev/null 2>&1; then
+    if command -v sudo >/dev/null 2>&1 && sudo -n docker info >/dev/null 2>&1; then
         DOCKER_COMMAND=(sudo docker)
         return
     fi
-
-    if [[ -t 0 && -t 1 ]]; then
+    if [[ -t 0 && -t 1 ]] && command -v sudo >/dev/null 2>&1; then
         printf 'tuvtk: Docker access requires sudo; sudo may prompt for your password.\n' >&2
         DOCKER_COMMAND=(sudo docker)
         return
     fi
-
-    fail "Docker is unavailable to this user. Run through sudo or grant the user Docker access."
+    fail "Docker is unavailable to this user. Run ./install.sh through sudo or grant Docker access."
 }
 
-prepare_compose() {
-    require_deployment_paths
+prepare_mode() {
+    require_mode_paths "$1"
     prepare_docker
 }
 
-prepare_dev_compose() {
-    require_deployment_paths
-    [[ -f "$DEV_COMPOSE_FILE" ]] \
-        || fail "development Compose file not found: $DEV_COMPOSE_FILE (set TUVTK_DEV_COMPOSE_FILE to override)"
-    prepare_docker
+compose_for() {
+    local mode="$1" env_file project
+    shift
+    env_file="$(mode_env_file "$mode")"
+    project="$(mode_project_name "$mode")"
+    if [[ "$mode" == dev ]]; then
+        "${DOCKER_COMMAND[@]}" compose \
+            --env-file "$env_file" \
+            --project-directory "$APP_DIR" \
+            -f "$COMPOSE_FILE" \
+            -f "$DEV_COMPOSE_FILE" \
+            -p "$project" \
+            "$@"
+    else
+        "${DOCKER_COMMAND[@]}" compose \
+            --env-file "$env_file" \
+            --project-directory "$APP_DIR" \
+            -f "$COMPOSE_FILE" \
+            -p "$project" \
+            "$@"
+    fi
 }
 
-compose() {
-    "${DOCKER_COMMAND[@]}" compose \
-        --env-file "$ENV_FILE" \
-        --project-directory "$APP_DIR" \
-        -f "$COMPOSE_FILE" \
-        -p "$PROJECT_NAME" \
-        "$@"
+django_for() {
+    local mode="$1"
+    shift
+    compose_for "$mode" exec "$WEB_SERVICE" python manage.py "$@"
 }
 
-dev_compose() {
-    "${DOCKER_COMMAND[@]}" compose \
-        --env-file "$ENV_FILE" \
-        --project-directory "$APP_DIR" \
-        -f "$COMPOSE_FILE" \
-        -f "$DEV_COMPOSE_FILE" \
-        -p "${PROJECT_NAME}-dev" \
-        "$@"
-}
-
-django_exec() {
-    compose exec "$WEB_SERVICE" python manage.py "$@"
-}
-
-env_value() {
-    local key="$1"
+env_value_for() {
+    local mode="$1" key="$2" env_file
+    env_file="$(mode_env_file "$mode")"
     awk -v key="$key" '
         $0 ~ "^[[:space:]]*" key "=" {
             sub("^[[:space:]]*" key "=", "")
@@ -3992,14 +3827,15 @@ env_value() {
             value=$0
         }
         END { print value }
-    ' "$ENV_FILE"
+    ' "$env_file"
 }
 
 database_identity() {
-    DB_NAME="$(env_value POSTGRES_DB)"
-    DB_USER="$(env_value POSTGRES_USER)"
-    [[ -n "$DB_NAME" ]] || fail "POSTGRES_DB is missing from $ENV_FILE."
-    [[ -n "$DB_USER" ]] || fail "POSTGRES_USER is missing from $ENV_FILE."
+    local mode="$1"
+    DB_NAME="$(env_value_for "$mode" POSTGRES_DB)"
+    DB_USER="$(env_value_for "$mode" POSTGRES_USER)"
+    [[ -n "$DB_NAME" ]] || fail "POSTGRES_DB is missing from $(mode_env_file "$mode")."
+    [[ -n "$DB_USER" ]] || fail "POSTGRES_USER is missing from $(mode_env_file "$mode")."
 }
 
 has_verbosity() {
@@ -4012,97 +3848,417 @@ has_verbosity() {
     return 1
 }
 
-export_sql() {
-    local destination="$1"
-    database_identity
+confirm_action() {
+    local confirmed="$1" prompt="$2" answer
+    [[ "$confirmed" == true ]] && return 0
+    [[ -t 0 ]] || fail "confirmation is required; rerun interactively or pass --yes."
+    printf '%s [y/N] ' "$prompt"
+    read -r answer
+    [[ "$answer" == y || "$answer" == Y || "$answer" == yes || "$answer" == YES ]] \
+        || fail "operation cancelled."
+}
 
-    if [[ -d "$destination" || "$destination" == */ ]]; then
-        mkdir -p "$destination"
-        destination="${destination%/}/tuvtk-$(date -u +%Y%m%dT%H%M%SZ).sql"
+mode_start() {
+    local mode="$1"
+    prepare_mode "$mode"
+    if [[ "$mode" == dev ]]; then
+        compose_for dev up -d db
+        compose_for dev run --rm init
+        compose_for dev up -d web tailwind
     else
-        local parent
+        compose_for prod up -d --wait "$DB_SERVICE"
+        compose_for prod run --rm init
+        compose_for prod up -d "$WEB_SERVICE" nginx
+    fi
+}
+
+mode_build() {
+    local mode="$1" no_cache="${2:-false}"
+    prepare_mode "$mode"
+    if [[ "$mode" == dev ]]; then
+        if [[ "$no_cache" == true ]]; then
+            compose_for dev build --no-cache web
+        else
+            compose_for dev build web
+        fi
+        mode_start dev
+    else
+        if [[ "$no_cache" == true ]]; then
+            compose_for prod build --no-cache
+        else
+            compose_for prod build
+        fi
+        mode_start prod
+    fi
+}
+
+mode_stop() {
+    local mode="$1"
+    prepare_mode "$mode"
+    compose_for "$mode" down
+}
+
+mode_restart() {
+    local mode="$1"
+    prepare_mode "$mode"
+    if [[ "$mode" == dev ]]; then
+        compose_for dev down
+        mode_start dev
+    else
+        compose_for prod restart
+    fi
+}
+
+timestamp() {
+    date -u +%Y-%m-%d_%H%M%S
+}
+
+sql_destination() {
+    local mode="$1" requested="$2" suffix destination parent
+    suffix="$(timestamp)"
+    if [[ "$requested" == *.sql ]]; then
+        destination="$requested"
         parent="$(dirname "$destination")"
         [[ -d "$parent" ]] || fail "output directory does not exist: $parent"
+    else
+        mkdir -p "$requested"
+        destination="${requested%/}/tuvtk-${mode}-${suffix}.sql"
     fi
+    printf '%s\n' "$destination"
+}
 
-    local temporary="${destination}.tmp.$$"
+write_sql_dump() {
+    local mode="$1" destination="$2" temporary
+    database_identity "$mode"
+    temporary="${destination}.tmp.$$"
     umask 077
-    if ! compose exec -T "$DB_SERVICE" pg_dump -U "$DB_USER" -d "$DB_NAME" >"$temporary"; then
-        rm -f "$temporary"
-        fail "PostgreSQL export failed."
-    fi
-    mv "$temporary" "$destination"
-    printf 'Database exported to %s\n' "$destination"
+    {
+        printf '%s\n' "-- TUVTK_MODE=$mode" "-- TUVTK_PROJECT=$(mode_project_name "$mode")"
+        compose_for "$mode" exec -T "$DB_SERVICE" pg_dump -U "$DB_USER" -d "$DB_NAME"
+    } >"$temporary" || {
+        rm -f -- "$temporary"
+        fail "PostgreSQL export failed for $mode."
+    }
+    mv -f -- "$temporary" "$destination"
+    chmod 0600 "$destination"
+}
+
+export_sql() {
+    local mode="$1" requested="$2" destination
+    prepare_mode "$mode"
+    destination="$(sql_destination "$mode" "$requested")"
+    write_sql_dump "$mode" "$destination"
+    printf 'Database exported: %s\n' "$destination"
+}
+
+sql_declared_mode() {
+    sed -n '1,20{s/^-- TUVTK_MODE=\(prod\|dev\)$/\1/p;}' "$1" | head -n 1
+}
+
+recreate_database() {
+    local mode="$1" source="$2"
+    database_identity "$mode"
+    compose_for "$mode" exec -T "$DB_SERVICE" dropdb --force --if-exists -U "$DB_USER" "$DB_NAME"
+    compose_for "$mode" exec -T "$DB_SERVICE" createdb -U "$DB_USER" -O "$DB_USER" "$DB_NAME"
+    compose_for "$mode" exec -T "$DB_SERVICE" psql -v ON_ERROR_STOP=1 -U "$DB_USER" -d "$DB_NAME" <"$source"
 }
 
 import_sql() {
-    local source="$1"
+    local mode="$1" source="$2" confirmed="$3" declared_mode
     [[ -f "$source" ]] || fail "SQL file not found: $source"
-    database_identity
-    printf 'Importing %s into database %s...\n' "$source" "$DB_NAME"
-    compose exec -T "$DB_SERVICE" psql -v ON_ERROR_STOP=1 -U "$DB_USER" -d "$DB_NAME" <"$source"
+    declared_mode="$(sql_declared_mode "$source")"
+    if [[ -n "$declared_mode" && "$declared_mode" != "$mode" ]]; then
+        fail "SQL dump is marked '$declared_mode' and cannot be imported into '$mode'."
+    fi
+    prepare_mode "$mode"
+    database_identity "$mode"
+    printf 'Target mode: %s\nTarget project: %s\nTarget service: %s\nTarget database: %s\n' \
+        "$mode" "$(mode_project_name "$mode")" "$DB_SERVICE" "$DB_NAME"
+    if [[ -z "$declared_mode" ]]; then
+        warn "SQL file has no TUVTK mode marker; verify its origin before continuing."
+    fi
+    confirm_action "$confirmed" "Replace the $mode database from $source?"
+    if [[ "$mode" == dev ]]; then
+        compose_for dev stop web tailwind 2>/dev/null || true
+    else
+        compose_for prod stop web nginx 2>/dev/null || true
+    fi
+    compose_for "$mode" up -d --wait "$DB_SERVICE"
+    recreate_database "$mode" "$source"
+    printf 'Database imported into %s (%s). Application services were not restarted.\n' \
+        "$(mode_project_name "$mode")" "$mode"
 }
 
-create_backup() {
-    local backup_directory="$1"
+archive_directory() {
+    local source="$1" destination="$2"
+    [[ -d "$source" ]] || return 1
+    tar -C "$source" -cf "$destination" .
+}
+
+archive_dev_service_path() {
+    local container_path="$1" destination="$2"
+    compose_for dev run --rm --no-deps -T --entrypoint tar "$WEB_SERVICE" \
+        -C "$container_path" -cf - . >"$destination"
+}
+
+create_backup() (
+    set -Eeuo pipefail
+    local mode="$1" backup_directory="$2" env_file work archive stamp data_dir
+    local -a included=() skipped=()
+    work=""
+    trap '[[ -z "$work" ]] || rm -rf -- "$work"' EXIT
+    prepare_mode "$mode"
     mkdir -p "$backup_directory"
     chmod 0700 "$backup_directory"
-    [[ -d "$backup_directory" && -w "$backup_directory" ]] || fail "backup directory is not writable: $backup_directory"
-    database_identity
+    [[ -d "$backup_directory" && -w "$backup_directory" ]] \
+        || fail "backup directory is not writable: $backup_directory"
+    database_identity "$mode"
 
-    local work_directory archive timestamp
-    timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
-    archive="${backup_directory%/}/tuvtk-backup-${timestamp}.tar.gz"
-    work_directory="$(mktemp -d "${TMPDIR:-/tmp}/tuvtk-backup.XXXXXX")"
+    stamp="$(timestamp)"
+    archive="${backup_directory%/}/${stamp}-tuvtk-${mode}.tar.gz"
+    work="$(mktemp -d "${TMPDIR:-/tmp}/tuvtk-backup.XXXXXX")"
+    mkdir -p "$work/database" "$work/env" "$work/deployment" "$work/data"
+    printf '%s\n' "$BACKUP_FORMAT" >"$work/BACKUP_FORMAT"
+    printf 'mode=%s\ncreated_utc=%s\nproject_name=%s\ndatabase_name=%s\ndatabase_user=%s\n' \
+        "$mode" "$stamp" "$(mode_project_name "$mode")" "$DB_NAME" "$DB_USER" >"$work/manifest"
 
-    mkdir -p "$work_directory/env" "$work_directory/deployment"
-    printf '%s\n' "$BACKUP_FORMAT" >"$work_directory/BACKUP_FORMAT"
-    printf 'created_utc=%s\nproject_name=%s\ndatabase_name=%s\ndatabase_user=%s\n' \
-        "$timestamp" "$PROJECT_NAME" "$DB_NAME" "$DB_USER" >"$work_directory/manifest"
-    cp -- "$ENV_FILE" "$work_directory/env/tuvtk.env"
-    cp -- "$COMPOSE_FILE" "$work_directory/deployment/compose.yaml"
-    for deployment_file in Dockerfile docker/nginx.conf.template docker/start-web.sh; do
-        if [[ -f "$APP_DIR/$deployment_file" ]]; then
-            mkdir -p "$work_directory/deployment/$(dirname "$deployment_file")"
-            cp -- "$APP_DIR/$deployment_file" "$work_directory/deployment/$deployment_file"
+    env_file="$(mode_env_file "$mode")"
+    cp -p -- "$env_file" "$work/env/environment"
+    included+=("env/environment ($env_file)")
+    cp -p -- "$COMPOSE_FILE" "$work/deployment/compose.yaml"
+    if [[ -f "$DEV_COMPOSE_FILE" ]]; then
+        cp -p -- "$DEV_COMPOSE_FILE" "$work/deployment/compose.dev.yaml"
+    fi
+    if [[ -f "$APP_DIR/command.sh" ]]; then
+        cp -p -- "$APP_DIR/command.sh" "$work/deployment/command.sh"
+    else
+        skipped+=("command.sh (not installed)")
+    fi
+    local relative
+    for relative in Dockerfile docker/nginx.conf.template docker/start-web.sh; do
+        if [[ -f "$APP_DIR/$relative" ]]; then
+            mkdir -p "$work/deployment/$(dirname "$relative")"
+            cp -p -- "$APP_DIR/$relative" "$work/deployment/$relative"
         fi
     done
 
-    if ! compose exec -T "$DB_SERVICE" pg_dump -U "$DB_USER" -d "$DB_NAME" >"$work_directory/database.sql"; then
-        rm -rf -- "$work_directory"
-        fail "database export failed; no backup archive was created."
+    write_sql_dump "$mode" "$work/database/database.sql"
+    included+=("database/database.sql")
+
+    if [[ "$mode" == prod ]]; then
+        data_dir="$(env_value_for prod TUVTK_DATA_DIR)"
+        if [[ -n "$data_dir" ]] && archive_directory "$data_dir/media" "$work/data/media.tar"; then
+            included+=("data/media.tar ($data_dir/media)")
+        else
+            rm -f -- "$work/data/media.tar"
+            skipped+=("media (path unavailable)")
+        fi
+        if [[ -n "$data_dir" ]] && archive_directory "$data_dir/private-media" "$work/data/private-media.tar"; then
+            included+=("data/private-media.tar ($data_dir/private-media)")
+        else
+            rm -f -- "$work/data/private-media.tar"
+            skipped+=("private media (path unavailable)")
+        fi
+    else
+        if archive_dev_service_path /app/media "$work/data/media.tar"; then
+            included+=("data/media.tar (development volume)")
+        else
+            rm -f -- "$work/data/media.tar"
+            skipped+=("development media (volume unavailable)")
+        fi
+        if archive_dev_service_path /app/private_media "$work/data/private-media.tar"; then
+            included+=("data/private-media.tar (development volume)")
+        else
+            rm -f -- "$work/data/private-media.tar"
+            skipped+=("development private media (volume unavailable)")
+        fi
     fi
-    if ! tar -C "$work_directory" -czf "$archive" .; then
-        rm -rf -- "$work_directory"
+    skipped+=("static output (regenerable; intentionally excluded)")
+
+    if ! tar -C "$work" -czf "$archive" .; then
+        rm -rf -- "$work"
         fail "unable to create backup archive."
     fi
-    rm -rf -- "$work_directory"
+    rm -rf -- "$work"
+    work=""
     chmod 0600 "$archive"
+
     printf 'Backup created: %s\n' "$archive"
-    printf 'Media, private media, static files, and Docker volumes were intentionally excluded.\n'
+    printf 'Included database dump: database/database.sql\n'
+    printf 'Included environment: %s\n' "$env_file"
+    for relative in "${included[@]}"; do printf 'Included: %s\n' "$relative"; done
+    for relative in "${skipped[@]}"; do printf 'Skipped: %s\n' "$relative"; done
+    if [[ "$mode" == dev ]]; then
+        printf 'Restore with: sudo ./install.sh dev-restore %q\n' "$archive"
+    else
+        printf 'Restore with: sudo ./install.sh restore %q\n' "$archive"
+    fi
+)
+
+archive_is_safe() {
+    local archive="$1" entry normalized
+    while IFS= read -r entry; do
+        normalized="${entry#./}"
+        [[ -z "$normalized" || "$normalized" == "." ]] && continue
+        [[ "$normalized" != /* && "$normalized" != ".." && "$normalized" != ../* && "$normalized" != */../* && "$normalized" != */.. ]] \
+            || return 1
+        case "$normalized" in
+            BACKUP_FORMAT|manifest|database/|database/database.sql|env/|env/environment|deployment/|deployment/compose.yaml|deployment/compose.dev.yaml|deployment/command.sh|deployment/Dockerfile|deployment/docker/|deployment/docker/nginx.conf.template|deployment/docker/start-web.sh|data/|data/media.tar|data/private-media.tar) ;;
+            *) return 1 ;;
+        esac
+    done < <(tar -tzf "$archive")
+    ! tar -tvzf "$archive" | awk 'substr($1,1,1) == "l" || substr($1,1,1) == "h" { found=1 } END { exit found ? 0 : 1 }'
 }
 
-restore_backup() {
-    local archive="$1"
+manifest_value() {
+    local file="$1" key="$2"
+    sed -n "s/^${key}=//p" "$file" | head -n 1
+}
+
+inner_tar_is_safe() {
+    local archive="$1" entry
+    while IFS= read -r entry; do
+        entry="${entry#./}"
+        [[ -z "$entry" || "$entry" == "." ]] && continue
+        [[ "$entry" != /* && "$entry" != ".." && "$entry" != ../* && "$entry" != */../* && "$entry" != */.. ]] || return 1
+    done < <(tar -tf "$archive")
+    ! tar -tvf "$archive" | awk 'substr($1,1,1) == "l" || substr($1,1,1) == "h" { found=1 } END { exit found ? 0 : 1 }'
+}
+
+restore_service_path() {
+    local mode="$1" source="$2" target="$3"
+    inner_tar_is_safe "$source" || fail "backup contains an unsafe data archive: $(basename "$source")"
+    compose_for "$mode" run --rm --no-deps -T --entrypoint sh "$WEB_SERVICE" -ec '
+        target="$1"
+        find "$target" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
+        tar -C "$target" -xf -
+    ' sh "$target" <"$source"
+}
+
+restore_backup() (
+    set -Eeuo pipefail
+    local mode="$1" archive="$2" confirmed="$3" work archive_mode archive_project env_file env_backup
     [[ -f "$archive" ]] || fail "backup archive not found: $archive"
+    archive_is_safe "$archive" || fail "archive has an unknown or unsafe structure."
+    work="$(mktemp -d "${TMPDIR:-/tmp}/tuvtk-restore.XXXXXX")"
+    trap 'rm -rf -- "$work"' EXIT
+    tar --no-same-owner --no-same-permissions -xzf "$archive" -C "$work"
+    [[ -f "$work/BACKUP_FORMAT" && "$(<"$work/BACKUP_FORMAT")" == "$BACKUP_FORMAT" ]] \
+        || fail "unsupported backup format."
+    [[ -f "$work/manifest" && -f "$work/database/database.sql" && -f "$work/env/environment" ]] \
+        || fail "backup is incomplete."
+    archive_mode="$(manifest_value "$work/manifest" mode)"
+    archive_project="$(manifest_value "$work/manifest" project_name)"
+    [[ "$archive_mode" == "$mode" ]] \
+        || fail "backup mode is '$archive_mode'; refusing to restore it into '$mode'."
+    [[ "$archive_project" == "$(mode_project_name "$mode")" ]] \
+        || fail "backup project '$archive_project' does not match '$(mode_project_name "$mode")'."
 
-    local work_directory
-    work_directory="$(mktemp -d "${TMPDIR:-/tmp}/tuvtk-restore.XXXXXX")"
-    if tar -tzf "$archive" | awk '
-        /(^|\/)\.\.($|\/)/ || /^\// { unsafe=1 }
-        END { exit unsafe ? 0 : 1 }
-    '; then
-        rm -rf -- "$work_directory"
-        fail "backup archive contains unsafe paths."
+    prepare_mode "$mode"
+    printf 'Restore target mode: %s\nRestore target project: %s\nArchive: %s\n' \
+        "$mode" "$(mode_project_name "$mode")" "$archive"
+    confirm_action "$confirmed" "Stop and replace the $mode database and included media?"
+    compose_for "$mode" down
+
+    env_file="$(mode_env_file "$mode")"
+    env_backup="${env_file}.pre-restore-$(timestamp).bak"
+    cp -p -- "$env_file" "$env_backup"
+    install -m 0600 "$work/env/environment" "$env_file"
+    printf 'Preserved previous environment: %s\n' "$env_backup"
+
+    compose_for "$mode" up -d --wait "$DB_SERVICE"
+    recreate_database "$mode" "$work/database/database.sql"
+    printf 'Restored database: %s\n' "$(env_value_for "$mode" POSTGRES_DB)"
+    if [[ -f "$work/data/media.tar" ]]; then
+        restore_service_path "$mode" "$work/data/media.tar" /app/media
+        printf 'Restored media.\n'
+    else
+        printf 'Skipped media: not included in archive.\n'
     fi
-    tar -xzf "$archive" -C "$work_directory" || fail "unable to read backup archive."
-    [[ -f "$work_directory/BACKUP_FORMAT" ]] || fail "archive is not a tuvtk wrapper backup."
-    [[ "$(<"$work_directory/BACKUP_FORMAT")" == "$BACKUP_FORMAT" ]] || fail "unsupported backup format."
-    [[ -f "$work_directory/database.sql" && -f "$work_directory/env/tuvtk.env" && -f "$work_directory/manifest" ]] \
-        || fail "backup is incomplete; database.sql, env/tuvtk.env, and manifest are required."
+    if [[ -f "$work/data/private-media.tar" ]]; then
+        restore_service_path "$mode" "$work/data/private-media.tar" /app/private_media
+        printf 'Restored private media.\n'
+    else
+        printf 'Skipped private media: not included in archive.\n'
+    fi
+    printf 'Application services were not restarted.\n'
+    if [[ "$mode" == dev ]]; then
+        printf 'Next command: sudo ./install.sh dev\n'
+    else
+        printf 'Next command: sudo ./install.sh start\n'
+    fi
+)
 
-    rm -rf -- "$work_directory"
-    fail "archive format $BACKUP_FORMAT was validated, but automated restore is intentionally disabled until the Phase 2 installer and environment model are finalized. No files or database data were changed."
+safe_data_root() {
+    local raw="$1" canonical_app canonical
+    [[ "$raw" == /* && "$raw" != "/" ]] || fail "unsafe TUVTK_DATA_DIR: $raw"
+    canonical="$(readlink -m -- "$raw")"
+    canonical_app="$(readlink -m -- "$APP_DIR")"
+    case "$canonical" in
+        /bin|/boot|/dev|/etc|/home|/lib|/lib64|/media|/mnt|/opt|/proc|/root|/run|/sbin|/srv|/sys|/tmp|/usr|/var|/var/lib)
+            fail "production data root is too broad or system-critical: $canonical"
+            ;;
+    esac
+    [[ "$canonical" != "/" && "$canonical" != "$canonical_app" && "$canonical" != "$canonical_app/"* && "$canonical_app" != "$canonical/"* ]] \
+        || fail "production data path overlaps the application directory: $canonical"
+    printf '%s\n' "$canonical"
+}
+
+remove_directory_contents() {
+    local path="$1"
+    [[ -d "$path" ]] || return 0
+    find "$path" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
+}
+
+dev_db_reset() {
+    local confirmed="$1" start_after="$2"
+    prepare_mode dev
+    printf 'Development project: %s\n' "$(mode_project_name dev)"
+    printf 'Volume removed: dev-postgres\n'
+    confirm_action "$confirmed" "Delete and recreate the isolated development database?"
+    compose_for dev down --remove-orphans
+    "${DOCKER_COMMAND[@]}" volume rm "$(mode_project_name dev)_dev-postgres" >/dev/null 2>&1 || true
+    printf 'Development database reset completed. Media, private media, static output, and Node modules were not deleted. Production was not changed.\n'
+    if [[ "$start_after" == true ]]; then
+        mode_start dev
+    else
+        printf 'Next command: sudo ./install.sh dev\n'
+    fi
+}
+
+prod_db_reset() {
+    local acknowledged="$1" no_backup="$2" backup_dir="$3" data_root env_file env_backup
+    [[ "$acknowledged" == true ]] \
+        || fail "production reset requires --yes-i-understand-this-deletes-production-data; --yes is not accepted."
+    prepare_mode prod
+    data_root="$(safe_data_root "$(env_value_for prod TUVTK_DATA_DIR)")"
+    printf 'Production project: %s\n' "$(mode_project_name prod)"
+    printf 'Production DB service: %s\n' "$DB_SERVICE"
+    printf 'Production DB path: %s/postgres\n' "$data_root"
+    printf 'Production media paths: %s/media, %s/private-media\n' "$data_root" "$data_root"
+    printf 'Production static path: %s/static\n' "$data_root"
+    if [[ "$no_backup" == false ]]; then
+        create_backup prod "$backup_dir"
+    else
+        warn "production backup explicitly disabled with --no-backup."
+    fi
+    env_file="$(mode_env_file prod)"
+    env_backup="${env_file}.pre-reset-$(timestamp).bak"
+    cp -p -- "$env_file" "$env_backup"
+    chmod 0600 "$env_backup"
+    printf 'Environment preserved: %s\n' "$env_backup"
+    compose_for prod down
+    remove_directory_contents "$data_root/postgres"
+    remove_directory_contents "$data_root/media"
+    remove_directory_contents "$data_root/private-media"
+    remove_directory_contents "$data_root/static"
+    printf 'Production data reset completed. Application source, .git, and environment files were not deleted.\n'
+    printf '%s\n' \
+        'Next commands:' \
+        '  sudo ./install.sh start' \
+        '  sudo ./install.sh migrate' \
+        '  sudo ./install.sh collectstatic' \
+        '  sudo ./install.sh django createsuperuser'
 }
 
 clean_generated() {
@@ -4121,104 +4277,114 @@ clean_generated() {
     printf 'Removed safe local caches and temporary test artifacts.\n'
 }
 
-command_name="${1:-help}"
-if (($#)); then
+parse_confirmed_file() {
+    local usage_text="$1"
     shift
-fi
+    CONFIRMED=false
+    TARGET_FILE=""
+    while (($#)); do
+        case "$1" in
+            --yes) CONFIRMED=true ;;
+            --*) fail "usage: $usage_text" ;;
+            *) [[ -z "$TARGET_FILE" ]] || fail "usage: $usage_text"; TARGET_FILE="$1" ;;
+        esac
+        shift
+    done
+    [[ -n "$TARGET_FILE" ]] || fail "usage: $usage_text"
+}
+
+run_context() {
+    require_app_dir
+    if command -v python3 >/dev/null 2>&1; then
+        (cd "$APP_DIR" && python3 scripts/generate_codex_context.py "$@")
+    elif command -v python >/dev/null 2>&1; then
+        (cd "$APP_DIR" && python scripts/generate_codex_context.py "$@")
+    else
+        fail "Python 3 is required for context generation."
+    fi
+}
+
+command_name="${1:-help}"
+if (($#)); then shift; fi
 
 case "$command_name" in
-    help|-h|--help)
-        usage
+    help|-h|--help) usage ;;
+    status|ps) (($# == 0)) || fail "usage: $command_name"; prepare_mode "$DEFAULT_MODE"; compose_for "$DEFAULT_MODE" ps ;;
+    start|up) (($# == 0)) || fail "usage: $command_name"; mode_start "$DEFAULT_MODE" ;;
+    stop|down) (($# == 0)) || fail "usage: $command_name"; mode_stop "$DEFAULT_MODE" ;;
+    restart) (($# == 0)) || fail "usage: restart"; mode_restart "$DEFAULT_MODE" ;;
+    build) (($# == 0)) || fail "usage: build"; mode_build "$DEFAULT_MODE" false ;;
+    rebuild) (($# == 0)) || fail "usage: rebuild"; mode_build "$DEFAULT_MODE" true ;;
+    logs) (($# <= 1)) || fail "usage: logs [SERVICE]"; prepare_mode "$DEFAULT_MODE"; compose_for "$DEFAULT_MODE" logs -f "$@" ;;
+
+    prod-status) (($# == 0)) || fail "usage: prod-status"; prepare_mode prod; compose_for prod ps ;;
+    prod-start) (($# == 0)) || fail "usage: prod-start"; mode_start prod ;;
+    prod-stop) (($# == 0)) || fail "usage: prod-stop"; mode_stop prod ;;
+    prod-restart) (($# == 0)) || fail "usage: prod-restart"; mode_restart prod ;;
+    prod-build) (($# == 0)) || fail "usage: prod-build"; mode_build prod false ;;
+    prod-rebuild) (($# == 0)) || fail "usage: prod-rebuild"; mode_build prod true ;;
+    prod-logs) (($# <= 1)) || fail "usage: prod-logs [SERVICE]"; prepare_mode prod; compose_for prod logs -f "$@" ;;
+
+    dev|dev-start) (($# == 0)) || fail "usage: $command_name"; mode_start dev ;;
+    dev-build) (($# == 0)) || fail "usage: dev-build"; mode_build dev false ;;
+    dev-stop) (($# == 0)) || fail "usage: dev-stop"; mode_stop dev ;;
+    dev-status) (($# == 0)) || fail "usage: dev-status"; prepare_mode dev; compose_for dev ps ;;
+    dev-logs) (($# <= 1)) || fail "usage: dev-logs [SERVICE]"; prepare_mode dev; compose_for dev logs -f "$@" ;;
+    tailwind) (($# == 0)) || fail "usage: tailwind"; prepare_mode dev; compose_for dev up -d tailwind; compose_for dev logs -f tailwind ;;
+    npm) (($# > 0)) || fail "usage: npm COMMAND [ARGS...]"; prepare_mode dev; compose_for dev run --rm --no-deps tailwind npm "$@" ;;
+
+    check) (($# == 0)) || fail "usage: check"; prepare_mode "$DEFAULT_MODE"; django_for "$DEFAULT_MODE" check ;;
+    test)
+        prepare_mode "$DEFAULT_MODE"
+        if has_verbosity "$@"; then django_for "$DEFAULT_MODE" test "$@"; else django_for "$DEFAULT_MODE" test "$@" -v 0; fi
         ;;
-    dev)
-        (($# == 0)) || fail "usage: tuvtk dev"
-        prepare_dev_compose
-        dev_compose up -d db
-        dev_compose run --rm init
-        dev_compose up -d web tailwind
+    migrate) prepare_mode "$DEFAULT_MODE"; django_for "$DEFAULT_MODE" migrate "$@" ;;
+    makemigrations) prepare_mode "$DEFAULT_MODE"; django_for "$DEFAULT_MODE" makemigrations "$@" ;;
+    collectstatic) (($# == 0)) || fail "usage: collectstatic"; prepare_mode "$DEFAULT_MODE"; django_for "$DEFAULT_MODE" collectstatic --noinput ;;
+    shell) (($# == 0)) || fail "usage: shell"; prepare_mode "$DEFAULT_MODE"; django_for "$DEFAULT_MODE" shell ;;
+    dbshell) (($# == 0)) || fail "usage: dbshell"; prepare_mode "$DEFAULT_MODE"; django_for "$DEFAULT_MODE" dbshell ;;
+    django) (($# > 0)) || fail "usage: django COMMAND [ARGS...]"; prepare_mode "$DEFAULT_MODE"; django_for "$DEFAULT_MODE" "$@" ;;
+    prod-django) (($# > 0)) || fail "usage: prod-django COMMAND [ARGS...]"; prepare_mode prod; django_for prod "$@" ;;
+    dev-django) (($# > 0)) || fail "usage: dev-django COMMAND [ARGS...]"; prepare_mode dev; django_for dev "$@" ;;
+    exec) (($# >= 2)) || fail "usage: exec SERVICE COMMAND [ARGS...]"; prepare_mode "$DEFAULT_MODE"; compose_for "$DEFAULT_MODE" exec "$@" ;;
+
+    export-sql) (($# == 1)) || fail "usage: export-sql PATH"; export_sql "$DEFAULT_MODE" "$1" ;;
+    prod-export-sql) (($# == 1)) || fail "usage: prod-export-sql PATH"; export_sql prod "$1" ;;
+    dev-export-sql) (($# == 1)) || fail "usage: dev-export-sql PATH"; export_sql dev "$1" ;;
+    import-sql) parse_confirmed_file "import-sql SQL_FILE [--yes]" "$@"; import_sql "$DEFAULT_MODE" "$TARGET_FILE" "$CONFIRMED" ;;
+    prod-import-sql) parse_confirmed_file "prod-import-sql SQL_FILE [--yes]" "$@"; import_sql prod "$TARGET_FILE" "$CONFIRMED" ;;
+    dev-import-sql) parse_confirmed_file "dev-import-sql SQL_FILE [--yes]" "$@"; import_sql dev "$TARGET_FILE" "$CONFIRMED" ;;
+    backup) (($# == 1)) || fail "usage: backup DIRECTORY"; create_backup "$DEFAULT_MODE" "$1" ;;
+    prod-backup) (($# == 1)) || fail "usage: prod-backup DIRECTORY"; create_backup prod "$1" ;;
+    dev-backup) (($# == 1)) || fail "usage: dev-backup DIRECTORY"; create_backup dev "$1" ;;
+    restore) parse_confirmed_file "restore ARCHIVE [--yes]" "$@"; restore_backup "$DEFAULT_MODE" "$TARGET_FILE" "$CONFIRMED" ;;
+    prod-restore) parse_confirmed_file "prod-restore ARCHIVE [--yes]" "$@"; restore_backup prod "$TARGET_FILE" "$CONFIRMED" ;;
+    dev-restore) parse_confirmed_file "dev-restore ARCHIVE [--yes]" "$@"; restore_backup dev "$TARGET_FILE" "$CONFIRMED" ;;
+
+    fresh-db|dev-db-reset)
+        confirmed=false; start_after=false
+        for argument in "$@"; do
+            case "$argument" in --yes) confirmed=true ;; --start) start_after=true ;; *) fail "usage: $command_name [--yes] [--start]" ;; esac
+        done
+        dev_db_reset "$confirmed" "$start_after"
         ;;
-    dev-build)
-        (($# == 0)) || fail "usage: tuvtk dev-build"
-        prepare_dev_compose
-        dev_compose build web
-        dev_compose up -d db
-        dev_compose run --rm init
-        dev_compose up -d web tailwind
+    prod-db-reset)
+        acknowledged=false; no_backup=false; backup_dir="$DEFAULT_BACKUP_DIR"
+        for argument in "$@"; do
+            case "$argument" in
+                --yes-i-understand-this-deletes-production-data) acknowledged=true ;;
+                --no-backup) no_backup=true ;;
+                --backup-dir=*) backup_dir="${argument#*=}" ;;
+                --yes) fail "--yes is insufficient for production reset; use the exact long confirmation flag." ;;
+                *) fail "usage: prod-db-reset --yes-i-understand-this-deletes-production-data [--no-backup] [--backup-dir=PATH]" ;;
+            esac
+        done
+        prod_db_reset "$acknowledged" "$no_backup" "$backup_dir"
         ;;
-    dev-logs)
-        (($# <= 1)) || fail "usage: tuvtk dev-logs [SERVICE]"
-        prepare_dev_compose
-        dev_compose logs -f "$@"
-        ;;
-    tailwind)
-        (($# == 0)) || fail "usage: tuvtk tailwind"
-        prepare_dev_compose
-        dev_compose up -d tailwind
-        dev_compose logs -f tailwind
-        ;;
-    npm)
-        (($# > 0)) || fail "usage: tuvtk npm COMMAND [ARGS...]"
-        prepare_dev_compose
-        dev_compose run --rm --no-deps tailwind npm "$@"
-        ;;
-    context)
-        require_app_dir
-        if [[ -f "$APP_DIR/scripts/generate_codex_context.py" ]]; then
-            if command -v python3 >/dev/null 2>&1; then
-                (cd "$APP_DIR" && python3 scripts/generate_codex_context.py "$@")
-            elif command -v python >/dev/null 2>&1; then
-                (cd "$APP_DIR" && python scripts/generate_codex_context.py "$@")
-            else
-                fail "Python 3 is required for context generation. Install host Python 3, or run 'docker compose run --rm web python scripts/generate_codex_context.py' with an image that contains the current source."
-            fi
-        elif [[ -f "$APP_DIR/generate_codex_context.bat" ]]; then
-            fail "the current context generator is Windows-only; Phase 4 will replace it with scripts/generate_codex_context.py."
-        else
-            fail "no context generator was found in $APP_DIR."
-        fi
-        ;;
-    clean)
-        (($# == 0)) || fail "usage: tuvtk clean"
-        clean_generated
-        ;;
-    *)
-        prepare_compose
-        case "$command_name" in
-            status|ps) (($# == 0)) || fail "usage: tuvtk $command_name"; compose ps ;;
-            up|start) (($# == 0)) || fail "usage: tuvtk $command_name"; compose up -d ;;
-            down|stop) (($# == 0)) || fail "usage: tuvtk $command_name"; compose down ;;
-            restart) (($# == 0)) || fail "usage: tuvtk restart"; compose restart ;;
-            build) (($# == 0)) || fail "usage: tuvtk build"; compose build && compose up -d ;;
-            rebuild) (($# == 0)) || fail "usage: tuvtk rebuild"; compose build --no-cache && compose up -d ;;
-            logs)
-                (($# <= 1)) || fail "usage: tuvtk logs [SERVICE]"
-                compose logs -f "$@"
-                ;;
-            check) (($# == 0)) || fail "usage: tuvtk check"; django_exec check ;;
-            test)
-                if has_verbosity "$@"; then
-                    django_exec test "$@"
-                else
-                    django_exec test "$@" -v 0
-                fi
-                ;;
-            migrate) django_exec migrate "$@" ;;
-            makemigrations) django_exec makemigrations "$@" ;;
-            collectstatic) (($# == 0)) || fail "usage: tuvtk collectstatic"; django_exec collectstatic --noinput ;;
-            shell) (($# == 0)) || fail "usage: tuvtk shell"; django_exec shell ;;
-            dbshell) (($# == 0)) || fail "usage: tuvtk dbshell"; django_exec dbshell ;;
-            django) (($# > 0)) || fail "usage: tuvtk django COMMAND [ARGS...]"; django_exec "$@" ;;
-            exec)
-                (($# >= 2)) || fail "usage: tuvtk exec SERVICE COMMAND [ARGS...]"
-                compose exec "$@"
-                ;;
-            export-sql) (($# == 1)) || fail "usage: tuvtk export-sql PATH"; export_sql "$1" ;;
-            import-sql) (($# == 1)) || fail "usage: tuvtk import-sql SQL_FILE"; import_sql "$1" ;;
-            backup) (($# == 1)) || fail "usage: tuvtk backup BACKUP_DIRECTORY"; create_backup "$1" ;;
-            restore) (($# == 1)) || fail "usage: tuvtk restore BACKUP_ARCHIVE"; restore_backup "$1" ;;
-            *) fail "unknown command: $command_name (run 'tuvtk help')" ;;
-        esac
-        ;;
+
+    context) run_context "$@" ;;
+    clean) (($# == 0)) || fail "usage: clean"; clean_generated ;;
+    *) fail "unknown command: $command_name (run './install.sh help')" ;;
 esac
 ```
 
@@ -5023,12 +5189,10 @@ class CoreConfig(AppConfig):
 
 ## `core/context_processors.py`
 
-Size: 3.6 KB
+Size: 2.9 KB
 
 ```python
 import re
-
-from django.urls import reverse
 
 from .navigation import NAVIGATION
 
@@ -5092,24 +5256,8 @@ def build_application_shell(request, profile=None, permissions: set[str] | None 
             user_initials = username[:2].upper() or "U"
         if profile and profile.avatar:
             user_avatar_url = profile.avatar.url
-    navigation = build_navigation(request, permissions)
-    active_navigation_url = ""
-    for section in navigation:
-        for item in section["items"]:
-            active_child = next(
-                (child for child in item["children"] if child["is_active"]),
-                None,
-            )
-            active_item = active_child or (item if item["is_active"] else None)
-            if active_item and active_item.get("url_name"):
-                active_navigation_url = reverse(active_item["url_name"])
-                break
-        if active_navigation_url:
-            break
-
     return {
-        "app_navigation": navigation,
-        "active_navigation_url": active_navigation_url,
+        "app_navigation": build_navigation(request, permissions),
         "app_name": "Platforma TUVTK",
         "app_tagline": "Operațiuni interne",
         "user_display_name": user_display_name,
@@ -5156,60 +5304,6 @@ class ApplicationShellMiddleware:
         return None
 ```
 
-## `core/mixins.py`
-
-Size: 1.5 KB
-
-```python
-from django.http import HttpResponse
-from django.urls import reverse
-
-
-class HtmxPageMixin:
-    """Return a page fragment for explicit HTMX navigation requests."""
-
-    htmx_template_name = "includes/htmx_page.html"
-    htmx_content_template = None
-    shell_page_title = "Platforma TUVTK"
-    shell_nav_url_name = None
-
-    def is_htmx_fragment_request(self):
-        headers = self.request.headers
-        return (
-            headers.get("HX-Request") == "true"
-            and headers.get("HX-History-Restore-Request") != "true"
-        )
-
-    def get_template_names(self):
-        if self.is_htmx_fragment_request():
-            return [self.htmx_template_name]
-        return super().get_template_names()
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update(
-            {
-                "htmx_content_template": self.htmx_content_template,
-                "shell_page_title": self.shell_page_title,
-                "shell_active_nav_url": reverse(self.shell_nav_url_name),
-            }
-        )
-        return context
-
-    def handle_no_permission(self):
-        response = super().handle_no_permission()
-        if (
-            self.request.headers.get("HX-Request") == "true"
-            and response.status_code in {301, 302}
-            and response.get("Location")
-        ):
-            return HttpResponse(
-                status=204,
-                headers={"HX-Redirect": response["Location"]},
-            )
-        return response
-```
-
 ## `core/models.py`
 
 Size: 384 B
@@ -5233,19 +5327,14 @@ class UserProfile(models.Model):
 
 ## `core/navigation.py`
 
-Size: 5.5 KB
+Size: 5.4 KB
 
 ```python
 NAVIGATION = (
     {
         "label": "Overview",
         "items": (
-            {
-                "label": "Dashboard",
-                "icon": "grid-1x2-fill",
-                "url_name": "dashboard:index",
-                "htmx": True,
-            },
+            {"label": "Dashboard", "icon": "grid-1x2-fill", "url_name": "dashboard:index"},
             {
                 "label": "Task-uri",
                 "icon": "list-task",
@@ -5296,7 +5385,6 @@ NAVIGATION = (
                     {
                         "label": "Istoric",
                         "url_name": "planificator:istoric",
-                        "htmx": True,
                         "permission": "planificator.use_course_planning",
                         "active_url_names": (
                             "planificator:istoric",
@@ -5457,26 +5545,9 @@ Size: 2.8 KB
 {% endblock %}
 ```
 
-## `core/templates/includes/htmx_page.html`
-
-Size: 293 B
-
-```html
-<title>{{ shell_page_title }}</title>
-<div
-    id="page-content"
-    class="mx-auto w-full max-w-[1600px] px-4 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-5"
-    data-active-nav-url="{{ shell_active_nav_url }}"
-    hx-history-elt
-    hx-history="false"
->
-    {% include htmx_content_template %}
-</div>
-```
-
 ## `core/templates/includes/sidebar.html`
 
-Size: 6.0 KB
+Size: 5.6 KB
 
 ```html
 {% load bootstrap_icons %}
@@ -5504,7 +5575,7 @@ Size: 6.0 KB
                                                 {% for child in item.children %}
                                                     <li>
                                                         {% if child.url_name %}
-                                                            <a href="{% url child.url_name %}" data-shell-nav-url="{% url child.url_name %}"{% if child.htmx %} hx-get="{% url child.url_name %}" hx-target="#page-content" hx-swap="outerHTML show:#ops-main-scroll:top" hx-push-url="true" hx-sync="#page-content:replace"{% endif %} class="transition-none{% if child.is_active %} active font-semibold{% endif %}" {% if child.is_active %}aria-current="page"{% endif %}><span class="ops-submenu-label">{{ child.label }}</span></a>
+                                                            <a href="{% url child.url_name %}" class="transition-none{% if child.is_active %} active font-semibold{% endif %}" {% if child.is_active %}aria-current="page"{% endif %}><span class="ops-submenu-label">{{ child.label }}</span></a>
                                                         {% else %}
                                                             <a href="#" class="transition-none"><span class="ops-submenu-label">{{ child.label }}</span></a>
                                                         {% endif %}
@@ -5514,7 +5585,7 @@ Size: 6.0 KB
                                         </details>
                                     {% else %}
                                         {% if item.url_name %}
-                                            <a href="{% url item.url_name %}" data-shell-nav-url="{% url item.url_name %}"{% if item.htmx %} hx-get="{% url item.url_name %}" hx-target="#page-content" hx-swap="outerHTML show:#ops-main-scroll:top" hx-push-url="true" hx-sync="#page-content:replace"{% endif %} class="is-drawer-close:tooltip is-drawer-close:tooltip-right is-drawer-close:justify-center transition-none{% if item.is_active %} active font-semibold{% endif %}" data-tip="{{ item.label }}" {% if item.is_active %}aria-current="page"{% endif %}>
+                                            <a href="{% url item.url_name %}" class="is-drawer-close:tooltip is-drawer-close:tooltip-right is-drawer-close:justify-center transition-none{% if item.is_active %} active font-semibold{% endif %}" data-tip="{{ item.label }}" {% if item.is_active %}aria-current="page"{% endif %}>
                                         {% else %}
                                             <a href="#" class="is-drawer-close:tooltip is-drawer-close:tooltip-right is-drawer-close:justify-center transition-none" data-tip="{{ item.label }}">
                                         {% endif %}
@@ -5550,7 +5621,7 @@ Size: 6.0 KB
 
 ## `core/templates/layouts/base.html`
 
-Size: 8.1 KB
+Size: 6.7 KB
 
 ```html
 {% load static tailwind_tags optional_browser_reload %}
@@ -5560,11 +5631,9 @@ Size: 8.1 KB
     <title>{% block title %}Platforma TUVTK{% endblock %}</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="htmx-config" content='{"historyRestoreAsHxRequest": false}'>
     <link rel="preload" href="{% static 'fonts/inter/InterVariable.woff2' %}" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="{% static 'bootstrap_icons/css/bootstrap_icons.css' %}">
     {% tailwind_css %}
-    <script src="{% static 'js/vendor/htmx.min.js' %}" defer></script>
     {% block page_styles %}{% endblock %}
 </head>
 <body class="h-dvh overflow-hidden">
@@ -5646,49 +5715,18 @@ Size: 8.1 KB
                 class="drawer-toggle"
                 data-sidebar-start-collapsed="{% block sidebar_start_collapsed %}false{% endblock %}"
             >
-            <script>
-                (() => {
-                    const toggle = document.getElementById("ops-sidebar");
-                    const drawer = toggle?.closest(".drawer");
-                    if (!toggle || !drawer) return;
-
-                    const desktop = window.matchMedia("(min-width: 1024px)");
-                    const startsCollapsed = toggle.dataset.sidebarStartCollapsed === "true";
-                    let savedState = null;
-
-                    try {
-                        savedState = sessionStorage.getItem("ops-sidebar-expanded");
-                    } catch {
-                        // Storage can be unavailable in restricted browser contexts.
-                    }
-
-                    toggle.checked = desktop.matches
-                        && !startsCollapsed
-                        && (savedState === null || savedState === "true");
-
-                    requestAnimationFrame(() => {
-                        requestAnimationFrame(() => drawer.dataset.sidebarReady = "true");
-                    });
-                })();
-            </script>
-            {% include "includes/sidebar.html" %}
+            <script src="{% static 'js/sidebar_state.js' %}"></script>
             <div class="drawer-content h-full min-h-0 overflow-hidden">
-                <main id="ops-main-scroll" class="ops-scrollbar h-full overflow-y-auto">
-                    <div
-                        id="page-content"
-                        class="mx-auto w-full max-w-[1600px] px-4 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-5"
-                        data-active-nav-url="{{ active_navigation_url }}"
-                        hx-history-elt
-                        hx-history="false"
-                    >
+                <main class="ops-scrollbar h-full overflow-y-auto">
+                    <div class="mx-auto w-full max-w-[1600px] px-4 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-5">
                         {% block content %}{% endblock %}
                     </div>
                 </main>
             </div>
+            {% include "includes/sidebar.html" %}
         </div>
     </div>
     <script src="{% static 'js/sidebar.js' %}" defer></script>
-    <script src="{% static 'js/shell_htmx.js' %}" defer></script>
     {% block page_scripts %}{% endblock %}
     {% optional_browser_reload_script %}
 </body>
@@ -5784,7 +5822,7 @@ def optional_browser_reload_script(context):
 
 ## `core/tests.py`
 
-Size: 3.0 KB
+Size: 2.9 KB
 
 ```python
 from django.contrib.auth.models import AnonymousUser
@@ -5814,7 +5852,6 @@ class ApplicationShellTests(TestCase):
 
         self.assertTrue(dashboard_item['is_active'])
         self.assertEqual(dashboard_item['url_name'], 'dashboard:index')
-        self.assertEqual(context['active_navigation_url'], '/')
 
     def test_context_processor_does_not_query_the_database(self):
         user = get_user_model().objects.create_user(username="shell-user")
@@ -5966,7 +6003,7 @@ Size: 921 B
 
 ## `generate_codex_context.bat`
 
-Size: 82 B
+Size: 85 B
 
 ```batch
 @echo off
@@ -5976,7 +6013,7 @@ exit /b %ERRORLEVEL%
 
 ## `generate_codex_context.ps1`
 
-Size: 84 B
+Size: 86 B
 
 ```powershell
 & python "$PSScriptRoot\scripts\generate_codex_context.py" @args
@@ -5993,6 +6030,109 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 exec python3 "$SCRIPT_DIR/scripts/generate_codex_context.py" "$@"
+```
+
+## `install.cmd`
+
+Size: 112 B
+
+```batch
+@echo off
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0install.ps1" %*
+exit /b %ERRORLEVEL%
+```
+
+## `install.ps1`
+
+Size: 2.7 KB
+
+```powershell
+[CmdletBinding()]
+param(
+    [Parameter(ValueFromRemainingArguments = $true)]
+    [string[]]$CommandArgs
+)
+
+$ErrorActionPreference = 'Stop'
+$root = Split-Path -Parent $MyInvocation.MyCommand.Path
+$router = Join-Path $root 'scripts\tuvtk_cli.py'
+$runtimeRoot = Join-Path $root '.tuvtk\runtime\python'
+$runtimePython = Join-Path $runtimeRoot 'python.exe'
+$minimumVersion = [Version]'3.12'
+
+function Test-TuvtkPython {
+    param([string]$Executable)
+
+    if (-not (Test-Path -LiteralPath $Executable -PathType Leaf)) {
+        return $false
+    }
+    try {
+        $versionText = & $Executable -c "import sys; print('.'.join(map(str, sys.version_info[:3])))" 2>$null
+        return ([Version]$versionText -ge $minimumVersion)
+    }
+    catch {
+        return $false
+    }
+}
+
+$python = $null
+$candidates = @(
+    $runtimePython,
+    (Join-Path $root '.venv\Scripts\python.exe')
+)
+
+$pathPython = Get-Command python.exe -ErrorAction SilentlyContinue
+if ($pathPython) {
+    $candidates += $pathPython.Source
+}
+
+foreach ($candidate in $candidates) {
+    if (Test-TuvtkPython -Executable $candidate) {
+        $python = $candidate
+        break
+    }
+}
+
+if (-not $python) {
+    $version = '3.12.10'
+    $installerName = "python-$version-amd64.exe"
+    $downloadDir = Join-Path $root '.tuvtk\downloads'
+    $installer = Join-Path $downloadDir $installerName
+    $url = "https://www.python.org/ftp/python/$version/$installerName"
+
+    New-Item -ItemType Directory -Force -Path $downloadDir | Out-Null
+    New-Item -ItemType Directory -Force -Path $runtimeRoot | Out-Null
+    if (-not (Test-Path -LiteralPath $installer)) {
+        Write-Host "[tuvtk] Downloading $url"
+        $partial = "$installer.part"
+        Invoke-WebRequest -Uri $url -OutFile $partial -UseBasicParsing
+        Move-Item -Force -LiteralPath $partial -Destination $installer
+    }
+
+    $signature = Get-AuthenticodeSignature -LiteralPath $installer
+    if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notmatch 'Python Software Foundation') {
+        throw "Python installer signature validation failed: $($signature.Status)"
+    }
+
+    Write-Host "[tuvtk] Installing a private Python runtime"
+    $arguments = @(
+        '/quiet',
+        'InstallAllUsers=0',
+        "TargetDir=`"$runtimeRoot`"",
+        'Include_pip=1',
+        'Include_launcher=0',
+        'PrependPath=0',
+        'Shortcuts=0'
+    )
+    $process = Start-Process -FilePath $installer -ArgumentList $arguments -Wait -PassThru -WindowStyle Hidden
+    if ($process.ExitCode -ne 0 -or -not (Test-TuvtkPython -Executable $runtimePython)) {
+        throw "Private Python installation failed with exit code $($process.ExitCode)."
+    }
+    $python = $runtimePython
+}
+
+& $python $router @CommandArgs
+exit $LASTEXITCODE
 ```
 
 ## `platforma_tuvtk/__init__.py`
@@ -6434,1148 +6574,6 @@ Size: 323 B
 }
 ```
 
-## `references/espocrm-install.sh`
-
-Size: 26.6 KB
-
-Redacted secret-like assignments: 1
-
-```bash
-#!/bin/bash
-
-# EspoCRM installer v2.8.0
-#
-# EspoCRM - Open Source CRM application.
-# Copyright (C) 2014-2026 EspoCRM, Inc.
-# Website: https://www.espocrm.com
-
-set -e
-
-function printExitError() {
-    local message="$1"
-
-    restoreBackup
-
-    printf "\n"
-    printRedMessage "ERROR"
-    printf ": ${message}\n"
-
-    exit 1
-}
-
-printRedMessage() {
-    local message="$1"
-
-    local red='\033[0;31m'
-    local default='\033[0m'
-
-    printf "${red}${message}${default}"
-}
-
-function restoreBackup() {
-    if [ -n "$backupDirectory" ] && [ -d "$backupDirectory" ]; then
-        cp -rp "${backupDirectory}"/* "${data[homeDirectory]}"
-    fi
-}
-
-if ! [ $(id -u) = 0 ]; then
-    printExitError "This script should be run as root or with sudo."
-fi
-
-# Pre installation modes:
-# 1. HTTP. Without parameters.
-# 2. Ask3. Without parameters, when already installed. It will ask about:
-#    1. HTTP
-#    2. letsencrypt
-#    3. SSL
-# 3. Ask2. Parameter --ssl. It will ask about letsencrypt + email.
-# 4. SSL. Parameter --ssl --owncertificate. Installation with a set self-signed certificate.
-# 5. Letsencrypt. Parameter --ssl --letsencrypt. It will ask for an email address.
-
-preInstallationMode=1
-
-declare -A data=(
-    [server]="nginx"
-    [ssl]=false
-    [owncertificate]=false
-    [letsencrypt]=false
-    [dbRootPassword]=$(openssl rand -hex 10)
-    [dbPassword]=$(openssl rand -hex 10)
-    [adminUsername]="admin"
-    [adminPassword]=$(openssl rand -hex 6)
-    [homeDirectory]="/var/www/espocrm"
-    [action]="main"
-    [backupPath]="SCRIPT_DIRECTORY/espocrm-backup"
-)
-
-declare -A modes=(
-    [1]="letsencrypt"
-    [2]="ssl"
-    [3]="http"
-)
-
-declare -A modesLabels=(
-    [letsencrypt]="Let's Encrypt certificate"
-    [ssl]="Own SSL/TLS certificate"
-    [http]="HTTP only"
-)
-
-function handleArguments() {
-    for ARGUMENT in "$@"
-    do
-        local key=$(echo "$ARGUMENT" | cut -f1 -d=)
-        local value=$(echo "$ARGUMENT" | cut -f2 -d=)
-
-        case "$key" in
-            -y | --yes)
-                noConfirmation=true
-                ;;
-
-            --ssl)
-                data[ssl]=true
-                ;;
-
-            --owncertificate)
-                data[owncertificate]=true
-                ;;
-
-            --letsencrypt)
-                data[letsencrypt]=true
-                ;;
-
-            --clean)
-                needClean=true
-                ;;
-
-            --domain)
-                data[domain]="${value}"
-                ;;
-
-            --email)
-                data[email]="${value}"
-                ;;
-
-            --db-root-password | --dbRootPassword)
-                data[dbRootPassword]="${value}"
-                ;;
-
-            --db-password | --dbPassword)
-                data[dbPassword]="${value}"
-                ;;
-
-            --admin-username | --adminUsername)
-                data[adminUsername]="${value}"
-                ;;
-
-            --admin-password | --adminPassword)
-                data[adminPassword]="${value}"
-                ;;
-
-            --command)
-                data[action]="command"
-                ;;
-
-            --backup-path | --backupPath)
-                data[backupPath]="${value}"
-                ;;
-
-            --environment)
-                data[action]="environment"
-                ;;
-
-            --network)
-                data[action]="network"
-                ;;
-
-            --public-ip)
-                data[ipAddressType]="1"
-                ;;
-
-            --private-ip)
-                data[ipAddressType]="2"
-                ;;
-        esac
-    done
-}
-
-function promptConfirmation() {
-    local text=$1
-
-    read -p "${text}" choice
-
-    case "$choice" in
-        y|Y|yes|YES )
-            echo true
-            return
-            ;;
-    esac
-
-    echo false
-}
-
-function stopProcess() {
-    restoreBackup
-
-    echo "Aborted."
-    exit 0
-}
-
-function getOs() {
-    local osType="unknown"
-
-    case $(uname | tr '[:upper:]' '[:lower:]') in
-        linux*)
-            local linuxOs=$(getLinuxOs)
-
-            if [ -n "$linuxOs" ]; then
-                osType="$linuxOs"
-            fi
-            ;;
-        darwin*)
-            osType="osx"
-            ;;
-        msys*)
-            osType="windows"
-            ;;
-    esac
-
-    echo "$osType"
-}
-
-function getLinuxOs() {
-    declare -a linuxOsList=(centos redhat fedora ubuntu debian mint)
-
-    find -L /etc/ -maxdepth 1 -type f -name "*release" -print | while read file; do
-        local osString=$(cat "$file" | grep "^NAME=" | sed 's/NAME=//' | tr -d '"' | tr '[:upper:]' '[:lower:]')
-
-        for linuxOs in "${linuxOsList[@]}"
-        do
-            if [[ "$osString" == *"$linuxOs"* ]]; then
-                echo "$linuxOs"
-                return
-            fi
-        done
-    done
-}
-
-function getHostname() {
-    local hostname=$(hostname -f)
-
-    if [ $hostname != "localhost" ]; then
-        isFqdn=$(isFqdn "$hostname")
-
-        if [ "$isFqdn" != true ]; then
-            hostname=$(getServerIp)
-        fi
-    fi
-
-    echo "$hostname"
-}
-
-function getServerIp() {
-    local serverIP=$(hostname -I | awk '{print $1}')
-
-    if [ -z "$serverIP" ] || [ "$(isIpValid $serverIP)" != true ]; then
-        serverIP=$(ip route get 1 | awk '{print $NF;exit}')
-    fi
-
-    if [ "$(isIpValid $serverIP)" = true ]; then
-        echo "$serverIP"
-    fi
-}
-
-function getPublicIp() {
-    local publicIP=$(curl -4 -s ifconfig.me)
-
-    if [ "$(isIpValid $publicIP)" = true ]; then
-        echo "$publicIP"
-    fi
-}
-
-function getActualInstalledMode() {
-    if [ -f "${data[homeDirectory]}/docker-compose.yml" ]; then
-        head -n 1 "${data[homeDirectory]}/docker-compose.yml" | grep -oP "(?<=MODE: ).*"
-    fi
-}
-
-function getInstallationMode() {
-    if [ -z "$installationMode" ] || [ -z "${modes[$installationMode]}" ]; then
-        printExitError "Unknown installation mode. Please try again."
-    fi
-
-    echo "${modes[$installationMode]}"
-}
-
-function getYamlValue {
-    local keyName="$1"
-    local category="$2"
-
-    if [ -f "${data[homeDirectory]}/docker-compose.yml" ]; then
-        sed -n "/${category}:/,/networks:/p" "${data[homeDirectory]}/docker-compose.yml" | grep -oP "(?<=${keyName}: ).*" | head -1
-    fi
-}
-
-function isFqdn() {
-    local hostname=$1
-
-    if [ -z "$hostname" ]; then
-        echo false
-        return
-    fi
-
-    local isIpValid=$(isIpValid "$hostname")
-    if [ "$isIpValid" = true ]; then
-        echo false
-        return
-    fi
-
-    if [[ $hostname == *"."* ]]; then
-        echo true
-        return
-    fi
-
-    echo false
-}
-
-function isHostAvailable() {
-    local hostname=$1
-
-    host $hostname 2>&1 > /dev/null
-    if [ $? -eq 0 ]; then
-        echo true
-        return
-    fi
-
-    echo false
-}
-
-function isIpValid() {
-    local ipAddress="$1"
-
-    if [[ $ipAddress =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-        echo true
-        return
-    fi
-
-    echo false
-}
-
-function isPortInUse() {
-    local port="$1"
-
-    if [ -z "$port" ]; then
-        echo false
-        return
-    fi
-
-    if (echo >"/dev/tcp/localhost/$port") &>/dev/null ; then
-        echo true
-        return
-    fi
-
-    echo false
-}
-
-function isEmailValidated() {
-    local emailAddress="$1"
-
-    local regex="^(([A-Za-z0-9]+((\.|\-|\_|\+)?[A-Za-z0-9]?)*[A-Za-z0-9]+)|[A-Za-z0-9]+)@(([A-Za-z0-9]+)+((\.|\-|\_)?([A-Za-z0-9]+)+)*)+\.([A-Za-z]{2,})+$"
-
-    if [[ "$emailAddress" =~ ${regex} ]]; then
-        echo true
-        return
-    fi
-
-    echo false
-}
-
-function isInstalled() {
-    if [ -d "${data[homeDirectory]}" ]; then
-        echo true
-        return
-    fi
-
-    local isRunning=$(isServiceRunning)
-
-    echo "$isRunning"
-}
-
-function isServiceRunning() {
-    if [ -x "$(command -v docker)" ] && [ "$(docker ps -aqf name=espocrm)" ]; then
-        echo true
-        return
-    fi
-
-    echo false
-}
-
-function forceServiceStop() {
-    docker stop $(docker ps -aqf "name=espocrm")
-    docker rm $(docker ps -aqf "name=espocrm")
-}
-
-function checkFixSystemRequirements() {
-    local os="$1"
-
-    # Check port
-    local isPortInUse=$(isPortInUse "${data[httpPort]}")
-
-    if [ "$isPortInUse" = true ]; then
-        printExitError "The required port \"${data[httpPort]}\" is already in use. Free up the port and try again."
-    fi
-
-    declare -a missingLibs=()
-
-    if ! [ -x "$(command -v wget)" ] && ! [ -x "$(command -v curl)" ]; then
-        missingLibs+=("curl")
-    fi
-
-    if ! [ -x "$(command -v unzip)" ]; then
-        missingLibs+=("unzip")
-    fi
-
-    if [ -z "$missingLibs" ]; then
-        return
-    fi
-
-    case "$os" in
-        ubuntu | debian | mint )
-            apt-get update; \
-                apt-get install -y --no-install-recommends \
-                curl \
-                unzip
-            ;;
-
-        * )
-            printExitError "Missing libraries: ${missingLibs[@]}. Please install them and try again."
-            ;;
-    esac
-}
-
-function getBackupDirectory() {
-    local backupPath="${data[backupPath]}"
-
-    backupPath=${backupPath//SCRIPT_DIRECTORY/$scriptDirectory}
-    backupPath=${backupPath%/}
-
-    echo "${backupPath}/$(date +'%Y-%m-%d_%H%M%S')"
-}
-
-function backupActualInstallation {
-    if [ ! -d "${data[homeDirectory]}" ]; then
-        return
-    fi
-
-    echo "Creating a backup..."
-
-    backupDirectory=$(getBackupDirectory)
-
-    mkdir -p "${backupDirectory}"
-
-    cp -rp "${data[homeDirectory]}"/* "${backupDirectory}"
-
-    echo "Backup is created: $backupDirectory"
-}
-
-function cleanInstallation() {
-    printf "Cleaning the previous installation...\n"
-
-    if [ -f "${data[homeDirectory]}/docker-compose.yml" ]; then
-        docker compose -f "${data[homeDirectory]}/docker-compose.yml" down
-    fi
-
-    if [ $(isServiceRunning) = true ]; then
-        forceServiceStop
-    fi
-
-    backupActualInstallation
-
-    rm -rf "${data[homeDirectory]}"
-}
-
-function rebaseInstallation() {
-    local isRebase=${rebaseInstallation:-false}
-
-    if [ "$isRebase" != true ]; then
-        return
-    fi
-
-    printf "\n"
-    printf "Starting the reinstallation process...\n"
-
-    normalizeActualInstalledData
-
-    backupActualInstallation
-
-    printf "\n"
-
-    docker compose -f "${data[homeDirectory]}/docker-compose.yml" down
-
-    rm -rf "${data[homeDirectory]}/data/${data[server]}"
-    rm "${data[homeDirectory]}/docker-compose.yml"
-}
-
-function cleanTemporaryFiles() {
-    if [ -f "${scriptDirectory}/espocrm-installer-2.8.0.zip" ]; then
-        rm "${scriptDirectory}/espocrm-installer-2.8.0.zip"
-    fi
-
-    if [ -d "${scriptDirectory}/espocrm-installer-2.8.0" ]; then
-        rm -rf "${scriptDirectory}/espocrm-installer-2.8.0"
-    fi
-}
-
-function normalizeActualInstalledData() {
-    declare -A currentData
-
-    currentData[dbRootPassword]=$(getYamlValue "MARIADB_ROOT_PASSWORD" "espocrm-db")
-    currentData[dbPassword]=$(getYamlValue "MARIADB_PASSWORD" "espocrm-db")
-    currentData[adminUsername]=$(getYamlValue "ESPOCRM_ADMIN_USERNAME" "espocrm")
-    currentData[adminPassword]=$(getYamlValue "ESPOCRM_ADMIN_PASSWORD" "espocrm")
-
-    for key in "${!currentData[@]}"
-    do
-        local value="${currentData[$key]}"
-
-        if [ -z "$value" ]; then
-            printExitError "Unable to start the reinstallation process. If you want to start a clean installation with losing your data, use \"--clean\" option."
-        fi
-
-        data[$key]="$value"
-    done
-}
-
-function normalizePreInstallationMode() {
-    if [ "${data[ssl]}" = true ] && [ "${data[owncertificate]}" = true ]; then
-        preInstallationMode=4
-        return
-    fi
-
-    if [ "${data[ssl]}" = true ] && [ "${data[letsencrypt]}" = true ]; then
-        preInstallationMode=5
-        return
-    fi
-
-    if [ "${data[ssl]}" = true ]; then
-        preInstallationMode=3
-        return
-    fi
-}
-
-function normalizeData() {
-    declare -a requiredFields=(
-        domain
-    )
-
-    for requiredField in "${requiredFields[@]}"
-    do
-        if [ -z "${data[$requiredField]}" ]; then
-            printExitError "The field \"$requiredField\" is required."
-        fi
-    done
-
-    if [ "$mode" == "letsencrypt" ]; then
-        local isEmailValidated=$(isEmailValidated "${data[email]}")
-
-        if [ -z "${data[email]}" ] || [ "$isEmailValidated" != true ]; then
-            printExitError "Empty or incorrect \"email\" field."
-        fi
-    fi
-
-    data[url]="http://${data[domain]}"
-    data[httpPort]="80"
-
-    if [ "$mode" != "http" ]; then
-        data[url]="https://${data[domain]}"
-        data[httpPort]="443"
-    fi
-
-    # Validate domain
-    validateIpOrDomain
-
-    isFqdn=$(isFqdn "${data[domain]}")
-
-    if [ "$isFqdn" != true ] && [ "$mode" != "http" ]; then
-        printExitError "Your domain name: \"${data[domain]}\" is incorrect. SSL/TLS certificate can only be used for a valid domain name."
-    fi
-}
-
-function createParamsFromData() {
-    for field in "${!data[@]}"
-    do
-        if [ -n "${data[$field]}" ]; then
-            params+=("--$field=${data[$field]}")
-        fi
-    done
-}
-
-function download() {
-    local url=$1
-    local name=$2
-
-    if [ -x "$(which wget)" ] ; then
-        local downloadMode="wget"
-    elif [ -x "$(which curl)" ]; then
-        local downloadMode="curl"
-    fi
-
-    if [ -z "$downloadMode" ]; then
-        printExitError "The \"wget\" or \"curl\" is not found on your system. Please install one of them and try again."
-    fi
-
-    if [ -n "$name" ]; then
-        case $downloadMode in
-            wget )
-                wget -q $url -O $name
-                return
-                ;;
-
-            curl )
-                curl -o $name -sfL $url
-                return
-                ;;
-        esac
-    fi
-
-    case $downloadMode in
-        wget )
-            wget -q $url
-            ;;
-
-        curl )
-            curl -sfL $url
-            ;;
-    esac
-}
-
-function runShellScript() {
-    local script="$1"
-    shift
-    local scriptParams=("$@")
-
-    if [ ! -f "./$script" ]; then
-        printExitError "Unable to find the \"$script\" script. Try to run the installer again."
-    fi
-
-    chmod +x "./$script"
-
-    if [ -n "$scriptParams" ]; then
-        "./$script" "${scriptParams[@]}" || {
-            restoreBackup
-            exit 1
-        }
-        return
-    fi
-
-    "./$script" || {
-        restoreBackup
-        exit 1
-    }
-}
-
-function handleExistingInstallation {
-    if [ -n "$needClean" ] && [ $needClean = true ]; then
-        cleanInstallation || {
-            printExitError "Unable to clean existing installation."
-        }
-    fi
-
-    if [ $(isInstalled) != true ]; then
-        return
-    fi
-
-    printf "\n"
-    printf "The installed EspoCRM instance is found.\n"
-
-    case "$(getActualInstalledMode)" in
-        http | letsencrypt | ssl )
-            preInstallationMode=2
-            rebaseInstallation=true
-            ;;
-
-        * )
-            printExitError "Unable to determine the current installation mode. If you want to start a clean installation with losing your data, use \"--clean\" option."
-            ;;
-    esac
-}
-
-function handlePreInstallationMode() {
-    local mode="$1"
-
-    case "$mode" in
-        1 | 2 )
-            installationMode=3
-            ;;
-
-        3 )
-            read -p "
-Please choose the installation mode you prefer [1-2]:
-  * 1. Free SSL/TLS certificate provided by the Let's Encrypt (recommended)? [1]
-  * 2. Own SSL/TLS certificate (for advanced users only)? [2]
-" installationMode
-            ;;
-
-        4 )
-            installationMode=2
-            ;;
-
-        5 )
-            installationMode=1
-            ;;
-
-        * )
-            printExitError "Unknown installation mode. Please try to run the script again."
-            ;;
-    esac
-}
-
-function defineIpAddress() {
-    if [ -n "${data[domain]}" ] || [ -n "$noConfirmation" ]; then
-        defineDomainNameAutomatically
-        return
-    fi
-
-    local publicIp=$(getPublicIp)
-    local privateIp=$(getServerIp)
-
-    if [ -z "${data[ipAddressType]}" ]; then
-        read -p "
-Please choose your IP for the future EspoCRM instance [1-3]:
-  * 1. Public IP (recommended): $publicIp [1]
-  * 2. Private IP (for local installation only): $privateIp [2]
-  * 3. Enter another IP or a domain [3]
-" data[ipAddressType]
-    fi
-
-    case "${data[ipAddressType]}" in
-        1 )
-            data[domain]="$publicIp"
-            ;;
-
-        2 )
-            data[domain]="$privateIp"
-            ;;
-
-        3 )
-            printf "\nEnter an IPv4 (e.g. 234.32.0.32):\n"
-            read data[domain]
-            ;;
-
-        * )
-            printRedMessage "Incorrect selection. Please try again."
-            unset data[ipAddressType]
-
-            defineIpAddress
-            return
-            ;;
-    esac
-
-    validateIpOrDomain
-}
-
-function defineDomainNameAutomatically() {
-    if [ -n "${data[domain]}" ]; then
-        validateIpOrDomain
-        return
-    fi
-
-    local publicIp=$(getPublicIp)
-    local privateIp=$(getServerIp)
-
-    case "${data[ipAddressType]}" in
-        private )
-            data[domain]="$privateIp"
-            ;;
-
-        * )
-            data[domain]="$publicIp"
-            ;;
-    esac
-}
-
-function validateIpOrDomain() {
-    isFqdn=$(isFqdn "${data[domain]}")
-    isIpValid=$(isIpValid "${data[domain]}")
-
-    if [ -z "$noConfirmation" ]; then
-        if [ "$isFqdn" != true ] && [ "$isIpValid" != true ]; then
-            printf "\nYour domain name or IP: \"${data[domain]}\" is incorrect. Please enter a valid one and try again\n"
-            read data[domain]
-
-            isFqdn=$(isFqdn "${data[domain]}")
-            isIpValid=$(isIpValid "${data[domain]}")
-        fi
-    fi
-
-    if [ "$isFqdn" != true ] && [ "$isIpValid" != true ]; then
-        printExitError "Your domain name or IP: \"${data[domain]}\" is incorrect."
-    fi
-}
-
-function handleInstallationMode() {
-    local mode="$1"
-
-    case "$mode" in
-        1 )
-            if [ -z "${data[email]}" ]; then
-                printf "\nEnter your email address to generate the Let's Encrypt certificate:\n"
-                read data[email]
-            fi
-            ;;
-
-        2 )
-            printf "NOTICE: For using your own SSL/TLS certificates you have to setup them manually after the installation.\n"
-            sleep 1
-            ;;
-
-        3 )
-            defineIpAddress
-            ;;
-
-        * )
-            printExitError "Incorrect installation mode. Please try again."
-            ;;
-    esac
-
-    if [ -z "${data[domain]}" ]; then
-        printf "\nEnter a domain name for the future EspoCRM instance (e.g. espoexample.com):\n"
-        read data[domain]
-    fi
-}
-
-function downloadSourceFiles() {
-    rm -rf ./espocrm-installer-2.8.0.zip ./espocrm-installer-2.8.0/
-
-    download https://github.com/espocrm/espocrm-installer/releases/download/2.8.0/espocrm-installer-2.8.0.zip "espocrm-installer-2.8.0.zip"
-    unzip -q "espocrm-installer-2.8.0.zip"
-
-    if [ ! -d "./espocrm-installer-2.8.0" ]; then
-        printExitError "Unable to load source files."
-    fi
-}
-
-function prepareDocker() {
-    mkdir -p "${data[homeDirectory]}"
-    mkdir -p "${data[homeDirectory]}/data"
-    mkdir -p "${data[homeDirectory]}/data/${data[server]}"
-
-    if [ ! -d "./installation-modes/$mode/${data[server]}" ]; then
-        printExitError "Unable to find configuration for the \"${data[server]}\" server. Try to run the installation again."
-    fi
-
-    if [ ! -f "./installation-modes/$mode/${data[server]}/docker-compose.yml" ]; then
-        printExitError "Error: Unable to find \"docker-compose.yml\" file. Try to run the installation again."
-    fi
-
-    mv "./installation-modes/$mode/${data[server]}/docker-compose.yml" "${data[homeDirectory]}/docker-compose.yml"
-    mv "./installation-modes/$mode/${data[server]}"/* "${data[homeDirectory]}/data/${data[server]}"
-
-    # Copy helper commands
-    find "./commands" -type f  | while read file; do
-        fileName=$(basename "$file")
-        cp "$file" "${data[homeDirectory]}/$fileName"
-        chmod +x "${data[homeDirectory]}/$fileName"
-    done
-
-    # Correct existing params
-    local configFile="${data[homeDirectory]}/data/espocrm/data/config.php"
-
-    if [ -f "$configFile" ]; then
-        sed -i "s#'siteUrl' => '.*'#'siteUrl' => '${data[url]}'#g" "$configFile"
-    fi
-}
-
-runDockerDatabase() {
-    docker compose -f "${data[homeDirectory]}/docker-compose.yml" up -d espocrm-db || {
-        restoreBackup
-        exit 1
-    }
-
-    printf "\nWaiting for the database ready.\n"
-
-    local dbUser=$(getYamlValue "MARIADB_USER" espocrm-db)
-    local dbPass=$(getYamlValue "MARIADB_PASSWORD" espocrm-db)
-
-    for i in {1..36}
-    do
-        docker exec -i espocrm-db mariadb --user="$dbUser" --password="$dbPass" -e "SHOW DATABASES;" > /dev/null 2>&1 && break
-
-        printf "."
-
-        sleep 5
-    done
-
-    printf "\n"
-}
-
-function runDocker() {
-    runDockerDatabase
-
-    docker compose -f "${data[homeDirectory]}/docker-compose.yml" up -d || {
-        restoreBackup
-        exit 1
-    }
-
-    printf "\nWaiting for the first-time EspoCRM configuration.\n"
-    printf "This may take up to 5 minutes.\n"
-
-    runDockerResult=false
-
-    for i in {1..120}
-    do
-        if [ $(curl -sfkLI "${data[url]}" --resolve "${data[domain]}:${data[httpPort]}:127.0.0.1" -o /dev/null -w '%{http_code}\n') == "200" ]; then
-            runDockerResult=true
-            break
-        fi
-
-        printf "."
-
-        if [ $i -eq 61 ]; then
-            printf "\n\nYour server is running slow. In 90%% the process is faster.\n"
-            printf "You have to wait 5 more minutes.\n"
-        fi
-
-        sleep 5
-    done
-
-    for i in {1..20}
-    do
-        if [ "$(docker container inspect -f '{{.State.Running}}' espocrm-websocket)" == "true" ]; then
-            sleep 3
-            docker compose -f "${data[homeDirectory]}/docker-compose.yml" restart espocrm-nginx > /dev/null 2>&1
-            break
-        fi
-
-        printf "."
-
-        sleep 5
-    done
-}
-
-function displaySummaryInformation() {
-    printf "\n"
-    printf "Summary information:\n"
-    printf "  Domain: ${data[domain]}\n"
-    printf "  Mode: ${modesLabels[$mode]}\n"
-
-    if [ "$mode" == "letsencrypt" ]; then
-        printf "  Email for the Let's Encrypt certificate: ${data[email]}\n"
-    fi
-
-    printf "\n"
-
-    isConfirmed=$(promptConfirmation "Do you want to continue? [y/n] ")
-
-    if [ "$isConfirmed" != true ]; then
-        stopProcess
-    fi
-}
-
-#---------- ACTIONS --------------------
-
-function actionMain() {
-    if [ -z "$noConfirmation" ]; then
-        printf "This script will install EspoCRM with all the needed prerequisites (including Docker, Nginx, PHP, MariaDB).\n"
-
-        isConfirmed=$(promptConfirmation "Do you want to continue the installation? [y/n] ")
-        if [ "$isConfirmed" != true ]; then
-            stopProcess
-        fi
-    fi
-
-    handleExistingInstallation
-
-    normalizePreInstallationMode
-
-    handlePreInstallationMode "$preInstallationMode"
-    handleInstallationMode "$installationMode"
-
-    mode=$(getInstallationMode)
-
-    normalizeData
-
-    if [ -z "$noConfirmation" ]; then
-        displaySummaryInformation
-    fi
-
-    rebaseInstallation
-
-    checkFixSystemRequirements "$operatingSystem"
-
-    cleanTemporaryFiles
-
-    downloadSourceFiles
-
-    cd "espocrm-installer-2.8.0"
-
-    # Check and configure a system
-    case $(getOs) in
-        ubuntu | debian | mint )
-            runShellScript "system-configuration/debian.sh"
-            ;;
-
-        * )
-            printExitError "Your OS is not supported by the script. We recommend to use Ubuntu server."
-            ;;
-    esac
-
-    case $mode in
-        http | ssl | letsencrypt )
-            declare -a params
-            createParamsFromData
-            runShellScript "installation-modes/$mode/init.sh" "${params[@]}"
-            ;;
-
-        * )
-            printExitError "Unknown installation mode \"$mode\"."
-            ;;
-    esac
-
-    # Prepare docker
-    prepareDocker
-
-    # Run Docker
-    runDocker
-
-    printf "\n\n"
-
-    if [ "$runDockerResult" = true ]; then
-        printf "The installation has been successfully completed.\n"
-    else
-        printRedMessage "The installation process is still in progress due to low server performance.\n"
-        printf " - In order to check the process, run:\n"
-        printf "   ${data[homeDirectory]}/command.sh logs\n"
-        printf " - In order to cancel the process, run:\n"
-        printf "   ${data[homeDirectory]}/command.sh stop\n"
-    fi
-
-    # Post installation message
-    case $mode in
-        http )
-            printf "
-IMPORTANT: Your EspoCRM instance is working in HTTP mode.
-If you want to install with SSL/TLS certificate, use \"--ssl\" option. For more details, please visit https://docs.espocrm.com/administration/installation-by-script#installation-with-ssltls-certificate.
-"
-            ;;
-
-        ssl )
-            printf "
-IMPORTANT: Your EspoCRM instance is working in insecure mode with a self-signed certificate.
-You have to setup your own SSL/TLS certificates. For more details, please visit https://docs.espocrm.com/administration/installation-by-script#2-own-ssltls-certificate.
-"
-            ;;
-    esac
-
-    printf "
-Login data/information to your EspoCRM instance:
-URL: ${data[url]}
-Username: ${data[adminUsername]}
-Password: <redacted>
-"
-
-    printf "\nYour instance files are located at: \"${data[homeDirectory]}\".\n"
-}
-
-actionCommand() {
-    cleanTemporaryFiles
-
-    downloadSourceFiles
-
-    if [ ! -f "${data[homeDirectory]}/command.sh" ]; then
-        printExitError "EspoCRM directory is not found."
-    fi
-
-    cp ./espocrm-installer-2.8.0/commands/command.sh "${data[homeDirectory]}/command.sh" || {
-        printExitError "Unable to update the ${data[homeDirectory]}/command.sh"
-    }
-
-    chmod +x "${data[homeDirectory]}/command.sh"
-
-    echo "Done"
-}
-
-actionEnvironment() {
-    if [ -z "$noConfirmation" ]; then
-        printf "This script will set up the environment required for EspoCRM (including Docker, Nginx, PHP, MariaDB).\n"
-
-        isConfirmed=$(promptConfirmation "Do you want to continue? [y/n] ")
-        if [ "$isConfirmed" != true ]; then
-            stopProcess
-        fi
-    fi
-
-    checkFixSystemRequirements "$operatingSystem"
-
-    cleanTemporaryFiles
-
-    downloadSourceFiles
-
-    cd "espocrm-installer-2.8.0"
-
-    # Check and configure a system
-    case $(getOs) in
-        ubuntu | debian | mint )
-            runShellScript "system-configuration/debian.sh"
-            ;;
-
-        * )
-            printExitError "Your OS is not supported by the script. We recommend to use Ubuntu server."
-            ;;
-    esac
-
-    mkdir -p "${data[homeDirectory]}"
-
-    cp ./commands/command.sh "${data[homeDirectory]}/command.sh" || {
-        printExitError "Unable to copy the ${data[homeDirectory]}/command.sh"
-    }
-
-    chmod +x "${data[homeDirectory]}/command.sh"
-
-    echo "Done"
-}
-
-# DEPRECATED
-# todo: remove in 2027
-actionNetwork() {
-    docker network inspect "external" >/dev/null 2>&1 || docker network create "external"
-
-    echo "Done"
-}
-
-#---------------------------------------
-
-scriptDirectory="$(dirname "$(readlink -f "$BASH_SOURCE")")"
-operatingSystem=$(getOs)
-
-handleArguments "$@"
-
-# run an action
-
-case "${data[action]}" in
-    main )
-        actionMain
-        ;;
-
-    command )
-        actionCommand
-        ;;
-
-    environment )
-        actionEnvironment
-        ;;
-
-    network )
-        actionNetwork
-        ;;
-
-    * )
-        printExitError "Unknown action \"{data[action]}\"."
-        ;;
-esac
-
-cleanTemporaryFiles
-```
-
 ## `repomix.config.json`
 
 Size: 1.3 KB
@@ -7646,6 +6644,27 @@ Size: 1.3 KB
     "enableSecurityCheck": true
   }
 }
+```
+
+## `runserver.bat`
+
+Size: 116 B
+
+```batch
+@echo off
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0install.ps1" dev %*
+exit /b %ERRORLEVEL%
+```
+
+## `runserver.ps1`
+
+Size: 151 B
+
+```powershell
+$ErrorActionPreference = 'Stop'
+$root = Split-Path -Parent $MyInvocation.MyCommand.Path
+& (Join-Path $root 'install.ps1') dev @args
+exit $LASTEXITCODE
 ```
 
 ## `scripts/generate_codex_context.py`
@@ -8111,6 +7130,7 @@ def discover_files(
             except UnicodeDecodeError:
                 skipped.append(SkippedEntry(relative, "not UTF-8 text"))
                 continue
+            content = content.replace("\r\n", "\n").replace("\r", "\n")
 
             safe_content, redactions = redact_content(content)
             if safe_content is None:
@@ -8399,6 +7419,1345 @@ if __name__ == "__main__":
     raise SystemExit(main())
 ```
 
+## `scripts/tests/__init__.py`
+
+Size: 36 B
+
+```python
+"""Tests for repository tooling."""
+```
+
+## `scripts/tests/test_tuvtk_cli.py`
+
+Size: 8.8 KB
+
+```python
+from __future__ import annotations
+
+import hashlib
+import io
+import os
+import tempfile
+import unittest
+import zipfile
+from pathlib import Path
+from unittest import mock
+
+from scripts import tuvtk_cli
+
+
+class EnvironmentFileTests(unittest.TestCase):
+    def test_write_env_preserves_comments_and_updates_keys(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / ".env"
+            path.write_text("# retained\nOLD=value\nKEEP=yes\n", encoding="utf-8")
+
+            tuvtk_cli.write_env(path, {"OLD": "new", "ADDED": "value"})
+
+            self.assertEqual(
+                path.read_text(encoding="utf-8"),
+                "# retained\nOLD=new\nKEEP=yes\n\nADDED=value\n",
+            )
+
+    def test_windows_environment_replaces_example_secrets(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / ".env.example").write_text(
+                "POSTGRES_DB=platforma_tuvtk\n"
+                "POSTGRES_USER=postgres\n"
+                "POSTGRES_PASSWORD=postgres\n"
+                "POSTGRES_PORT=5432\n"
+                "DJANGO_SECRET_KEY=\n",
+                encoding="utf-8",
+            )
+            env_file = root / ".env"
+            with mock.patch.object(tuvtk_cli, "ROOT", root), mock.patch.object(tuvtk_cli, "ENV_FILE", env_file):
+                values = tuvtk_cli.WindowsNativeBackend({}).prepare_environment()
+
+            self.assertNotEqual(values["POSTGRES_PASSWORD"], "postgres")
+            self.assertTrue(values["DJANGO_SECRET_KEY"])
+            self.assertEqual(tuvtk_cli.read_env(env_file)["POSTGRES_PASSWORD"], values["POSTGRES_PASSWORD"])
+
+
+class ArchiveSafetyTests(unittest.TestCase):
+    def test_zip_traversal_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive = root / "unsafe.zip"
+            with zipfile.ZipFile(archive, "w") as bundle:
+                bundle.writestr("../outside.txt", "unsafe")
+
+            with self.assertRaises(tuvtk_cli.CliError):
+                tuvtk_cli.safe_extract_zip(archive, root / "output")
+
+
+class DownloadTests(unittest.TestCase):
+    def test_download_verifies_sha256(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "source.bin"
+            source.write_bytes(b"verified")
+            expected = hashlib.sha256(b"verified").hexdigest()
+
+            destination = tuvtk_cli.download(source.as_uri(), root / "destination.bin", expected)
+
+            self.assertEqual(destination.read_bytes(), b"verified")
+
+
+class ArgumentTests(unittest.TestCase):
+    def test_help_names_primary_windows_and_linux_launchers(self) -> None:
+        self.assertIn("Windows: install.cmd COMMAND", tuvtk_cli.HELP)
+        self.assertIn("Linux:   ./install.sh COMMAND", tuvtk_cli.HELP)
+        self.assertIn("fresh-db [--yes] [--start]", tuvtk_cli.HELP)
+
+    def test_option_value_supports_both_forms(self) -> None:
+        self.assertEqual(tuvtk_cli.option_value(["--port=9000"], "--port"), "9000")
+        self.assertEqual(tuvtk_cli.option_value(["--port", "9001"], "--port"), "9001")
+
+    def test_invalid_port_is_rejected(self) -> None:
+        with self.assertRaises(tuvtk_cli.CliError):
+            tuvtk_cli.validate_port(0)
+
+    def test_setup_port_supports_public_and_legacy_names(self) -> None:
+        self.assertEqual(tuvtk_cli.selected_setup_port(["--port=9000"], {}), 9000)
+        self.assertEqual(tuvtk_cli.selected_setup_port(["--dev-port", "9001"], {}), 9001)
+
+    def test_setup_domain_supports_public_host_alias(self) -> None:
+        self.assertEqual(tuvtk_cli.selected_setup_domain(["--public-host=example.com"]), "example.com")
+
+    def test_linux_setup_passthrough_keeps_installer_options(self) -> None:
+        self.assertEqual(
+            tuvtk_cli.linux_setup_passthrough(
+                [
+                    "production",
+                    "--port=9000",
+                    "--domain=example.com",
+                    "--http-port",
+                    "8080",
+                    "--data-dir=/srv/tuvtk",
+                    "--force",
+                ]
+            ),
+            ["--domain=example.com", "--http-port", "8080", "--data-dir=/srv/tuvtk"],
+        )
+
+
+class LinuxBackendTests(unittest.TestCase):
+    def test_fresh_db_targets_linux_development(self) -> None:
+        backend = mock.Mock()
+        with mock.patch.object(tuvtk_cli, "IS_WINDOWS", False), mock.patch.object(
+            tuvtk_cli, "load_config", return_value={"default_mode": "prod"}
+        ), mock.patch.object(tuvtk_cli, "LinuxDockerBackend", return_value=backend):
+            tuvtk_cli.main(["fresh-db", "--yes"])
+
+        backend.invoke.assert_called_once_with("fresh-db", ["--yes"], "dev")
+
+    def test_setup_passes_linux_installer_options(self) -> None:
+        backend = tuvtk_cli.LinuxDockerBackend({})
+
+        with mock.patch.object(backend, "_sudo", side_effect=lambda command: command), mock.patch.object(
+            tuvtk_cli, "run"
+        ) as runner, mock.patch.object(tuvtk_cli, "save_config"):
+            backend.setup("prod", domain="example.com", passthrough=["--http-port=8080"])
+
+        command = runner.call_args.args[0]
+        self.assertIn("--domain=example.com", command)
+        self.assertIn("--http-port=8080", command)
+
+    def test_sudo_preserves_internal_installer_flags(self) -> None:
+        backend = tuvtk_cli.LinuxDockerBackend({})
+        with mock.patch.object(tuvtk_cli.os, "geteuid", return_value=1000, create=True), mock.patch.object(
+            tuvtk_cli.shutil, "which", return_value="/usr/bin/sudo"
+        ):
+            command = backend._sudo(["bash", "install.sh", "--dev"])
+
+        self.assertEqual(command[:2], ["sudo", "env"])
+        self.assertIn("TUVTK_SKIP_COMMAND=true", command)
+
+    def test_doctor_reports_missing_commands(self) -> None:
+        backend = tuvtk_cli.LinuxDockerBackend({})
+        output = io.StringIO()
+        with mock.patch.object(tuvtk_cli.shutil, "which", return_value=None), mock.patch("sys.stdout", output):
+            backend.doctor()
+
+        self.assertIn("docker: missing/unavailable", output.getvalue())
+
+
+@unittest.skipUnless(os.name == "nt", "Windows process flags")
+class WindowsProcessTests(unittest.TestCase):
+    def test_fresh_db_resets_windows_development_database(self) -> None:
+        backend = mock.Mock()
+        with mock.patch.object(tuvtk_cli, "IS_WINDOWS", True), mock.patch.object(
+            tuvtk_cli, "load_config", return_value={}
+        ), mock.patch.object(tuvtk_cli, "WindowsNativeBackend", return_value=backend):
+            tuvtk_cli.main(["fresh-db", "--yes", "--start"])
+
+        backend.reset_database.assert_called_once_with(True, True)
+
+    def test_background_process_uses_no_window_flag(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            process = mock.Mock(pid=1234)
+            process.poll.return_value = None
+            backend = tuvtk_cli.WindowsNativeBackend({})
+            with mock.patch.object(tuvtk_cli, "ROOT", root), mock.patch.object(
+                tuvtk_cli, "PID_DIR", root / "pids"
+            ), mock.patch.object(tuvtk_cli, "LOG_DIR", root / "logs"), mock.patch.object(
+                backend, "process_running", return_value=False
+            ), mock.patch.object(backend, "process_environment", return_value={}), mock.patch.object(
+                tuvtk_cli.time, "sleep"
+            ), mock.patch.object(tuvtk_cli.subprocess, "Popen", return_value=process) as popen:
+                backend.spawn("web", ["fake.exe"])
+
+            self.assertEqual(popen.call_args.kwargs["creationflags"], tuvtk_cli.WINDOWS_BACKGROUND_FLAGS)
+
+    def test_foreground_processes_inherit_current_terminal(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            tailwind = mock.Mock(pid=1234)
+            tailwind.poll.side_effect = [0, 0]
+            web = mock.Mock(pid=1235)
+            web.poll.return_value = None
+            backend = tuvtk_cli.WindowsNativeBackend({})
+            with mock.patch.object(tuvtk_cli, "ROOT", root), mock.patch.object(
+                tuvtk_cli, "PID_DIR", root / "pids"
+            ), mock.patch.object(backend, "stop_process"), mock.patch.object(
+                backend, "prepare_development", return_value=Path("npm.cmd")
+            ), mock.patch.object(backend, "process_environment", return_value={}), mock.patch.object(
+                tuvtk_cli.subprocess, "Popen", side_effect=[tailwind, web]
+            ) as popen, mock.patch.object(tuvtk_cli, "run"):
+                backend.dev_foreground(prepared=True)
+
+            self.assertEqual(popen.call_count, 2)
+            for call in popen.call_args_list:
+                self.assertNotIn("creationflags", call.kwargs)
+                self.assertNotIn("stdout", call.kwargs)
+
+
+if __name__ == "__main__":
+    unittest.main()
+```
+
+## `scripts/tuvtk_cli.py`
+
+Size: 46.0 KB
+
+```python
+#!/usr/bin/env python3
+"""Cross-platform TUVTK setup and command router."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import re
+import secrets
+import shutil
+import subprocess
+import sys
+import tarfile
+import tempfile
+import time
+import urllib.request
+import zipfile
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parent.parent
+STATE_DIR = ROOT / ".tuvtk"
+CONFIG_FILE = STATE_DIR / "config.json"
+RUNTIME_DIR = STATE_DIR / "runtime"
+DOWNLOAD_DIR = STATE_DIR / "downloads"
+LOG_DIR = STATE_DIR / "logs"
+PID_DIR = STATE_DIR / "pids"
+VENV_DIR = ROOT / ".venv"
+POSTGRES_ROOT = ROOT / ".postgresql"
+POSTGRES_DATA = POSTGRES_ROOT / "data"
+ENV_FILE = ROOT / ".env"
+DEV_ENV_FILE = ROOT / ".env.dev"
+IS_WINDOWS = os.name == "nt"
+POSTGRES_VERSION = "17.10-1"
+POSTGRES_ARCHIVE = f"postgresql-{POSTGRES_VERSION}-windows-x64-binaries.zip"
+POSTGRES_URL = f"https://get.enterprisedb.com/postgresql/{POSTGRES_ARCHIVE}"
+POSTGRES_SHA256 = "f9aafca58e7026a1ef2caeee711acf761671e57904d430adc85f468374f5a821"
+NODE_VERSION = "22.17.0"
+NODE_ARCHIVE = f"node-v{NODE_VERSION}-win-x64.zip"
+NODE_BASE_URL = f"https://nodejs.org/dist/v{NODE_VERSION}"
+NODE_SHA256 = "721ab118a3aac8584348b132767eadf51379e0616f0db802cc1e66d7f0d98f85"
+WINDOWS_BACKGROUND_FLAGS = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+
+
+class CliError(RuntimeError):
+    pass
+
+
+def info(message: str) -> None:
+    print(f"[tuvtk] {message}")
+
+
+def run(
+    command: list[str | Path],
+    *,
+    cwd: Path = ROOT,
+    env: dict[str, str] | None = None,
+    check: bool = True,
+    capture: bool = False,
+    stdin=None,
+    stdout=None,
+) -> subprocess.CompletedProcess[str]:
+    rendered = [str(part) for part in command]
+    kwargs: dict[str, object] = {
+        "cwd": str(cwd),
+        "env": env,
+        "check": check,
+        "text": True,
+    }
+    if capture:
+        kwargs["stdout"] = subprocess.PIPE
+        kwargs["stderr"] = subprocess.PIPE
+    else:
+        if stdin is not None:
+            kwargs["stdin"] = stdin
+        if stdout is not None:
+            kwargs["stdout"] = stdout
+    try:
+        return subprocess.run(rendered, **kwargs)
+    except FileNotFoundError as exc:
+        raise CliError(f"required command was not found: {rendered[0]}") from exc
+    except subprocess.CalledProcessError as exc:
+        detail = (exc.stderr or "").strip() if isinstance(exc.stderr, str) else ""
+        suffix = f": {detail}" if detail else ""
+        raise CliError(f"command failed with exit code {exc.returncode}: {' '.join(rendered)}{suffix}") from exc
+
+
+def load_config() -> dict[str, object]:
+    if not CONFIG_FILE.exists():
+        return {}
+    try:
+        value = json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise CliError(f"invalid configuration file: {CONFIG_FILE}") from exc
+    if not isinstance(value, dict):
+        raise CliError(f"configuration root must be an object: {CONFIG_FILE}")
+    return value
+
+
+def save_config(config: dict[str, object]) -> None:
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    temporary = CONFIG_FILE.with_suffix(".tmp")
+    temporary.write_text(json.dumps(config, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    temporary.replace(CONFIG_FILE)
+
+
+def read_env(path: Path) -> dict[str, str]:
+    values: dict[str, str] = {}
+    if not path.exists():
+        return values
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        values[key.strip()] = value.strip().strip('"').strip("'")
+    return values
+
+
+def write_env(path: Path, values: dict[str, str]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    existing_lines = path.read_text(encoding="utf-8").splitlines() if path.exists() else []
+    remaining = dict(values)
+    output: list[str] = []
+    for line in existing_lines:
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#") and "=" in stripped:
+            key = stripped.split("=", 1)[0].strip()
+            if key in remaining:
+                output.append(f"{key}={remaining.pop(key)}")
+                continue
+        output.append(line)
+    if output and output[-1] != "":
+        output.append("")
+    output.extend(f"{key}={value}" for key, value in remaining.items())
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text("\n".join(output).rstrip() + "\n", encoding="utf-8")
+    temporary.replace(path)
+
+
+def file_digest(paths: list[Path]) -> str:
+    digest = hashlib.sha256()
+    for path in paths:
+        digest.update(path.name.encode())
+        digest.update(path.read_bytes())
+    return digest.hexdigest()
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def download(url: str, destination: Path, expected_sha256: str = "") -> Path:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    if destination.exists() and expected_sha256:
+        if sha256_file(destination).lower() == expected_sha256.lower():
+            return destination
+    if destination.exists() and not expected_sha256:
+        return destination
+    temporary = destination.with_suffix(destination.suffix + ".part")
+    info(f"Downloading {url}")
+    request = urllib.request.Request(url, headers={"User-Agent": "TUVTK installer/1"})
+    try:
+        with urllib.request.urlopen(request, timeout=60) as response, temporary.open("wb") as output:
+            shutil.copyfileobj(response, output, length=1024 * 1024)
+    except Exception as exc:
+        temporary.unlink(missing_ok=True)
+        raise CliError(f"download failed: {url}: {exc}") from exc
+    actual = sha256_file(temporary)
+    if expected_sha256 and actual.lower() != expected_sha256.lower():
+        temporary.unlink(missing_ok=True)
+        raise CliError(f"checksum mismatch for {destination.name}")
+    temporary.replace(destination)
+    return destination
+
+
+def safe_extract_zip(archive: Path, destination: Path) -> None:
+    destination.mkdir(parents=True, exist_ok=True)
+    root = destination.resolve()
+    with zipfile.ZipFile(archive) as bundle:
+        for member in bundle.infolist():
+            target = (destination / member.filename).resolve()
+            if target != root and root not in target.parents:
+                raise CliError(f"unsafe ZIP member: {member.filename}")
+        bundle.extractall(destination)
+
+
+def safe_extract_tar(archive: Path, destination: Path) -> None:
+    destination.mkdir(parents=True, exist_ok=True)
+    root = destination.resolve()
+    with tarfile.open(archive, "r:gz") as bundle:
+        for member in bundle.getmembers():
+            target = (destination / member.name).resolve()
+            if target != root and root not in target.parents:
+                raise CliError(f"unsafe backup member: {member.name}")
+            if member.issym() or member.islnk():
+                raise CliError(f"links are not allowed in backups: {member.name}")
+        bundle.extractall(destination)
+
+
+def validate_name(label: str, value: str) -> str:
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_.-]*", value):
+        raise CliError(f"invalid {label}: {value}")
+    return value
+
+
+def validate_port(value: int) -> int:
+    if not 1 <= value <= 65535:
+        raise CliError(f"invalid port: {value}")
+    return value
+
+
+class LinuxDockerBackend:
+    def __init__(self, config: dict[str, object]) -> None:
+        self.config = config
+
+    def _sudo(self, command: list[str]) -> list[str]:
+        if hasattr(os, "geteuid") and os.geteuid() == 0:
+            return command
+        if not shutil.which("sudo"):
+            raise CliError("sudo is required to install Debian/Docker prerequisites")
+        return ["sudo", "env", "TUVTK_LEGACY_INSTALL=1", "TUVTK_SKIP_COMMAND=true", *command]
+
+    def setup(self, mode: str, *, domain: str = "", port: int = 8000, passthrough: list[str] | None = None) -> None:
+        if mode == "prod" and not domain:
+            raise CliError("production setup requires --domain=HOST")
+        command = [
+            "bash",
+            str(ROOT / "install.sh"),
+            "--production" if mode == "prod" else "--dev",
+            "--yes",
+            f"--app-dir={ROOT}",
+        ]
+        if mode == "prod":
+            command.append(f"--domain={domain}")
+        else:
+            command.append(f"--dev-port={port}")
+        command.extend(passthrough or [])
+        environment = os.environ.copy()
+        environment["TUVTK_LEGACY_INSTALL"] = "1"
+        environment["TUVTK_SKIP_COMMAND"] = "true"
+        run(self._sudo(command), env=environment)
+        self.config.update(
+            {
+                "backend": "linux-docker",
+                "default_mode": mode,
+                "dev_port": port,
+                "domain": domain,
+            }
+        )
+        save_config(self.config)
+
+    def ensure_setup(self, mode: str) -> None:
+        env_file = DEV_ENV_FILE if mode == "dev" else Path("/etc/tuvtk/tuvtk.env")
+        if env_file.exists():
+            return
+        if mode == "prod":
+            raise CliError("production is not configured; run './install.sh deploy --domain=HOST'")
+        self.setup("dev", port=int(self.config.get("dev_port", 8000)))
+
+    def legacy_environment(self, mode: str) -> dict[str, str]:
+        environment = os.environ.copy()
+        environment.update(
+            {
+                "TUVTK_APP_DIR": str(ROOT),
+                "TUVTK_COMPOSE_FILE": str(ROOT / "compose.yaml"),
+                "TUVTK_DEV_COMPOSE_FILE": str(ROOT / "compose.dev.yaml"),
+                "TUVTK_PROJECT_NAME": "tuvtk",
+                "TUVTK_DEFAULT_MODE": mode,
+                "TUVTK_DEV_PORT": str(self.config.get("dev_port", 8000)),
+                "TUVTK_DEV_ENV_FILE": str(DEV_ENV_FILE),
+                "TUVTK_PROD_ENV_FILE": "/etc/tuvtk/tuvtk.env",
+                "TUVTK_BACKUP_DIR": str(self.config.get("backup_dir", "/opt/tuvtk-backups")),
+            }
+        )
+        return environment
+
+    def invoke(self, command: str, arguments: list[str], mode: str) -> None:
+        self.ensure_setup(mode)
+        run(["bash", ROOT / "bin" / "tuvtk", command, *arguments], env=self.legacy_environment(mode))
+
+    def doctor(self) -> None:
+        print("Backend: Linux Docker")
+        print(f"Application: {ROOT}")
+        print(f"Python router: {sys.version.split()[0]}")
+        for label, command in (("bash", ["bash", "--version"]), ("docker", ["docker", "--version"]), ("compose", ["docker", "compose", "version"])):
+            if not shutil.which(command[0]):
+                state = "missing/unavailable"
+            else:
+                result = run(command, capture=True, check=False)
+                state = "ok" if result.returncode == 0 else "missing/unavailable"
+            print(f"{label}: {state}")
+        print(f"Development environment: {'ready' if DEV_ENV_FILE.exists() else 'not configured'}")
+        print(f"Production environment: {'ready' if Path('/etc/tuvtk/tuvtk.env').exists() else 'not configured'}")
+
+
+class WindowsNativeBackend:
+    def __init__(self, config: dict[str, object]) -> None:
+        self.config = config
+        self.port = int(config.get("dev_port", 8000))
+
+    @property
+    def venv_python(self) -> Path:
+        return VENV_DIR / "Scripts" / "python.exe"
+
+    def ensure_venv(self, *, force: bool = False) -> None:
+        if self.venv_python.exists():
+            result = run(
+                [self.venv_python, "-c", "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"],
+                capture=True,
+                check=False,
+            )
+            try:
+                supported = result.returncode == 0 and tuple(map(int, result.stdout.strip().split("."))) >= (3, 12)
+            except ValueError:
+                supported = False
+            if not supported:
+                backup = ROOT / f".venv.python-backup-{time.strftime('%Y%m%d-%H%M%S')}"
+                info(f"Preserving incompatible virtual environment as {backup.name}")
+                VENV_DIR.replace(backup)
+        if not self.venv_python.exists():
+            if sys.version_info < (3, 12):
+                raise CliError("Python 3.12+ is required; run through install.ps1 so it can bootstrap Python")
+            info("Creating Python virtual environment")
+            run([sys.executable, "-m", "venv", VENV_DIR])
+        fingerprint = file_digest([ROOT / "requirements.txt", ROOT / "requirements-dev.txt"])
+        marker = STATE_DIR / "requirements.sha256"
+        if force or not marker.exists() or marker.read_text(encoding="ascii").strip() != fingerprint:
+            info("Installing Python development requirements")
+            run([self.venv_python, "-m", "pip", "install", "--disable-pip-version-check", "-r", ROOT / "requirements-dev.txt"])
+            marker.parent.mkdir(parents=True, exist_ok=True)
+            marker.write_text(fingerprint + "\n", encoding="ascii")
+
+    def find_npm(self) -> Path | None:
+        configured = self.config.get("npm")
+        if configured and Path(str(configured)).exists():
+            return Path(str(configured))
+        found = shutil.which("npm.cmd") or shutil.which("npm")
+        return Path(found) if found else None
+
+    def node_supported(self, npm: Path) -> bool:
+        node = npm.parent / "node.exe"
+        found = shutil.which("node.exe")
+        if not node.exists() and not found:
+            return False
+        executable = node if node.exists() else Path(found)
+        result = run([executable, "--version"], capture=True, check=False)
+        match = re.fullmatch(r"v(\d+)\.\d+\.\d+", result.stdout.strip())
+        return result.returncode == 0 and bool(match) and int(match.group(1)) >= 22
+
+    def ensure_node(self, *, force: bool = False) -> Path:
+        npm = self.find_npm()
+        if npm and not force and self.node_supported(npm):
+            return npm
+        archive = DOWNLOAD_DIR / NODE_ARCHIVE
+        download(f"{NODE_BASE_URL}/{NODE_ARCHIVE}", archive, NODE_SHA256)
+        node_root = RUNTIME_DIR / "node"
+        if force and node_root.exists():
+            shutil.rmtree(node_root)
+        if not node_root.exists():
+            with tempfile.TemporaryDirectory(dir=STATE_DIR) as temporary:
+                temp_path = Path(temporary)
+                safe_extract_zip(archive, temp_path)
+                extracted = next(temp_path.glob("node-v*-win-x64"), None)
+                if not extracted:
+                    raise CliError("unexpected Node archive structure")
+                node_root.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(extracted), str(node_root))
+        npm = node_root / "npm.cmd"
+        self.config["npm"] = str(npm)
+        save_config(self.config)
+        return npm
+
+    def postgres_bin(self) -> Path | None:
+        configured = self.config.get("postgres_bin")
+        if configured and (Path(str(configured)) / "pg_ctl.exe").exists():
+            return Path(str(configured))
+        for candidate in POSTGRES_ROOT.glob("**/bin/pg_ctl.exe"):
+            return candidate.parent
+        return None
+
+    def ensure_postgres_binaries(self, *, force: bool = False) -> Path:
+        pg_bin = self.postgres_bin()
+        if pg_bin and not force:
+            return pg_bin
+        url = os.environ.get("TUVTK_POSTGRES_URL", POSTGRES_URL)
+        expected = os.environ.get("TUVTK_POSTGRES_SHA256", POSTGRES_SHA256 if url == POSTGRES_URL else "")
+        if not expected:
+            raise CliError("TUVTK_POSTGRES_SHA256 is required when TUVTK_POSTGRES_URL overrides the pinned archive")
+        archive = download(url, DOWNLOAD_DIR / POSTGRES_ARCHIVE, expected)
+        runtime = POSTGRES_ROOT / "runtime"
+        if force and runtime.exists():
+            shutil.rmtree(runtime)
+        if not runtime.exists():
+            safe_extract_zip(archive, runtime)
+        pg_ctl = next(runtime.glob("**/bin/pg_ctl.exe"), None)
+        if not pg_ctl:
+            raise CliError("unexpected PostgreSQL archive structure")
+        pg_bin = pg_ctl.parent
+        version = run([pg_bin / "postgres.exe", "--version"], capture=True)
+        if "postgres" not in version.stdout.lower():
+            raise CliError("downloaded PostgreSQL runtime failed validation")
+        self.config["postgres_bin"] = str(pg_bin)
+        save_config(self.config)
+        return pg_bin
+
+    def prepare_environment(self) -> dict[str, str]:
+        existing = read_env(ENV_FILE)
+        values = read_env(ROOT / ".env.example")
+        values.update(existing)
+        values.update(
+            {
+                "POSTGRES_DB": values.get("POSTGRES_DB") or "platforma_tuvtk",
+                "POSTGRES_USER": values.get("POSTGRES_USER") or "postgres",
+                "POSTGRES_PASSWORD": existing.get("POSTGRES_PASSWORD") or secrets.token_hex(24),
+                "POSTGRES_HOST": "127.0.0.1",
+                "POSTGRES_PORT": values.get("POSTGRES_PORT") or "5432",
+                "POSTGRES_CONN_MAX_AGE": "0",
+                "DJANGO_DEPLOYMENT_MODE": "development",
+                "DJANGO_SECRET_KEY": existing.get("DJANGO_SECRET_KEY") or secrets.token_urlsafe(48),
+                "DJANGO_DEBUG": "true",
+                "DJANGO_ALLOWED_HOSTS": "127.0.0.1,localhost,testserver",
+                "DJANGO_CSRF_TRUSTED_ORIGINS": f"http://127.0.0.1:{self.port},http://localhost:{self.port}",
+            }
+        )
+        validate_name("database name", values["POSTGRES_DB"])
+        validate_name("database user", values["POSTGRES_USER"])
+        validate_port(int(values["POSTGRES_PORT"]))
+        write_env(ENV_FILE, values)
+        return values
+
+    def process_environment(self) -> dict[str, str]:
+        environment = os.environ.copy()
+        environment.update(read_env(ENV_FILE))
+        npm = self.find_npm()
+        pg_bin = self.postgres_bin()
+        path_parts = []
+        if npm:
+            path_parts.append(str(npm.parent))
+        if pg_bin:
+            path_parts.append(str(pg_bin))
+        if path_parts:
+            environment["PATH"] = os.pathsep.join([*path_parts, environment.get("PATH", "")])
+        if npm:
+            environment["NPM_BIN_PATH"] = str(npm)
+        environment["PGPASSWORD"] = environment.get("POSTGRES_PASSWORD", "")
+        return environment
+
+    def init_postgres(self, values: dict[str, str], pg_bin: Path) -> None:
+        if (POSTGRES_DATA / "PG_VERSION").exists():
+            return
+        info(f"Initializing PostgreSQL data directory at {POSTGRES_DATA}")
+        POSTGRES_DATA.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False, dir=STATE_DIR) as password_file:
+            password_file.write(values["POSTGRES_PASSWORD"])
+            password_path = Path(password_file.name)
+        try:
+            run(
+                [
+                    pg_bin / "initdb.exe",
+                    "-D",
+                    POSTGRES_DATA,
+                    "-U",
+                    values["POSTGRES_USER"],
+                    "--encoding=UTF8",
+                    "--locale=C",
+                    "--auth=scram-sha-256",
+                    f"--pwfile={password_path}",
+                ],
+                env=self.process_environment(),
+            )
+        finally:
+            password_path.unlink(missing_ok=True)
+
+    def postgres_ready(self, values: dict[str, str], pg_bin: Path) -> bool:
+        result = run(
+            [pg_bin / "pg_isready.exe", "-h", "127.0.0.1", "-p", values["POSTGRES_PORT"]],
+            env=self.process_environment(),
+            check=False,
+            capture=True,
+        )
+        return result.returncode == 0
+
+    def postgres_owned_running(self, pg_bin: Path) -> bool:
+        result = run(
+            [pg_bin / "pg_ctl.exe", "-D", POSTGRES_DATA, "status"],
+            env=self.process_environment(),
+            check=False,
+            capture=True,
+        )
+        return result.returncode == 0
+
+    def start_postgres(self) -> None:
+        values = self.prepare_environment()
+        pg_bin = self.ensure_postgres_binaries()
+        self.init_postgres(values, pg_bin)
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        ready = self.postgres_ready(values, pg_bin)
+        owned = self.postgres_owned_running(pg_bin)
+        if ready and not owned:
+            raise CliError(f"port {values['POSTGRES_PORT']} is already used by another PostgreSQL instance")
+        if owned and not ready:
+            raise CliError("the TUVTK PostgreSQL cluster is running on an unexpected host or port")
+        if not owned:
+            info("Starting PostgreSQL")
+            run(
+                [
+                    pg_bin / "pg_ctl.exe",
+                    "-D",
+                    POSTGRES_DATA,
+                    "-l",
+                    LOG_DIR / "postgres.log",
+                    "-o",
+                    f"-h 127.0.0.1 -p {values['POSTGRES_PORT']}",
+                    "start",
+                ],
+                env=self.process_environment(),
+            )
+        for _ in range(30):
+            if self.postgres_ready(values, pg_bin):
+                break
+            time.sleep(1)
+        else:
+            raise CliError(f"PostgreSQL did not become ready; inspect {LOG_DIR / 'postgres.log'}")
+        query = f"SELECT 1 FROM pg_database WHERE datname = '{values['POSTGRES_DB']}';"
+        result = run(
+            [pg_bin / "psql.exe", "-h", "127.0.0.1", "-p", values["POSTGRES_PORT"], "-U", values["POSTGRES_USER"], "-d", "postgres", "-Atc", query],
+            env=self.process_environment(),
+            capture=True,
+        )
+        if result.stdout.strip() != "1":
+            info(f"Creating PostgreSQL database {values['POSTGRES_DB']}")
+            run(
+                [pg_bin / "createdb.exe", "-h", "127.0.0.1", "-p", values["POSTGRES_PORT"], "-U", values["POSTGRES_USER"], "--encoding=UTF8", "--template=template0", values["POSTGRES_DB"]],
+                env=self.process_environment(),
+            )
+
+    def install_node_modules(self, *, force: bool = False) -> None:
+        npm = self.ensure_node()
+        package_files = [ROOT / "theme" / "static_src" / "package.json", ROOT / "theme" / "static_src" / "package-lock.json"]
+        fingerprint = file_digest(package_files)
+        marker = STATE_DIR / "node-modules.sha256"
+        modules = ROOT / "theme" / "static_src" / "node_modules"
+        if force or not modules.exists() or not marker.exists() or marker.read_text(encoding="ascii").strip() != fingerprint:
+            info("Installing frontend dependencies")
+            run([npm, "--prefix", ROOT / "theme" / "static_src", "ci"], env=self.process_environment())
+            marker.parent.mkdir(parents=True, exist_ok=True)
+            marker.write_text(fingerprint + "\n", encoding="ascii")
+
+    def build_css(self) -> None:
+        npm = self.ensure_node()
+        self.install_node_modules()
+        run([npm, "--prefix", ROOT / "theme" / "static_src", "run", "build"], env=self.process_environment())
+
+    def setup(self, *, port: int = 8000, force: bool = False) -> None:
+        if force:
+            self.stop()
+        self.port = port
+        self.config.update({"backend": "windows-native", "default_mode": "dev", "dev_port": port})
+        save_config(self.config)
+        self.ensure_venv(force=force)
+        self.prepare_environment()
+        self.ensure_node(force=force)
+        self.install_node_modules(force=force)
+        self.ensure_postgres_binaries(force=force)
+        self.start_postgres()
+        self.build_css()
+        self.django(["migrate", "--noinput"])
+        info("Windows development environment is ready")
+
+    def ensure_setup(self) -> bool:
+        if not self.venv_python.exists() or not ENV_FILE.exists() or not self.postgres_bin():
+            self.setup(port=self.port)
+            return True
+        return False
+
+    def django(self, arguments: list[str]) -> None:
+        self.ensure_venv()
+        self.start_postgres()
+        run([self.venv_python, ROOT / "manage.py", *arguments], env=self.process_environment())
+
+    def pid_file(self, service: str) -> Path:
+        return PID_DIR / f"{service}.pid"
+
+    def process_running(self, service: str) -> bool:
+        path = self.pid_file(service)
+        if not path.exists():
+            return False
+        try:
+            pid = int(path.read_text(encoding="ascii").strip())
+            os.kill(pid, 0)
+            return True
+        except (OSError, ValueError):
+            path.unlink(missing_ok=True)
+            return False
+
+    def spawn(self, service: str, command: list[str | Path]) -> None:
+        if self.process_running(service):
+            return
+        PID_DIR.mkdir(parents=True, exist_ok=True)
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        log = (LOG_DIR / f"{service}.log").open("a", encoding="utf-8")
+        try:
+            process = subprocess.Popen(
+                [str(part) for part in command],
+                cwd=str(ROOT),
+                env=self.process_environment(),
+                stdin=subprocess.DEVNULL,
+                stdout=log,
+                stderr=subprocess.STDOUT,
+                creationflags=WINDOWS_BACKGROUND_FLAGS,
+                close_fds=True,
+            )
+        finally:
+            log.close()
+        self.pid_file(service).write_text(f"{process.pid}\n", encoding="ascii")
+        time.sleep(0.5)
+        if process.poll() is not None:
+            self.pid_file(service).unlink(missing_ok=True)
+            raise CliError(f"{service} failed to start; inspect {LOG_DIR / (service + '.log')}")
+
+    def prepare_development(self, *, prepared: bool = False) -> Path:
+        prepared = self.ensure_setup() or prepared
+        self.start_postgres()
+        if not prepared:
+            self.django(["migrate", "--noinput"])
+            self.build_css()
+        return self.ensure_node()
+
+    def start(self, *, prepared: bool = False) -> None:
+        npm = self.prepare_development(prepared=prepared)
+        self.spawn("tailwind", [npm, "--prefix", ROOT / "theme" / "static_src", "run", "dev"])
+        try:
+            self.spawn("web", [self.venv_python, ROOT / "manage.py", "runserver", f"127.0.0.1:{self.port}"])
+        except Exception:
+            self.stop_process("tailwind")
+            raise
+        info(f"Development server: http://127.0.0.1:{self.port}")
+
+    def dev_foreground(self, *, prepared: bool = False) -> None:
+        self.stop_process("web")
+        self.stop_process("tailwind")
+        npm = self.prepare_development(prepared=prepared)
+        commands = {
+            "tailwind": [npm, "--prefix", ROOT / "theme" / "static_src", "run", "dev"],
+            "web": [self.venv_python, ROOT / "manage.py", "runserver", f"127.0.0.1:{self.port}"],
+        }
+        environment = self.process_environment()
+        processes: dict[str, subprocess.Popen[bytes]] = {}
+        PID_DIR.mkdir(parents=True, exist_ok=True)
+        try:
+            for service, command in commands.items():
+                process = subprocess.Popen(
+                    [str(part) for part in command],
+                    cwd=str(ROOT),
+                    env=environment,
+                )
+                processes[service] = process
+                self.pid_file(service).write_text(f"{process.pid}\n", encoding="ascii")
+            info(f"Development server: http://127.0.0.1:{self.port} (press Ctrl+C to stop)")
+            while True:
+                for service, process in processes.items():
+                    return_code = process.poll()
+                    if return_code is None:
+                        continue
+                    if return_code != 0:
+                        raise CliError(f"{service} exited with code {return_code}")
+                    return
+                time.sleep(0.25)
+        except KeyboardInterrupt:
+            info("Stopping Django and Tailwind")
+        finally:
+            for service, process in processes.items():
+                if process.poll() is None:
+                    run(["taskkill.exe", "/PID", str(process.pid), "/T", "/F"], check=False, capture=True)
+                self.pid_file(service).unlink(missing_ok=True)
+
+    def stop_process(self, service: str) -> None:
+        path = self.pid_file(service)
+        if not path.exists():
+            return
+        try:
+            pid = int(path.read_text(encoding="ascii").strip())
+        except ValueError:
+            path.unlink(missing_ok=True)
+            return
+        run(["taskkill.exe", "/PID", str(pid), "/T", "/F"], check=False, capture=True)
+        path.unlink(missing_ok=True)
+
+    def stop(self) -> None:
+        self.stop_process("web")
+        self.stop_process("tailwind")
+        pg_bin = self.postgres_bin()
+        if pg_bin and (POSTGRES_DATA / "PG_VERSION").exists():
+            run([pg_bin / "pg_ctl.exe", "-D", POSTGRES_DATA, "stop", "-m", "fast"], env=self.process_environment(), check=False)
+        info("Windows development services stopped")
+
+    def status(self) -> None:
+        pg_bin = self.postgres_bin()
+        postgres = bool(pg_bin and (POSTGRES_DATA / "PG_VERSION").exists() and self.postgres_owned_running(pg_bin))
+        print(f"postgres: {'running' if postgres else 'stopped'}")
+        print(f"web: {'running' if self.process_running('web') else 'stopped'}")
+        print(f"tailwind: {'running' if self.process_running('tailwind') else 'stopped'}")
+        if self.process_running("web"):
+            print(f"url: http://127.0.0.1:{self.port}")
+
+    def logs(self, service: str = "") -> None:
+        services = [service] if service else ["postgres", "web", "tailwind"]
+        positions: dict[Path, int] = {}
+        for name in services:
+            path = LOG_DIR / f"{name}.log"
+            if path.exists():
+                positions[path] = 0
+        if not positions:
+            raise CliError("no logs are available")
+        try:
+            while True:
+                for path, position in list(positions.items()):
+                    with path.open("r", encoding="utf-8", errors="replace") as source:
+                        source.seek(position)
+                        for line in source:
+                            print(f"[{path.stem}] {line}", end="")
+                        positions[path] = source.tell()
+                time.sleep(0.5)
+        except KeyboardInterrupt:
+            return
+
+    def npm(self, arguments: list[str]) -> None:
+        npm = self.ensure_node()
+        self.install_node_modules()
+        run([npm, "--prefix", ROOT / "theme" / "static_src", *arguments], env=self.process_environment())
+
+    def export_sql(self, destination: str) -> Path:
+        self.start_postgres()
+        values = read_env(ENV_FILE)
+        pg_bin = self.ensure_postgres_binaries()
+        requested = Path(destination).expanduser()
+        if requested.suffix.lower() != ".sql":
+            requested.mkdir(parents=True, exist_ok=True)
+            requested = requested / f"tuvtk-dev-{time.strftime('%Y-%m-%d_%H%M%S', time.gmtime())}.sql"
+        requested.parent.mkdir(parents=True, exist_ok=True)
+        temporary = requested.with_suffix(requested.suffix + ".tmp")
+        with temporary.open("w", encoding="utf-8", newline="\n") as output:
+            output.write("-- TUVTK_MODE=dev\n")
+            run(
+                [pg_bin / "pg_dump.exe", "-h", "127.0.0.1", "-p", values["POSTGRES_PORT"], "-U", values["POSTGRES_USER"], "-d", values["POSTGRES_DB"]],
+                env=self.process_environment(),
+                stdout=output,
+            )
+        temporary.replace(requested)
+        info(f"Database exported: {requested}")
+        return requested
+
+    def import_sql(self, source: str, confirmed: bool) -> None:
+        sql = Path(source).expanduser().resolve()
+        if not sql.is_file():
+            raise CliError(f"SQL file not found: {sql}")
+        first_lines = "\n".join(sql.read_text(encoding="utf-8", errors="replace").splitlines()[:20])
+        if "TUVTK_MODE=prod" in first_lines:
+            raise CliError("production SQL cannot be imported into Windows development")
+        if not confirmed:
+            answer = input(f"Replace the Windows development database from {sql}? [y/N] ").strip().lower()
+            if answer not in {"y", "yes"}:
+                raise CliError("operation cancelled")
+        self.stop_process("web")
+        self.stop_process("tailwind")
+        self.start_postgres()
+        values = read_env(ENV_FILE)
+        pg_bin = self.ensure_postgres_binaries()
+        common = ["-h", "127.0.0.1", "-p", values["POSTGRES_PORT"], "-U", values["POSTGRES_USER"]]
+        run([pg_bin / "dropdb.exe", *common, "--force", "--if-exists", values["POSTGRES_DB"]], env=self.process_environment())
+        run([pg_bin / "createdb.exe", *common, "--encoding=UTF8", "--template=template0", values["POSTGRES_DB"]], env=self.process_environment())
+        with sql.open("r", encoding="utf-8") as input_file:
+            run([pg_bin / "psql.exe", *common, "-v", "ON_ERROR_STOP=1", "-d", values["POSTGRES_DB"]], env=self.process_environment(), stdin=input_file)
+        info("Database imported; application services remain stopped")
+
+    def backup(self, destination: str) -> None:
+        output_dir = Path(destination).expanduser().resolve()
+        output_dir.mkdir(parents=True, exist_ok=True)
+        STATE_DIR.mkdir(parents=True, exist_ok=True)
+        archive = output_dir / f"{time.strftime('%Y-%m-%d_%H%M%S', time.gmtime())}-tuvtk-dev.tar.gz"
+        with tempfile.TemporaryDirectory(dir=STATE_DIR) as temporary:
+            staging = Path(temporary)
+            self.export_sql(str(staging / "database.sql"))
+            shutil.copy2(ENV_FILE, staging / ".env")
+            (staging / "manifest.json").write_text(json.dumps({"format": "tuvtk-backup-v2", "mode": "dev"}) + "\n", encoding="utf-8")
+            with tarfile.open(archive, "w:gz") as bundle:
+                for item in (staging / "manifest.json", staging / "database.sql", staging / ".env"):
+                    bundle.add(item, arcname=item.name)
+                for directory in (ROOT / "media", ROOT / "private_media"):
+                    if directory.exists():
+                        bundle.add(directory, arcname=directory.name)
+        info(f"Backup created: {archive}")
+
+    def restore(self, archive_name: str, confirmed: bool) -> None:
+        archive = Path(archive_name).expanduser().resolve()
+        if not archive.is_file():
+            raise CliError(f"backup not found: {archive}")
+        STATE_DIR.mkdir(parents=True, exist_ok=True)
+        if not confirmed:
+            answer = input(f"Restore Windows development from {archive}? [y/N] ").strip().lower()
+            if answer not in {"y", "yes"}:
+                raise CliError("operation cancelled")
+        with tempfile.TemporaryDirectory(dir=STATE_DIR) as temporary:
+            staging = Path(temporary)
+            safe_extract_tar(archive, staging)
+            manifest = json.loads((staging / "manifest.json").read_text(encoding="utf-8"))
+            if manifest.get("format") != "tuvtk-backup-v2" or manifest.get("mode") != "dev":
+                raise CliError("backup is not a compatible development archive")
+            self.import_sql(str(staging / "database.sql"), True)
+            for name in ("media", "private_media"):
+                source = staging / name
+                target = ROOT / name
+                if source.exists():
+                    target.mkdir(parents=True, exist_ok=True)
+                    shutil.copytree(source, target, dirs_exist_ok=True)
+        info("Backup restored; application services remain stopped")
+
+    def reset_database(self, confirmed: bool, start_after: bool) -> None:
+        if not confirmed:
+            answer = input("Delete and recreate the Windows development database? [y/N] ").strip().lower()
+            if answer not in {"y", "yes"}:
+                raise CliError("operation cancelled")
+        self.stop()
+        if POSTGRES_DATA.exists():
+            shutil.rmtree(POSTGRES_DATA)
+        self.start_postgres()
+        self.django(["migrate", "--noinput"])
+        if start_after:
+            self.start()
+
+    def clean(self) -> None:
+        for path in ROOT.rglob("__pycache__"):
+            if ".venv" not in path.parts and ".git" not in path.parts:
+                shutil.rmtree(path, ignore_errors=True)
+        for relative in ("tmp", "test-results", "playwright-report"):
+            shutil.rmtree(ROOT / relative, ignore_errors=True)
+        info("Removed safe generated caches; runtimes, database, media, and environments were preserved")
+
+    def doctor(self) -> None:
+        print("Backend: Windows native")
+        print(f"Application: {ROOT}")
+        print(f"Router Python: {sys.version.split()[0]}")
+        print(f"Virtual environment: {'ready' if self.venv_python.exists() else 'not configured'}")
+        print(f"Node: {self.find_npm() or 'not configured'}")
+        print(f"PostgreSQL: {self.postgres_bin() or 'not configured'}")
+        print(f"Environment: {'ready' if ENV_FILE.exists() else 'not configured'}")
+        self.status()
+
+
+HELP = """\
+Use the launcher for your OS:
+  Windows: install.cmd COMMAND [ARGS...]
+  Linux:   ./install.sh COMMAND [ARGS...]
+
+PowerShell can use .\\install.ps1 COMMAND [ARGS...].
+
+Setup and servers:
+  setup dev [--port=PORT]        Prepare development without starting servers
+  dev [--port=PORT]              Start the development server in this terminal
+  start, stop, restart, status   Manage the configured default stack
+  logs [SERVICE]                 Follow default-stack logs
+  deploy --domain=HOST           Prepare, build, and start Linux production
+  prod-start, prod-stop          Start or stop Linux production explicitly
+  prod-status, prod-logs [SVC]   Inspect Linux production explicitly
+
+Database and data:
+  fresh-db [--yes] [--start]     Reset the development database and optionally start dev
+  dev-db-reset [--yes] [--start] Same as fresh-db
+  backup DIRECTORY               Back up the default mode
+  restore ARCHIVE [--yes]        Restore the default mode
+  export-sql PATH                Export default-mode PostgreSQL
+  import-sql FILE [--yes]        Replace default-mode PostgreSQL from SQL
+  prod-db-reset --yes-i-understand-this-deletes-production-data
+                                  Reset Linux production data; creates a backup first
+
+Django and frontend:
+  check
+  test [TARGET] [ARGS...]
+  migrate [ARGS...]
+  makemigrations [APP] [ARGS...]
+  collectstatic
+  shell, dbshell
+  django COMMAND [ARGS...]
+  tailwind
+  npm COMMAND [ARGS...]
+
+Maintenance:
+  build, rebuild                 Build or rebuild the configured stack
+  doctor                         Report dependency and service status
+  context [ARGS...]
+  clean                          Remove safe caches and temporary test artifacts
+
+The command vocabulary is shared. Windows production commands are visible but
+exit with an explanation because production deployment is Debian/Docker only.
+Linux production setup accepts installer options such as --http-port=PORT,
+--data-dir=PATH, --env-file=PATH, --project-name=NAME, and database credentials.
+"""
+
+
+def option_value(arguments: list[str], name: str, default: str = "") -> str:
+    for index, argument in enumerate(arguments):
+        if argument.startswith(name + "="):
+            return argument.split("=", 1)[1]
+        if argument == name and index + 1 < len(arguments):
+            return arguments[index + 1]
+    return default
+
+
+def selected_setup_domain(arguments: list[str]) -> str:
+    return option_value(arguments, "--domain") or option_value(arguments, "--public-host")
+
+
+def selected_setup_port(arguments: list[str], config: dict[str, object]) -> int:
+    default = str(config.get("dev_port", 8000))
+    return validate_port(int(option_value(arguments, "--port", option_value(arguments, "--dev-port", default))))
+
+
+def linux_setup_passthrough(arguments: list[str]) -> list[str]:
+    remaining = list(arguments)
+    if remaining and remaining[0] in {"dev", "prod", "production"}:
+        remaining = remaining[1:]
+    passthrough: list[str] = []
+    skip_next = False
+    for argument in remaining:
+        if skip_next:
+            skip_next = False
+            continue
+        if argument == "--force":
+            continue
+        if argument == "--port":
+            skip_next = True
+            continue
+        if argument.startswith("--port="):
+            continue
+        passthrough.append(argument)
+    return passthrough
+
+
+def selected_mode(config: dict[str, object]) -> str:
+    mode = str(config.get("default_mode", "dev"))
+    return mode if mode in {"dev", "prod"} else "dev"
+
+
+def main(arguments: list[str]) -> int:
+    command = arguments[0] if arguments else "help"
+    rest = arguments[1:]
+    if command in {"help", "-h", "--help"}:
+        print(HELP)
+        return 0
+    if command == "context":
+        run([self_python(), ROOT / "scripts" / "generate_codex_context.py", *rest])
+        return 0
+
+    config = load_config()
+    backend = WindowsNativeBackend(config) if IS_WINDOWS else LinuxDockerBackend(config)
+    mode = selected_mode(config)
+
+    if command == "doctor":
+        backend.doctor()
+        return 0
+    if command == "setup":
+        requested = rest[0] if rest and not rest[0].startswith("-") else "dev"
+        if requested not in {"dev", "prod", "production"}:
+            raise CliError("setup mode must be dev or production")
+        requested_mode = "prod" if requested in {"prod", "production"} else "dev"
+        port = selected_setup_port(rest, config)
+        if IS_WINDOWS:
+            if requested_mode == "prod":
+                raise CliError("production deployment is supported only on Debian/Docker")
+            backend.setup(port=port, force="--force" in rest)
+        else:
+            backend.setup(
+                requested_mode,
+                domain=selected_setup_domain(rest),
+                port=port,
+                passthrough=linux_setup_passthrough(rest),
+            )
+        return 0
+    if command in {"dev", "dev-start"}:
+        port = selected_setup_port(rest, config)
+        if IS_WINDOWS:
+            prepared = False
+            if not config or port != backend.port:
+                backend.setup(port=port)
+                prepared = True
+            backend.dev_foreground(prepared=prepared)
+        else:
+            if not DEV_ENV_FILE.exists() or port != int(config.get("dev_port", -1)):
+                backend.setup("dev", port=port, passthrough=linux_setup_passthrough(rest))
+            backend.invoke("dev", [], "dev")
+        return 0
+    if command == "deploy":
+        if IS_WINDOWS:
+            raise CliError("production deployment is supported only on Debian/Docker")
+        domain = selected_setup_domain(rest)
+        backend.setup("prod", domain=domain, passthrough=linux_setup_passthrough(rest))
+        backend.invoke("prod-build", [], "prod")
+        return 0
+
+    if IS_WINDOWS:
+        if command in {"prod-start", "prod-stop", "prod-status", "prod-build", "prod-rebuild", "prod-logs", "prod-django", "prod-backup", "prod-restore", "prod-export-sql", "prod-import-sql", "prod-db-reset"}:
+            raise CliError("production commands are supported only on Debian/Docker")
+        if command in {"start", "up"}:
+            backend.start()
+        elif command in {"stop", "down", "dev-stop"}:
+            backend.stop()
+        elif command == "restart":
+            backend.stop(); backend.start()
+        elif command in {"status", "ps", "dev-status"}:
+            backend.status()
+        elif command in {"logs", "dev-logs"}:
+            backend.logs(rest[0] if rest else "")
+        elif command in {"build", "rebuild", "dev-build"}:
+            backend.setup(port=backend.port, force=command == "rebuild")
+            backend.start(prepared=True)
+        elif command == "check":
+            backend.django(["check"])
+        elif command == "test":
+            test_args = list(rest)
+            if not any(item in {"-v", "--verbosity"} or item.startswith("--verbosity=") for item in test_args):
+                test_args.extend(["-v", "0"])
+            backend.django(["test", *test_args])
+        elif command in {"migrate", "makemigrations"}:
+            backend.django([command, *rest])
+        elif command == "collectstatic":
+            backend.django(["collectstatic", "--noinput"])
+        elif command in {"shell", "dbshell"}:
+            backend.django([command])
+        elif command in {"django", "dev-django"}:
+            if not rest:
+                raise CliError(f"usage: {command} COMMAND [ARGS...]")
+            backend.django(rest)
+        elif command == "tailwind":
+            backend.npm(["run", "dev"])
+        elif command == "npm":
+            if not rest:
+                raise CliError("usage: npm COMMAND [ARGS...]")
+            backend.npm(rest)
+        elif command in {"export-sql", "dev-export-sql"}:
+            if len(rest) != 1:
+                raise CliError(f"usage: {command} PATH")
+            backend.export_sql(rest[0])
+        elif command in {"import-sql", "dev-import-sql"}:
+            files = [item for item in rest if item != "--yes"]
+            if len(files) != 1:
+                raise CliError(f"usage: {command} FILE [--yes]")
+            backend.import_sql(files[0], "--yes" in rest)
+        elif command in {"backup", "dev-backup"}:
+            if len(rest) != 1:
+                raise CliError(f"usage: {command} DIRECTORY")
+            backend.backup(rest[0])
+        elif command in {"restore", "dev-restore"}:
+            files = [item for item in rest if item != "--yes"]
+            if len(files) != 1:
+                raise CliError(f"usage: {command} ARCHIVE [--yes]")
+            backend.restore(files[0], "--yes" in rest)
+        elif command in {"dev-db-reset", "fresh-db"}:
+            backend.reset_database("--yes" in rest, "--start" in rest)
+        elif command == "clean":
+            backend.clean()
+        elif command == "exec":
+            raise CliError("exec targets Compose services and is unavailable in Windows-native development")
+        else:
+            raise CliError(f"unknown command: {command} (run './install.sh help')")
+        return 0
+
+    if command == "clean":
+        run(["bash", ROOT / "bin" / "tuvtk", "clean"], env=backend.legacy_environment(mode))
+        return 0
+    if command == "fresh-db":
+        backend.invoke("fresh-db", rest, "dev")
+        return 0
+    command_mode = "prod" if command.startswith("prod-") else "dev" if command.startswith("dev-") else mode
+    backend.invoke(command, rest, command_mode)
+    return 0
+
+
+def self_python() -> str:
+    return str(sys.executable)
+
+
+if __name__ == "__main__":
+    try:
+        raise SystemExit(main(sys.argv[1:]))
+    except (CliError, ValueError) as exc:
+        print(f"tuvtk: ERROR: {exc}", file=sys.stderr)
+        raise SystemExit(1)
+```
+
+## `start_postgres.bat`
+
+Size: 119 B
+
+```batch
+@echo off
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0install.ps1" setup dev
+exit /b %ERRORLEVEL%
+```
+
+## `stop_postgres.bat`
+
+Size: 114 B
+
+```batch
+@echo off
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0install.ps1" stop
+exit /b %ERRORLEVEL%
+```
+
 ## `theme/__init__.py`
 
 Size: 0 B
@@ -8515,50 +8874,6 @@ INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
 DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
-```
-
-## `theme/static/js/shell_htmx.js`
-
-Size: 1.5 KB
-
-```javascript
-(() => {
-    if (window.__opsShellHtmxInitialized) return;
-    window.__opsShellHtmxInitialized = true;
-
-    const syncShellNavigation = () => {
-        const pageContent = document.getElementById("page-content");
-        const activeUrl = pageContent?.dataset.activeNavUrl;
-        if (!activeUrl) return;
-
-        document.querySelectorAll("[data-shell-nav-url]").forEach((link) => {
-            const isActive = link.dataset.shellNavUrl === activeUrl;
-            link.classList.toggle("active", isActive);
-            link.classList.toggle("font-semibold", isActive);
-            if (isActive) {
-                link.setAttribute("aria-current", "page");
-            } else {
-                link.removeAttribute("aria-current");
-            }
-        });
-
-        document.querySelectorAll("[data-sidebar-flyout]").forEach((flyout) => {
-            const hasActiveChild = Boolean(flyout.querySelector("[data-shell-nav-url].active"));
-            flyout.open = hasActiveChild;
-            flyout.querySelector("[data-sidebar-flyout-trigger]")
-                ?.setAttribute("aria-expanded", String(hasActiveChild));
-        });
-    };
-
-    document.addEventListener("htmx:afterSettle", syncShellNavigation);
-    document.addEventListener("htmx:historyRestore", syncShellNavigation);
-    document.addEventListener("htmx:responseError", (event) => {
-        const responseUrl = event.detail.xhr.responseURL;
-        if (responseUrl) window.location.assign(responseUrl);
-    });
-
-    syncShellNavigation();
-})();
 ```
 
 ## `theme/static/js/sidebar.js`
@@ -8707,12 +9022,29 @@ Size: 5.5 KB
 })();
 ```
 
-## `theme/static/js/vendor/htmx.min.js`
+## `theme/static/js/sidebar_state.js`
 
-Size: 50.0 KB
+Size: 561 B
 
 ```javascript
-var htmx=function(){"use strict";const Q={onLoad:null,process:null,on:null,off:null,trigger:null,ajax:null,find:null,findAll:null,closest:null,values:function(e,t){const n=dn(e,t||"post");return n.values},remove:null,addClass:null,removeClass:null,toggleClass:null,takeClass:null,swap:null,defineExtension:null,removeExtension:null,logAll:null,logNone:null,logger:null,config:{historyEnabled:true,historyCacheSize:10,refreshOnHistoryMiss:false,defaultSwapStyle:"innerHTML",defaultSwapDelay:0,defaultSettleDelay:20,includeIndicatorStyles:true,indicatorClass:"htmx-indicator",requestClass:"htmx-request",addedClass:"htmx-added",settlingClass:"htmx-settling",swappingClass:"htmx-swapping",allowEval:true,allowScriptTags:true,inlineScriptNonce:"",inlineStyleNonce:"",attributesToSettle:["class","style","width","height"],withCredentials:false,timeout:0,wsReconnectDelay:"full-jitter",wsBinaryType:"blob",disableSelector:"[hx-disable], [data-hx-disable]",scrollBehavior:"instant",defaultFocusScroll:false,getCacheBusterParam:false,globalViewTransitions:false,methodsThatUseUrlParams:["get","delete"],selfRequestsOnly:true,ignoreTitle:false,scrollIntoViewOnBoost:true,triggerSpecsCache:null,disableInheritance:false,responseHandling:[{code:"204",swap:false},{code:"[23]..",swap:true},{code:"[45]..",swap:false,error:true}],allowNestedOobSwaps:true,historyRestoreAsHxRequest:true,reportValidityOfForms:false},parseInterval:null,location:location,_:null,version:"2.0.10"};Q.onLoad=j;Q.process=Ft;Q.on=ye;Q.off=xe;Q.trigger=ae;Q.ajax=Nn;Q.find=f;Q.findAll=y;Q.closest=g;Q.remove=z;Q.addClass=w;Q.removeClass=b;Q.toggleClass=G;Q.takeClass=W;Q.swap=_e;Q.defineExtension=_n;Q.removeExtension=zn;Q.logAll=$;Q.logNone=_;Q.parseInterval=d;Q._=e;const n={addTriggerHandler:St,bodyContains:se,canAccessLocalStorage:U,findThisElement:we,filterValues:yn,swap:_e,hasAttribute:s,getAttributeValue:a,getClosestAttributeValue:ne,getClosestMatch:A,getExpressionVars:Rn,getHeaders:mn,getInputValues:dn,getInternalData:oe,getSwapSpecification:bn,getTriggerSpecs:st,getTarget:Se,makeFragment:P,mergeObjects:le,makeSettleInfo:Sn,oobSwap:He,querySelectorExt:ce,settleImmediately:Yt,shouldCancel:ht,triggerEvent:ae,triggerErrorEvent:fe,withExtensions:Vt};const de=["get","post","put","delete","patch"];const R=de.map(function(e){return"[hx-"+e+"], [data-hx-"+e+"]"}).join(", ");function d(e){if(e==undefined){return undefined}let t=NaN;if(e.slice(-2)=="ms"){t=parseFloat(e.slice(0,-2))}else if(e.slice(-1)=="s"){t=parseFloat(e.slice(0,-1))*1e3}else if(e.slice(-1)=="m"){t=parseFloat(e.slice(0,-1))*1e3*60}else{t=parseFloat(e)}return isNaN(t)?undefined:t}function ee(e,t){return e instanceof Element&&e.getAttribute(t)}function s(e,t){return!!e.hasAttribute&&(e.hasAttribute(t)||e.hasAttribute("data-"+t))}function a(e,t){return ee(e,t)||ee(e,"data-"+t)}function c(e){const t=e.parentElement;if(!t&&e.parentNode instanceof ShadowRoot)return e.parentNode;return t}function te(){return document}function q(e,t){return e.getRootNode?e.getRootNode({composed:t}):te()}function A(e,t){while(e&&!t(e)){e=c(e)}return e||null}function o(e,t,n){const r=a(t,n);const o=a(t,"hx-disinherit");var i=a(t,"hx-inherit");if(e!==t){if(Q.config.disableInheritance){if(i&&(i==="*"||i.split(" ").indexOf(n)>=0)){return r}else{return null}}if(o&&(o==="*"||o.split(" ").indexOf(n)>=0)){return"unset"}}return r}function ne(t,n){let r=null;A(t,function(e){return!!(r=o(t,ue(e),n))});if(r!=="unset"){return r}}function h(e,t){return e instanceof Element&&e.matches(t)}function N(e){const t=/<([a-z][^\/\0>\x20\t\r\n\f]*)/i;const n=t.exec(e);if(n){return n[1].toLowerCase()}else{return""}}function I(e){if("parseHTMLUnsafe"in Document){return Document.parseHTMLUnsafe(e)}const t=new DOMParser;return t.parseFromString(e,"text/html")}function L(e,t){while(t.childNodes.length>0){e.append(t.childNodes[0])}}function r(e){const t=te().createElement("script");ie(e.attributes,function(e){t.setAttribute(e.name,e.value)});t.textContent=e.textContent;t.async=false;if(Q.config.inlineScriptNonce){t.nonce=Q.config.inlineScriptNonce}return t}function i(e){return e.matches("script")&&(e.type==="text/javascript"||e.type==="module"||e.type==="")}function D(e){Array.from(e.querySelectorAll("script")).forEach(e=>{if(i(e)){const t=r(e);const n=e.parentNode;try{n.insertBefore(t,e)}catch(e){H(e)}finally{e.remove()}}})}function P(e){const t=e.replace(/<head(\s[^>]*)?>[\s\S]*?<\/head>/i,"");const n=N(t);let r;if(n==="html"){r=new DocumentFragment;const i=I(e);L(r,i.body);r.title=i.title}else if(n==="body"){r=new DocumentFragment;const i=I(t);L(r,i.body);r.title=i.title}else{const i=I('<body><template class="internal-htmx-wrapper">'+t+"</template></body>");r=i.querySelector("template").content;r.title=i.title;var o=r.querySelector("title");if(o&&o.parentNode===r){o.remove();r.title=o.innerText}}if(r){if(Q.config.allowScriptTags){D(r)}else{r.querySelectorAll("script").forEach(e=>e.remove())}}return r}function re(e){if(e){e()}}function t(e,t){return Object.prototype.toString.call(e)==="[object "+t+"]"}function k(e){return typeof e==="function"}function M(e){return t(e,"Object")}function oe(e){const t="htmx-internal-data";let n=e[t];if(!n){n=e[t]={}}return n}function F(t){const n=[];if(t){for(let e=0;e<t.length;e++){n.push(t[e])}}return n}function ie(t,n){if(t){for(let e=0;e<t.length;e++){n(t[e])}}}function B(e){const t=e.getBoundingClientRect();const n=t.top;const r=t.bottom;return n<window.innerHeight&&r>=0}function se(e){return e.getRootNode({composed:true})===document}function X(e){return e.trim().split(/\s+/)}function le(e,t){for(const n in t){if(t.hasOwnProperty(n)){e[n]=t[n]}}return e}function v(e){try{return JSON.parse(e)}catch(e){H(e);return null}}function U(){const e="htmx:sessionStorageTest";try{sessionStorage.setItem(e,e);sessionStorage.removeItem(e);return true}catch(e){return false}}function V(e){try{const t=new URL(e,window.location.href);e=t.pathname+t.search}catch(e){}if(e!="/"){e=e.replace(/\/+$/,"")}return e}function e(e){return On(te().body,function(){return eval(e)})}function j(t){const e=Q.on("htmx:load",function(e){t(e.detail.elt)});return e}function $(){Q.logger=function(e,t,n){if(console){console.log(t,e,n)}}}function _(){Q.logger=null}function f(e,t){if(typeof e!=="string"){return e.querySelector(t)}else{return f(te(),e)}}function y(e,t){if(typeof e!=="string"){return e.querySelectorAll(t)}else{return y(te(),e)}}function x(){return window}function z(e,t){e=S(e);if(t){x().setTimeout(function(){z(e);e=null},t)}else{c(e).removeChild(e)}}function ue(e){return e instanceof Element?e:null}function J(e){return e instanceof HTMLElement?e:null}function K(e){return typeof e==="string"?e:null}function p(e){return e instanceof Element||e instanceof Document||e instanceof DocumentFragment?e:null}function w(e,t,n){e=ue(S(e));if(!e){return}if(n){x().setTimeout(function(){w(e,t);e=null},n)}else{e.classList&&e.classList.add(t)}}function b(e,t,n){let r=ue(S(e));if(!r){return}if(n){x().setTimeout(function(){b(r,t);r=null},n)}else{if(r.classList){r.classList.remove(t);if(r.classList.length===0){r.removeAttribute("class")}}}}function G(e,t){e=S(e);e.classList.toggle(t)}function W(e,t){e=S(e);ie(e.parentElement.children,function(e){b(e,t)});w(ue(e),t)}function g(e,t){e=ue(S(e));if(e){return e.closest(t)}return null}function l(e,t){return e.substring(0,t.length)===t}function Z(e,t){return e.substring(e.length-t.length)===t}function Y(e){const t=e.trim();if(l(t,"<")&&Z(t,"/>")){return t.substring(1,t.length-2)}else{return t}}function m(t,r,n){if(r.indexOf("global ")===0){return m(t,r.slice(7),true)}t=S(t);const o=[];{let t=0;let n=0;for(let e=0;e<r.length;e++){const l=r[e];if(l===","&&t===0){o.push(r.substring(n,e));n=e+1;continue}if(l==="<"){t++}else if(l==="/"&&e<r.length-1&&r[e+1]===">"){t--}}if(n<r.length){o.push(r.substring(n))}}const i=[];const s=[];while(o.length>0){const r=Y(o.shift());let e;if(r.indexOf("closest ")===0){e=g(ue(t),Y(r.slice(8)))}else if(r.indexOf("find ")===0){e=f(p(t),Y(r.slice(5)))}else if(r==="next"||r==="nextElementSibling"){e=ue(t).nextElementSibling}else if(r.indexOf("next ")===0){e=pe(t,Y(r.slice(5)),!!n)}else if(r==="previous"||r==="previousElementSibling"){e=ue(t).previousElementSibling}else if(r.indexOf("previous ")===0){e=ge(t,Y(r.slice(9)),!!n)}else if(r==="document"){e=document}else if(r==="window"){e=window}else if(r==="body"){e=document.body}else if(r==="root"){e=q(t,!!n)}else if(r==="host"){e=t.getRootNode().host}else{s.push(r)}if(e){i.push(e)}}if(s.length>0){const e=s.join(",");const u=p(q(t,!!n));i.push(...F(u.querySelectorAll(e)))}return i}var pe=function(t,e,n){const r=p(q(t,n)).querySelectorAll(e);for(let e=0;e<r.length;e++){const o=r[e];if(o.compareDocumentPosition(t)===Node.DOCUMENT_POSITION_PRECEDING){return o}}};var ge=function(t,e,n){const r=p(q(t,n)).querySelectorAll(e);for(let e=r.length-1;e>=0;e--){const o=r[e];if(o.compareDocumentPosition(t)===Node.DOCUMENT_POSITION_FOLLOWING){return o}}};function ce(e,t){if(typeof e!=="string"){return m(e,t)[0]}else{return m(te().body,e)[0]}}function S(e,t){if(typeof e==="string"){return f(p(t)||document,e)}else{return e}}function me(e,t,n,r){if(k(t)){return{target:te().body,event:K(e),listener:t,options:n}}else{return{target:S(e),event:K(t),listener:n,options:r}}}function ye(t,n,r,o){Gn(function(){const e=me(t,n,r,o);e.target.addEventListener(e.event,e.listener,e.options)});const e=k(n);return e?n:r}function xe(t,n,r){Gn(function(){const e=me(t,n,r);e.target.removeEventListener(e.event,e.listener)});return k(n)?n:r}const be=te().createElement("output");function ve(t,n){const e=ne(t,n);if(e){if(e==="this"){return[we(t,n)]}else{const r=m(t,e);const o=/(^|,)(\s*)inherit(\s*)($|,)/.test(e);if(o){const i=ue(A(t,function(e){return e!==t&&s(ue(e),n)}));if(i){r.push(...ve(i,n))}}if(r.length===0){H('The selector "'+e+'" on '+n+" returned no matches!");return[be]}else{return r}}}}function we(e,t){return ue(A(e,function(e){return a(ue(e),t)!=null}))}function Se(e){const t=ne(e,"hx-target");if(t){if(t==="this"){return we(e,"hx-target")}else{return ce(e,t)}}else{const n=oe(e);if(n.boosted){return te().body}else{return e}}}function Ee(e){return Q.config.attributesToSettle.includes(e)}function Ce(t,n){ie(Array.from(t.attributes),function(e){if(!n.hasAttribute(e.name)&&Ee(e.name)){t.removeAttribute(e.name)}});ie(n.attributes,function(e){if(Ee(e.name)){t.setAttribute(e.name,e.value)}})}function Oe(t,e){const n=Jn(e);for(let e=0;e<n.length;e++){const r=n[e];try{if(r.isInlineSwap(t)){return true}}catch(e){H(e)}}return t==="outerHTML"}function He(e,o,i,t){t=t||te();let n="#"+CSS.escape(ee(o,"id"));let s="outerHTML";if(e==="true"){}else if(e.indexOf(":")>0){s=e.substring(0,e.indexOf(":"));n=e.substring(e.indexOf(":")+1)}else{s=e}o.removeAttribute("hx-swap-oob");o.removeAttribute("data-hx-swap-oob");const r=m(t,n,false);if(r.length){ie(r,function(e){let t;const n=o.cloneNode(true);t=te().createDocumentFragment();t.appendChild(n);if(!Oe(s,e)){t=p(n)}const r={shouldSwap:true,target:e,fragment:t};if(!ae(e,"htmx:oobBeforeSwap",r))return;e=r.target;if(r.shouldSwap){Re(t);je(s,e,e,t,i);Te()}ie(i.elts,function(e){ae(e,"htmx:oobAfterSwap",r)})});o.parentNode.removeChild(o)}else{o.parentNode.removeChild(o);fe(te().body,"htmx:oobErrorNoTarget",{content:o,target:n})}return e}function Te(){const e=f("#--htmx-preserve-pantry--");if(e){for(const t of[...e.children]){const n=f("#"+t.id);n.parentNode.moveBefore(t,n);n.remove()}e.remove()}}function Re(e){ie(y(e,"[hx-preserve], [data-hx-preserve]"),function(e){const t=a(e,"id");const n=te().getElementById(t);if(n!=null){if(e.moveBefore){let e=f("#--htmx-preserve-pantry--");if(e==null){te().body.insertAdjacentHTML("afterend","<div id='--htmx-preserve-pantry--'></div>");e=f("#--htmx-preserve-pantry--")}e.moveBefore(n,null)}else{e.parentNode.replaceChild(n,e)}}})}function qe(i,e,s){ie(e.querySelectorAll("[id]"),function(t){const n=ee(t,"id");if(n&&n.length>0){const e=p(i);const r=e&&e.querySelector(CSS.escape(t.tagName)+"#"+CSS.escape(n));if(r&&r!==e){const o=t.cloneNode();Ce(t,r);s.tasks.push(function(){Ce(t,o)})}}})}function Ae(e){return function(){b(e,Q.config.addedClass);Ft(ue(e));Ne(p(e));ae(e,"htmx:load")}}function Ne(e){const t="[autofocus]";const n=J(h(e,t)?e:e.querySelector(t));if(n!=null){n.focus()}}function u(e,t,n,r){qe(e,n,r);while(n.childNodes.length>0){const o=n.firstChild;w(ue(o),Q.config.addedClass);e.insertBefore(o,t);if(o.nodeType!==Node.TEXT_NODE&&o.nodeType!==Node.COMMENT_NODE){r.tasks.push(Ae(o))}}}function Ie(e,t){let n=0;while(n<e.length){t=(t<<5)-t+e.charCodeAt(n++)|0}return t}function Le(t){let n=0;for(let e=0;e<t.attributes.length;e++){const r=t.attributes[e];if(r.value){n=Ie(r.name,n);n=Ie(r.value,n)}}return n}function De(t){const n=oe(t);if(n.onHandlers){for(let e=0;e<n.onHandlers.length;e++){const r=n.onHandlers[e];xe(t,r.event,r.listener)}delete n.onHandlers}}function Pe(e){const t=oe(e);if(t.timeout){clearTimeout(t.timeout)}if(t.listenerInfos){ie(t.listenerInfos,function(e){if(e.on){xe(e.on,e.trigger,e.listener)}})}De(e);ie(Object.keys(t),function(e){if(e!=="firstInitCompleted")delete t[e]})}function E(e){ae(e,"htmx:beforeCleanupElement");Pe(e);ie(e.children,function(e){E(e)})}function ke(t,e,n){if(t.tagName==="BODY"){return Ve(t,e,n)}let r;const o=t.previousSibling;const i=c(t);if(!i){return}u(i,t,e,n);if(o==null){r=i.firstChild}else{r=o.nextSibling}n.elts=n.elts.filter(function(e){return e!==t});while(r&&r!==t){if(r instanceof Element){n.elts.push(r)}r=r.nextSibling}E(t);t.remove()}function Me(e,t,n){return u(e,e.firstChild,t,n)}function Fe(e,t,n){return u(c(e),e,t,n)}function Be(e,t,n){return u(e,null,t,n)}function Xe(e,t,n){return u(c(e),e.nextSibling,t,n)}function Ue(e){E(e);const t=c(e);if(t){return t.removeChild(e)}}function Ve(e,t,n){const r=e.firstChild;u(e,r,t,n);if(r){while(r.nextSibling){E(r.nextSibling);e.removeChild(r.nextSibling)}E(r);e.removeChild(r)}}function je(t,e,n,r,o){switch(t){case"none":return;case"outerHTML":ke(n,r,o);return;case"afterbegin":Me(n,r,o);return;case"beforebegin":Fe(n,r,o);return;case"beforeend":Be(n,r,o);return;case"afterend":Xe(n,r,o);return;case"delete":Ue(n);return;default:var i=Jn(e);for(let e=0;e<i.length;e++){const s=i[e];try{const l=s.handleSwap(t,n,r,o);if(l){if(Array.isArray(l)){for(let e=0;e<l.length;e++){const u=l[e];if(u.nodeType!==Node.TEXT_NODE&&u.nodeType!==Node.COMMENT_NODE){o.tasks.push(Ae(u))}}}return}}catch(e){H(e)}}if(t==="innerHTML"){Ve(n,r,o)}else{je(Q.config.defaultSwapStyle,e,n,r,o)}}}function $e(e,n,r){var t=y(e,"[hx-swap-oob], [data-hx-swap-oob]");ie(t,function(e){if(Q.config.allowNestedOobSwaps||e.parentElement===null){const t=a(e,"hx-swap-oob");if(t!=null){He(t,e,n,r)}}else{e.removeAttribute("hx-swap-oob");e.removeAttribute("data-hx-swap-oob")}});return t.length>0}function _e(h,d,p,g){if(!g){g={}}let m=null;let n=null;let e=function(){re(g.beforeSwapCallback);h=S(h);const r=g.contextElement?q(g.contextElement,false):te();const e=document.activeElement;let t={};t={elt:e,start:e?e.selectionStart:null,end:e?e.selectionEnd:null};const o=Sn(h);if(p.swapStyle==="textContent"){h.textContent=d}else{let n=P(d);o.title=g.title||n.title;if(g.historyRequest){n=n.querySelector("[hx-history-elt],[data-hx-history-elt]")||n}if(g.selectOOB){const i=g.selectOOB.split(",");for(let t=0;t<i.length;t++){const s=i[t].split(":",2);let e=s[0].trim();if(e.indexOf("#")===0){e=e.substring(1)}const l=s[1]||"true";const u=n.querySelector("#"+e);if(u){He(l,u,o,r)}}}$e(n,o,r);ie(y(n,"template"),function(e){if(e.content&&$e(e.content,o,r)){e.remove()}});if(g.select){const c=te().createDocumentFragment();ie(n.querySelectorAll(g.select),function(e){c.appendChild(e)});n=c}Re(n);je(p.swapStyle,g.contextElement,h,n,o);Te()}if(t.elt&&!se(t.elt)&&ee(t.elt,"id")){const f=document.getElementById(ee(t.elt,"id"));const a={preventScroll:p.focusScroll!==undefined?!p.focusScroll:!Q.config.defaultFocusScroll};if(f){if(t.start&&f.setSelectionRange){try{f.setSelectionRange(t.start,t.end)}catch(e){}}f.focus(a)}}b(h,Q.config.swappingClass);ie(o.elts,function(e){if(e.classList){w(e,Q.config.settlingClass)}ae(e,"htmx:afterSwap",g.eventInfo)});re(g.afterSwapCallback);if(!p.ignoreTitle){Xn(o.title)}const n=function(){ie(o.tasks,function(e){e.call()});ie(o.elts,function(e){if(e.classList){b(e,Q.config.settlingClass)}ae(e,"htmx:afterSettle",g.eventInfo)});if(g.anchor){const e=ue(S("#"+g.anchor));if(e){e.scrollIntoView({block:"start",behavior:"auto"})}}En(o.elts,p);re(g.afterSettleCallback);re(m)};if(p.settleDelay>0){x().setTimeout(n,p.settleDelay)}else{n()}};let t=Q.config.globalViewTransitions;if(p.hasOwnProperty("transition")){t=p.transition}const r=g.contextElement||te();if(t&&ae(r,"htmx:beforeTransition",g.eventInfo)&&typeof Promise!=="undefined"&&document.startViewTransition){const o=new Promise(function(e,t){m=e;n=t});const i=e;e=function(){document.startViewTransition(function(){i();return o})}}try{if(p?.swapDelay&&p.swapDelay>0){x().setTimeout(e,p.swapDelay)}else{e()}}catch(e){fe(r,"htmx:swapError",g.eventInfo);re(n);throw e}}function ze(e,t,n){const r=e.getResponseHeader(t);if(r.indexOf("{")===0){const o=v(r);for(const i in o){if(o.hasOwnProperty(i)){let e=o[i];if(M(e)){n=e.target!==undefined?e.target:n}else{e={value:e}}ae(n,i,e)}}}else{const s=r.split(",");for(let e=0;e<s.length;e++){ae(n,s[e].trim(),[])}}}const Je=/\s/;const C=/[\s,]/;const Ke=/[_$a-zA-Z]/;const Ge=/[_$a-zA-Z0-9]/;const We=['"',"'","/"];const Ze=/[^\s]/;const Ye=/[{(]/;const Qe=/[})]/;function et(e){const t=[];let n=0;while(n<e.length){if(Ke.exec(e.charAt(n))){var r=n;while(Ge.exec(e.charAt(n+1))){n++}t.push(e.substring(r,n+1))}else if(We.indexOf(e.charAt(n))!==-1){const o=e.charAt(n);var r=n;n++;while(n<e.length&&e.charAt(n)!==o){if(e.charAt(n)==="\\"){n++}n++}t.push(e.substring(r,n+1))}else{const i=e.charAt(n);t.push(i)}n++}return t}function tt(e,t,n){return Ke.exec(e.charAt(0))&&e!=="true"&&e!=="false"&&e!=="this"&&e!==n&&t!=="."}function nt(r,o,i){if(o[0]==="["){o.shift();let e=1;let t=" return (function("+i+"){ return (";let n=null;while(o.length>0){const s=o[0];if(s==="]"){e--;if(e===0){if(n===null){t=t+"true"}o.shift();t+=")})";try{const l=On(r,function(){return Function(t)()},function(){return true});l.source=t;return l}catch(e){fe(te().body,"htmx:syntax:error",{error:e,source:t});return null}}}else if(s==="["){e++}if(tt(s,n,i)){t+="(("+i+"."+s+") ? ("+i+"."+s+") : (window."+s+"))"}else{t=t+s}n=o.shift()}}}function O(e,t){let n="";while(e.length>0&&!t.test(e[0])){n+=e.shift()}return n}function rt(e){let t;if(e.length>0&&Ye.test(e[0])){e.shift();t=O(e,Qe).trim();e.shift()}else{t=O(e,C)}return t}const ot="input, textarea, select";function it(e,t,n){const r=[];const o=et(t);do{O(o,Ze);const l=o.length;const u=O(o,/[,\[\s]/);if(u!==""){if(u==="every"){const c={trigger:"every"};O(o,Ze);c.pollInterval=d(O(o,/[,\[\s]/));O(o,Ze);var i=nt(e,o,"event");if(i){c.eventFilter=i}r.push(c)}else{const f={trigger:u};var i=nt(e,o,"event");if(i){f.eventFilter=i}O(o,Ze);while(o.length>0&&o[0]!==","){const a=o.shift();if(a==="changed"){f.changed=true}else if(a==="once"){f.once=true}else if(a==="consume"){f.consume=true}else if(a==="delay"&&o[0]===":"){o.shift();f.delay=d(O(o,C))}else if(a==="from"&&o[0]===":"){o.shift();if(Ye.test(o[0])){var s=rt(o)}else{var s=O(o,C);if(s==="closest"||s==="find"||s==="next"||s==="previous"){o.shift();const h=rt(o);if(h.length>0){s+=" "+h}}}f.from=s}else if(a==="target"&&o[0]===":"){o.shift();f.target=rt(o)}else if(a==="throttle"&&o[0]===":"){o.shift();f.throttle=d(O(o,C))}else if(a==="queue"&&o[0]===":"){o.shift();f.queue=O(o,C)}else if(a==="root"&&o[0]===":"){o.shift();f[a]=rt(o)}else if(a==="threshold"&&o[0]===":"){o.shift();f[a]=O(o,C)}else{fe(e,"htmx:syntax:error",{token:o.shift()})}O(o,Ze)}r.push(f)}}if(o.length===l){fe(e,"htmx:syntax:error",{token:o.shift()})}O(o,Ze)}while(o[0]===","&&o.shift());if(n){n[t]=r}return r}function st(e){const t=a(e,"hx-trigger");let n=[];if(t){const r=Q.config.triggerSpecsCache;n=r&&r[t]||it(e,t,r)}if(n.length>0){return n}else if(h(e,"form")){return[{trigger:"submit"}]}else if(h(e,'input[type="button"], input[type="submit"]')){return[{trigger:"click"}]}else if(h(e,ot)){return[{trigger:"change"}]}else{return[{trigger:"click"}]}}function lt(e){oe(e).cancelled=true}function ut(e,t,n){const r=oe(e);r.timeout=x().setTimeout(function(){if(se(e)&&r.cancelled!==true){if(!pt(n,e,Xt("hx:poll:trigger",{triggerSpec:n,target:e}))){t(e)}ut(e,t,n)}},n.pollInterval)}function ct(e){return location.hostname===e.hostname&&ee(e,"href")&&ee(e,"href").indexOf("#")!==0}function ft(e){return g(e,Q.config.disableSelector)}function at(t,n,e){if(t instanceof HTMLAnchorElement&&ct(t)&&(t.target===""||t.target==="_self")||t.tagName==="FORM"&&String(ee(t,"method")).toLowerCase()!=="dialog"){n.boosted=true;let r,o;if(t.tagName==="A"){r="get";o=ee(t,"href")}else{const i=ee(t,"method");r=i?i.toLowerCase():"get";o=ee(t,"action");if(o==null||o===""){o=location.href}if(r==="get"&&o.includes("?")){o=o.replace(/\?[^#]+/,"")}}e.forEach(function(e){gt(t,function(e,t){const n=ue(e);if(ft(n)){E(n);return}he(r,o,n,t)},n,e,true)})}}function ht(e,t){if(e.type==="submit"&&t.tagName==="FORM"){return true}else if(e.type==="click"){const n=t.closest('input[type="submit"], button');if(n&&n.form&&n.type==="submit"){return true}const r=t.closest("a");const o=/^#.+/;if(r&&r.href&&!o.test(r.getAttribute("href"))){return true}}return false}function dt(e,t){return oe(e).boosted&&e instanceof HTMLAnchorElement&&t.type==="click"&&(t.ctrlKey||t.metaKey)}function pt(e,t,n){const r=e.eventFilter;if(r){try{return r.call(t,n)!==true}catch(e){const o=r.source;fe(te().body,"htmx:eventFilter:error",{error:e,source:o});return true}}return false}function gt(l,u,e,c,f){const a=oe(l);let t;if(c.from){t=m(l,c.from)}else{t=[l]}if(c.changed){if(!("lastValue"in a)){a.lastValue=new WeakMap}t.forEach(function(e){if(!a.lastValue.has(c)){a.lastValue.set(c,new WeakMap)}a.lastValue.get(c).set(e,e.value)})}ie(t,function(i){const s=function(e){if(!se(l)){i.removeEventListener(c.trigger,s);return}if(dt(l,e)){return}if(f||ht(e,i)){e.preventDefault()}if(pt(c,l,e)){return}const t=oe(e);t.triggerSpec=c;if(t.handledFor==null){t.handledFor=[]}if(t.handledFor.indexOf(l)<0){t.handledFor.push(l);if(c.consume){e.stopPropagation()}if(c.target&&e.target){if(!h(ue(e.target),c.target)){return}}if(c.once){if(a.triggeredOnce){return}else{a.triggeredOnce=true}}if(c.changed){const n=e.target;const r=n.value;const o=a.lastValue.get(c);if(o.has(n)&&o.get(n)===r){return}o.set(n,r)}if(a.delayed){clearTimeout(a.delayed)}if(a.throttle){return}if(c.throttle>0){if(!a.throttle){ae(l,"htmx:trigger");u(l,e);a.throttle=x().setTimeout(function(){a.throttle=null},c.throttle)}}else if(c.delay>0){a.delayed=x().setTimeout(function(){ae(l,"htmx:trigger");u(l,e)},c.delay)}else{ae(l,"htmx:trigger");u(l,e)}}};if(e.listenerInfos==null){e.listenerInfos=[]}e.listenerInfos.push({trigger:c.trigger,listener:s,on:i});i.addEventListener(c.trigger,s)})}let mt=false;let yt=null;function xt(){if(!yt){yt=function(){mt=true};window.addEventListener("scroll",yt);window.addEventListener("resize",yt);setInterval(function(){if(mt){mt=false;ie(te().querySelectorAll("[hx-trigger*='revealed'],[data-hx-trigger*='revealed']"),function(e){bt(e)})}},200)}}function bt(e){if(!s(e,"data-hx-revealed")&&B(e)){e.setAttribute("data-hx-revealed","true");const t=oe(e);if(t.initHash){ae(e,"revealed")}else{e.addEventListener("htmx:afterProcessNode",function(){ae(e,"revealed")},{once:true})}}}function vt(e,t,n,r){const o=function(){if(!n.loaded){n.loaded=true;ae(e,"htmx:trigger");t(e)}};if(r>0){x().setTimeout(o,r)}else{o()}}function wt(t,n,e){let i=false;ie(de,function(r){if(s(t,"hx-"+r)){const o=a(t,"hx-"+r);i=true;n.path=o;n.verb=r;e.forEach(function(e){St(t,e,n,function(e,t){const n=ue(e);if(ft(n)){E(n);return}he(r,o,n,t)})})}});return i}function St(r,e,t,n){if(e.trigger==="revealed"){xt();gt(r,n,t,e);bt(ue(r))}else if(e.trigger==="intersect"){const o={};if(e.root){o.root=ce(r,e.root)}if(e.threshold){o.threshold=parseFloat(e.threshold)}const i=new IntersectionObserver(function(t){for(let e=0;e<t.length;e++){const n=t[e];if(n.isIntersecting){ae(r,"intersect");break}}},o);i.observe(ue(r));gt(ue(r),n,t,e)}else if(!t.firstInitCompleted&&e.trigger==="load"){if(!pt(e,r,Xt("load",{elt:r}))){vt(ue(r),n,t,e.delay)}}else if(e.pollInterval>0){t.polling=true;ut(ue(r),n,e)}else{gt(r,n,t,e)}}function Et(e){const t=ue(e);if(!t){return false}const n=t.attributes;for(let e=0;e<n.length;e++){const r=n[e].name;if(l(r,"hx-on:")||l(r,"data-hx-on:")||l(r,"hx-on-")||l(r,"data-hx-on-")){return true}}return false}const Ct=(new XPathEvaluator).createExpression('.//*[@*[ starts-with(name(), "hx-on:") or starts-with(name(), "data-hx-on:") or'+' starts-with(name(), "hx-on-") or starts-with(name(), "data-hx-on-") ]]');function Ot(e,t){if(Et(e)){t.push(ue(e))}const n=Ct.evaluate(e);let r=null;while(r=n.iterateNext())t.push(ue(r))}function Ht(e){const t=[];if(e instanceof DocumentFragment){for(const n of e.childNodes){Ot(n,t)}}else{Ot(e,t)}return t}function Tt(e){if(e.querySelectorAll){const n=", [hx-boost] a, [data-hx-boost] a, a[hx-boost], a[data-hx-boost]";const r=[];for(const i in jn){const s=jn[i];if(s.getSelectors){var t=s.getSelectors();if(t){r.push(t)}}}const o=e.querySelectorAll(R+n+", form, [type='submit'],"+" [hx-ext], [data-hx-ext], [hx-trigger], [data-hx-trigger]"+r.flat().map(e=>", "+e).join(""));return o}else{return[]}}function Rt(e){const t=At(e.target);const n=It(e);if(n){n.lastButtonClicked=t}}function qt(e){const t=It(e);if(t){t.lastButtonClicked=null}}function At(e){return g(ue(e),"button, input[type='submit']")}function Nt(e){return e.form||g(e,"form")}function It(e){const t=At(e.target);if(!t){return}const n=Nt(t);if(!n){return}return oe(n)}function Lt(e){e.addEventListener("click",Rt);e.addEventListener("focusin",Rt);e.addEventListener("focusout",qt)}function Dt(t,e,n){const r=oe(t);if(!Array.isArray(r.onHandlers)){r.onHandlers=[]}let o;const i=function(e){On(t,function(){if(ft(t)){return}if(!o){o=new Function("event",n)}o.call(t,e)})};t.addEventListener(e,i);r.onHandlers.push({event:e,listener:i})}function Pt(t){De(t);for(let e=0;e<t.attributes.length;e++){const n=t.attributes[e].name;const r=t.attributes[e].value;if(l(n,"hx-on")||l(n,"data-hx-on")){const o=n.indexOf("-on")+3;const i=n.slice(o,o+1);if(i==="-"||i===":"){let e=n.slice(o+1);if(l(e,":")){e="htmx"+e}else if(l(e,"-")){e="htmx:"+e.slice(1)}else if(l(e,"htmx-")){e="htmx:"+e.slice(5)}Dt(t,e,r)}}}}function kt(t){ae(t,"htmx:beforeProcessNode");const n=oe(t);const e=st(t);const r=wt(t,n,e);if(!r){if(ne(t,"hx-boost")==="true"){at(t,n,e)}else if(s(t,"hx-trigger")){e.forEach(function(e){St(t,e,n,function(){})})}}if(t.tagName==="FORM"||ee(t,"type")==="submit"&&s(t,"form")){Lt(t)}n.firstInitCompleted=true;ae(t,"htmx:afterProcessNode")}function Mt(e){if(!(e instanceof Element)){return false}const t=oe(e);const n=Le(e);if(t.initHash!==n){Pe(e);t.initHash=n;return true}return false}function Ft(e){e=S(e);if(ft(e)){E(e);return}const t=[];if(Mt(e)){t.push(e)}ie(Tt(e),function(e){if(ft(e)){E(e);return}if(Mt(e)){t.push(e)}});ie(Ht(e),Pt);ie(t,kt)}function Bt(e){return e.replace(/([a-z0-9])([A-Z])/g,"$1-$2").toLowerCase()}function Xt(e,t){return new CustomEvent(e,{bubbles:true,cancelable:true,composed:true,detail:t})}function fe(e,t,n){ae(e,t,le({error:t},n))}function Ut(e){return e==="htmx:afterProcessNode"}function Vt(e,t,n){ie(Jn(e,[],n),function(e){try{t(e)}catch(e){H(e)}})}function H(e){console.error(e)}function ae(e,t,n){e=S(e);if(n==null){n={}}n.elt=e;const r=Xt(t,n);if(Q.logger&&!Ut(t)){Q.logger(e,t,n)}if(n.error){H(n.error+(n.target?", "+n.target:""));ae(e,"htmx:error",{errorInfo:n})}let o=e.dispatchEvent(r);const i=Bt(t);if(o&&i!==t){const s=Xt(i,r.detail);o=o&&e.dispatchEvent(s)}Vt(ue(e),function(e){o=o&&(e.onEvent(t,r)!==false&&!r.defaultPrevented)});return o}let jt;function $t(e){jt=e;if(U()){sessionStorage.setItem("htmx-current-path-for-history",e)}}$t(location.pathname+location.search);function _t(){const e=te().querySelector("[hx-history-elt],[data-hx-history-elt]");return e||te().body}function zt(t,e){if(!U()){return}const n=Kt(e);const r=te().title;const o=window.scrollY;if(Q.config.historyCacheSize<=0){sessionStorage.removeItem("htmx-history-cache");return}t=V(t);const i=v(sessionStorage.getItem("htmx-history-cache"))||[];for(let e=0;e<i.length;e++){if(i[e].url===t){i.splice(e,1);break}}const s={url:t,content:n,title:r,scroll:o};ae(te().body,"htmx:historyItemCreated",{item:s,cache:i});i.push(s);while(i.length>Q.config.historyCacheSize){i.shift()}while(i.length>0){try{sessionStorage.setItem("htmx-history-cache",JSON.stringify(i));break}catch(e){fe(te().body,"htmx:historyCacheError",{cause:e,cache:i});i.shift()}}}function Jt(t){if(!U()){return null}t=V(t);const n=v(sessionStorage.getItem("htmx-history-cache"))||[];for(let e=0;e<n.length;e++){if(n[e].url===t){return n[e]}}return null}function Kt(e){const t=Q.config.requestClass;const n=e.cloneNode(true);ie(y(n,"."+t),function(e){b(e,t)});ie(y(n,"[data-disabled-by-htmx]"),function(e){e.removeAttribute("disabled")});return n.innerHTML}function Gt(){const e=_t();let t=jt;if(U()){t=sessionStorage.getItem("htmx-current-path-for-history")}t=t||location.pathname+location.search;const n=te().querySelector('[hx-history="false" i],[data-hx-history="false" i]');if(!n){ae(te().body,"htmx:beforeHistorySave",{path:t,historyElt:e});zt(t,e)}if(Q.config.historyEnabled)history.replaceState({htmx:true},te().title,location.href)}function Wt(e){if(Q.config.getCacheBusterParam){e=e.replace(/org\.htmx\.cache-buster=[^&]*&?/,"");if(Z(e,"&")||Z(e,"?")){e=e.slice(0,-1)}}if(Q.config.historyEnabled){history.pushState({htmx:true},"",e)}$t(e)}function Zt(e){if(Q.config.historyEnabled)history.replaceState({htmx:true},"",e);$t(e)}function Yt(e){ie(e,function(e){e.call(undefined)})}function Qt(e){const t=new XMLHttpRequest;const n={swapStyle:"innerHTML",swapDelay:0,settleDelay:0};const r={path:e,xhr:t,historyElt:_t(),swapSpec:n};t.open("GET",e,true);if(Q.config.historyRestoreAsHxRequest){t.setRequestHeader("HX-Request","true")}t.setRequestHeader("HX-History-Restore-Request","true");t.setRequestHeader("HX-Current-URL",location.href);t.onload=function(){if(this.status>=200&&this.status<400){r.response=this.response;ae(te().body,"htmx:historyCacheMissLoad",r);_e(r.historyElt,r.response,n,{contextElement:r.historyElt,historyRequest:true});$t(r.path);ae(te().body,"htmx:historyRestore",{path:e,cacheMiss:true,serverResponse:r.response})}else{fe(te().body,"htmx:historyCacheMissLoadError",r)}};if(ae(te().body,"htmx:historyCacheMiss",r)){t.send()}}function en(e){Gt();e=e||location.pathname+location.search;const t=Jt(e);if(t){const n={swapStyle:"innerHTML",swapDelay:0,settleDelay:0,scroll:t.scroll};const r={path:e,item:t,historyElt:_t(),swapSpec:n};if(ae(te().body,"htmx:historyCacheHit",r)){_e(r.historyElt,t.content,n,{contextElement:r.historyElt,title:t.title});$t(r.path);ae(te().body,"htmx:historyRestore",r)}}else{if(Q.config.refreshOnHistoryMiss){Q.location.reload(true)}else{Qt(e)}}}function tn(e){let t=ve(e,"hx-indicator");if(t==null){t=[e]}ie(t,function(e){const t=oe(e);t.requestCount=(t.requestCount||0)+1;w(e,Q.config.requestClass)});return t}function nn(e){let t=ve(e,"hx-disabled-elt");if(t==null){t=[]}ie(t,function(e){const t=oe(e);t.requestCount=(t.requestCount||0)+1;if(!e.hasAttribute("disabled")){e.setAttribute("disabled","");e.setAttribute("data-disabled-by-htmx","")}});return t}function rn(e,t){ie(e.concat(t),function(e){const t=oe(e);t.requestCount=(t.requestCount||1)-1});ie(e,function(e){const t=oe(e);if(t.requestCount===0){b(e,Q.config.requestClass)}});ie(t,function(e){const t=oe(e);if(t.requestCount===0&&e.hasAttribute("data-disabled-by-htmx")){e.removeAttribute("disabled");e.removeAttribute("data-disabled-by-htmx")}})}function on(t,n){for(let e=0;e<t.length;e++){const r=t[e];if(r.isSameNode(n)){return true}}return false}function sn(e){const t=e;if(t.name===""||t.name==null||t.disabled||g(t,"fieldset[disabled]")){return false}if(t.type==="button"||t.type==="submit"||t.tagName==="image"||t.tagName==="reset"||t.tagName==="file"){return false}if(t.type==="checkbox"||t.type==="radio"){return t.checked}return true}function ln(t,e,n){if(t!=null&&e!=null){if(Array.isArray(e)){e.forEach(function(e){n.append(t,e)})}else{n.append(t,e)}}}function un(t,n,r){if(t!=null&&n!=null){let e=r.getAll(t);if(Array.isArray(n)){e=e.filter(e=>n.indexOf(e)<0)}else{e=e.filter(e=>e!==n)}r.delete(t);ie(e,e=>r.append(t,e))}}function cn(e){if(e instanceof HTMLSelectElement&&e.multiple){return F(e.querySelectorAll("option:checked")).map(function(e){return e.value})}if(e instanceof HTMLInputElement&&e.files){return F(e.files)}return e.value}function fn(t,n,r,e,o){if(e==null||on(t,e)){return}else{t.push(e)}if(sn(e)){const i=ee(e,"name");ln(i,cn(e),n);if(o){an(e,r)}}if(e instanceof HTMLFormElement){ie(e.elements,function(e){if(t.indexOf(e)>=0){un(e.name,cn(e),n)}else{t.push(e)}if(o){an(e,r)}});new FormData(e).forEach(function(e,t){if(e instanceof File&&e.name===""){return}ln(t,e,n)})}}function an(e,t){const n=e;if(n.willValidate){ae(n,"htmx:validation:validate");if(!n.checkValidity()){if(ae(n,"htmx:validation:failed",{message:n.validationMessage,validity:n.validity})&&!t.length&&Q.config.reportValidityOfForms){n.reportValidity()}t.push({elt:n,message:n.validationMessage,validity:n.validity})}}}function hn(n,e){for(const t of e.keys()){n.delete(t)}e.forEach(function(e,t){n.append(t,e)});return n}function dn(e,t){const n=[];const r=new FormData;const o=new FormData;const i=[];const s=oe(e);if(s.lastButtonClicked&&!se(s.lastButtonClicked)){s.lastButtonClicked=null}let l=e instanceof HTMLFormElement&&e.noValidate!==true||a(e,"hx-validate")==="true";if(s.lastButtonClicked){l=l&&s.lastButtonClicked.formNoValidate!==true}if(t!=="get"){fn(n,o,i,Nt(e),l)}fn(n,r,i,e,l);if(s.lastButtonClicked||e.tagName==="BUTTON"||e.tagName==="INPUT"&&ee(e,"type")==="submit"){const c=s.lastButtonClicked||e;const f=ee(c,"name");ln(f,c.value,o)}const u=ve(e,"hx-include");ie(u,function(e){fn(n,r,i,ue(e),l);if(!h(e,"form")){ie(p(e).querySelectorAll(ot),function(e){fn(n,r,i,e,l)})}});hn(r,o);return{errors:i,formData:r,values:kn(r)}}function pn(e,t,n){if(e!==""){e+="&"}if(String(n)==="[object Object]"){n=JSON.stringify(n)}const r=encodeURIComponent(n);e+=encodeURIComponent(t)+"="+r;return e}function gn(e){e=Dn(e);let n="";e.forEach(function(e,t){n=pn(n,t,e)});return n}function mn(e,t,n){const r={"HX-Request":"true","HX-Trigger":ee(e,"id"),"HX-Trigger-Name":ee(e,"name"),"HX-Target":a(t,"id"),"HX-Current-URL":location.href};Cn(e,"hx-headers",false,r);if(n!==undefined){r["HX-Prompt"]=n}if(oe(e).boosted){r["HX-Boosted"]="true"}return r}function yn(n,e){const t=ne(e,"hx-params");if(t){if(t==="none"){return new FormData}else if(t==="*"){return n}else if(t.indexOf("not ")===0){ie(t.slice(4).split(","),function(e){e=e.trim();n.delete(e)});return n}else{const r=new FormData;ie(t.split(","),function(t){t=t.trim();if(n.has(t)){n.getAll(t).forEach(function(e){r.append(t,e)})}});return r}}else{return n}}function xn(e){return!!ee(e,"href")&&ee(e,"href").indexOf("#")>=0}function bn(e,t){const n=t||ne(e,"hx-swap");const r={swapStyle:oe(e).boosted?"innerHTML":Q.config.defaultSwapStyle,swapDelay:Q.config.defaultSwapDelay,settleDelay:Q.config.defaultSettleDelay};if(Q.config.scrollIntoViewOnBoost&&oe(e).boosted&&!xn(e)){r.show="top"}if(n){const s=X(n);if(s.length>0){for(let e=0;e<s.length;e++){const l=s[e];if(l.indexOf("swap:")===0){r.swapDelay=d(l.slice(5))}else if(l.indexOf("settle:")===0){r.settleDelay=d(l.slice(7))}else if(l.indexOf("transition:")===0){r.transition=l.slice(11)==="true"}else if(l.indexOf("ignoreTitle:")===0){r.ignoreTitle=l.slice(12)==="true"}else if(l.indexOf("scroll:")===0){const u=l.slice(7);var o=u.split(":");const c=o.pop();var i=o.length>0?o.join(":"):null;r.scroll=c;r.scrollTarget=i}else if(l.indexOf("show:")===0){const f=l.slice(5);var o=f.split(":");const a=o.pop();var i=o.length>0?o.join(":"):null;r.show=a;r.showTarget=i}else if(l.indexOf("focus-scroll:")===0){const h=l.slice("focus-scroll:".length);r.focusScroll=h=="true"}else if(e==0){r.swapStyle=l}else{H("Unknown modifier in hx-swap: "+l)}}}}return r}function vn(e){return ne(e,"hx-encoding")==="multipart/form-data"||h(e,"form")&&ee(e,"enctype")==="multipart/form-data"}function wn(t,n,r){let o=null;Vt(n,function(e){if(o==null){o=e.encodeParameters(t,r,n)}});if(o!=null){return o}else{if(vn(n)){return hn(new FormData,Dn(r))}else{return gn(r)}}}function Sn(e){return{tasks:[],elts:[e]}}function En(e,t){const n=e[0];const r=e[e.length-1];if(t.scroll){var o=null;if(t.scrollTarget){o=ue(ce(n,t.scrollTarget))}if(t.scroll==="top"&&(n||o)){o=o||n;o.scrollTop=0}if(t.scroll==="bottom"&&(r||o)){o=o||r;o.scrollTop=o.scrollHeight}if(typeof t.scroll==="number"){x().setTimeout(function(){window.scrollTo(0,t.scroll)},0)}}if(t.show){var o=null;if(t.showTarget){let e=t.showTarget;if(t.showTarget==="window"){e="body"}o=ue(ce(n,e))}if(t.show==="top"&&(n||o)){o=o||n;o.scrollIntoView({block:"start",behavior:Q.config.scrollBehavior})}if(t.show==="bottom"&&(r||o)){o=o||r;o.scrollIntoView({block:"end",behavior:Q.config.scrollBehavior})}}}function Cn(r,e,o,i,s){if(i==null){i={}}if(r==null){return i}const l=a(r,e);if(l){let e=l.trim();let t=o;if(e==="unset"){return null}if(e.indexOf("javascript:")===0){e=e.slice(11);t=true}else if(e.indexOf("js:")===0){e=e.slice(3);t=true}if(e.indexOf("{")!==0){e="{"+e+"}"}let n;if(t){n=On(r,function(){if(s){return Function("event","return ("+e+")").call(r,s)}else{return Function("return ("+e+")").call(r)}},{})}else{n=v(e)}for(const u in n){if(n.hasOwnProperty(u)){if(i[u]==null){i[u]=n[u]}}}}return Cn(ue(c(r)),e,o,i,s)}function On(e,t,n){if(Q.config.allowEval){return t()}else{fe(e,"htmx:evalDisallowedError");return n}}function Hn(e,t,n){return Cn(e,"hx-vars",true,n,t)}function Tn(e,t,n){return Cn(e,"hx-vals",false,n,t)}function Rn(e,t){return le(Hn(e,t),Tn(e,t))}function qn(t,n,r){if(r!==null){try{t.setRequestHeader(n,r)}catch(e){t.setRequestHeader(n,encodeURIComponent(r));t.setRequestHeader(n+"-URI-AutoEncoded","true")}}}function An(t){if(t.responseURL){try{const e=new URL(t.responseURL);return e.pathname+e.search}catch(e){fe(te().body,"htmx:badResponseUrl",{url:t.responseURL})}}}function T(e,t){return t.test(e.getAllResponseHeaders())}function Nn(t,n,r){t=t.toLowerCase();if(r){if(r instanceof Element||typeof r==="string"){return he(t,n,null,null,{targetOverride:S(r)||be,returnPromise:true})}else{let e=S(r.target);if(r.target&&!e||r.source&&!e&&!S(r.source)){e=be}return he(t,n,S(r.source),r.event,{handler:r.handler,headers:r.headers,values:r.values,targetOverride:e,swapOverride:r.swap,select:r.select,returnPromise:true,push:r.push,replace:r.replace,selectOOB:r.selectOOB})}}else{return he(t,n,null,null,{returnPromise:true})}}function In(e){const t=[];while(e){t.push(e);e=e.parentElement}return t}function Ln(e,t,n){const r=new URL(t,location.protocol!=="about:"?location.href:window.origin);const o=location.protocol!=="about:"?location.origin:window.origin;const i=o===r.origin;if(Q.config.selfRequestsOnly){if(!i){return false}}return ae(e,"htmx:validateUrl",le({url:r,sameHost:i},n))}function Dn(e){if(e instanceof FormData)return e;const t=new FormData;for(const n in e){if(e.hasOwnProperty(n)){if(e[n]&&typeof e[n].forEach==="function"){e[n].forEach(function(e){t.append(n,e)})}else if(typeof e[n]==="object"&&!(e[n]instanceof Blob)){t.append(n,JSON.stringify(e[n]))}else{t.append(n,e[n])}}}return t}function Pn(r,o,e){return new Proxy(e,{get:function(t,e){if(typeof e==="number")return t[e];if(e==="length")return t.length;if(e==="push"){return function(e){t.push(e);r.append(o,e)}}if(typeof t[e]==="function"){return function(){t[e].apply(t,arguments);r.delete(o);t.forEach(function(e){r.append(o,e)})}}if(t[e]&&t[e].length===1){return t[e][0]}else{return t[e]}},set:function(e,t,n){e[t]=n;r.delete(o);e.forEach(function(e){r.append(o,e)});return true}})}function kn(o){return new Proxy(o,{get:function(e,t){if(typeof t==="symbol"){const r=Reflect.get(e,t);if(typeof r==="function"){return function(){return r.apply(o,arguments)}}else{return r}}if(t==="toJSON"){return()=>Object.fromEntries(o)}if(t in e){if(typeof e[t]==="function"){return function(){return o[t].apply(o,arguments)}}}const n=o.getAll(t);if(n.length===0){return undefined}else if(n.length===1){return n[0]}else{return Pn(e,t,n)}},set:function(t,n,e){if(typeof n!=="string"){return false}t.delete(n);if(e&&typeof e.forEach==="function"){e.forEach(function(e){t.append(n,e)})}else if(typeof e==="object"&&!(e instanceof Blob)){t.append(n,JSON.stringify(e))}else{t.append(n,e)}return true},deleteProperty:function(e,t){if(typeof t==="string"){e.delete(t)}return true},ownKeys:function(e){return Reflect.ownKeys(Object.fromEntries(e))},getOwnPropertyDescriptor:function(e,t){return Reflect.getOwnPropertyDescriptor(Object.fromEntries(e),t)}})}function he(t,n,r,o,i,k){let s=null;let l=null;i=i!=null?i:{};if(i.returnPromise&&typeof Promise!=="undefined"){var e=new Promise(function(e,t){s=e;l=t})}if(r==null){r=te().body}const M=i.handler||Vn;const F=i.select||null;if(!se(r)){re(s);return e}const u=i.targetOverride||ue(Se(r));if(u==null||u==be){fe(r,"htmx:targetError",{target:ne(r,"hx-target")});re(l);return e}let c=oe(r);const f=c.lastButtonClicked;if(f){const A=ee(f,"formaction");if(A!=null){n=A}const N=ee(f,"formmethod");if(N!=null){if(de.includes(N.toLowerCase())){t=N}else{re(s);return e}}}const a=ne(r,"hx-confirm");if(k===undefined){const K=function(e){return he(t,n,r,o,i,!!e)};const G={target:u,elt:r,path:n,verb:t,triggeringEvent:o,etc:i,issueRequest:K,question:a};if(ae(r,"htmx:confirm",G)===false){re(s);return e}}let h=r;let d=ne(r,"hx-sync");let p=null;let B=false;if(d){const I=d.split(":");const L=I[0].trim();if(L==="this"){h=we(r,"hx-sync")}else{h=ue(ce(r,L))}d=(I[1]||"drop").trim();c=oe(h);if(d==="drop"&&c.xhr&&c.abortable!==true){re(s);return e}else if(d==="abort"){if(c.xhr){re(s);return e}else{B=true}}else if(d==="replace"){ae(h,"htmx:abort")}else if(d.indexOf("queue")===0){const W=d.split(" ");p=(W[1]||"last").trim()}}if(c.xhr){if(c.abortable){ae(h,"htmx:abort")}else{if(p==null){if(o){const D=oe(o);if(D&&D.triggerSpec&&D.triggerSpec.queue){p=D.triggerSpec.queue}}if(p==null){p="last"}}if(c.queuedRequests==null){c.queuedRequests=[]}if(p==="first"&&c.queuedRequests.length===0){c.queuedRequests.push(function(){he(t,n,r,o,i)})}else if(p==="all"){c.queuedRequests.push(function(){he(t,n,r,o,i)})}else if(p==="last"){c.queuedRequests=[];c.queuedRequests.push(function(){he(t,n,r,o,i)})}re(s);return e}}const g=new XMLHttpRequest;c.xhr=g;c.abortable=B;const m=function(){c.xhr=null;c.abortable=false;if(c.queuedRequests!=null&&c.queuedRequests.length>0){const e=c.queuedRequests.shift();e()}};const X=ne(r,"hx-prompt");if(X){var y=prompt(X);if(y===null||!ae(r,"htmx:prompt",{prompt:y,target:u})){re(s);m();return e}}if(a&&!k){if(!confirm(a)){re(s);m();return e}}let x=mn(r,u,y);if(t!=="get"&&!vn(r)){x["Content-Type"]="application/x-www-form-urlencoded"}if(i.headers){x=le(x,i.headers)}const U=dn(r,t);let b=U.errors;const V=U.formData;if(i.values){hn(V,Dn(i.values))}const j=Dn(Rn(r,o));const v=hn(V,j);let w=yn(v,r);if(Q.config.getCacheBusterParam&&t==="get"){w.set("org.htmx.cache-buster",ee(u,"id")||"true")}if(n==null||n===""){n=location.href}const S=Cn(r,"hx-request");const $=oe(r).boosted;let E=Q.config.methodsThatUseUrlParams.indexOf(t)>=0;const C={boosted:$,useUrlParams:E,formData:w,parameters:kn(w),unfilteredFormData:v,unfilteredParameters:kn(v),headers:x,elt:r,target:u,verb:t,errors:b,withCredentials:i.credentials||S.credentials||Q.config.withCredentials,timeout:i.timeout||S.timeout||Q.config.timeout,path:n,triggeringEvent:o};if(!ae(r,"htmx:configRequest",C)){re(s);m();return e}n=C.path;t=C.verb;x=C.headers;w=Dn(C.parameters);b=C.errors;E=C.useUrlParams;if(b&&b.length>0){ae(r,"htmx:validation:halted",C);re(s);m();return e}const _=n.split("#");const z=_[0];const O=_[1];let H=n;if(E){H=z;const Z=!w.keys().next().done;if(Z){if(H.indexOf("?")<0){H+="?"}else{H+="&"}H+=gn(w);if(O){H+="#"+O}}}if(!Ln(r,H,C)){fe(r,"htmx:invalidPath",C);re(l);m();return e}g.open(t.toUpperCase(),H,true);g.overrideMimeType("text/html");g.withCredentials=C.withCredentials;g.timeout=C.timeout;if(S.noHeaders){}else{for(const P in x){if(x.hasOwnProperty(P)){const Y=x[P];qn(g,P,Y)}}}const T={xhr:g,target:u,requestConfig:C,etc:i,boosted:$,select:F,pathInfo:{requestPath:n,finalRequestPath:H,responsePath:null,anchor:O}};g.onload=function(){try{const t=In(r);T.pathInfo.responsePath=An(g);M(r,T);if(T.keepIndicators!==true){rn(R,q)}ae(r,"htmx:afterRequest",T);ae(r,"htmx:afterOnLoad",T);if(!se(r)){let e=null;while(t.length>0&&e==null){const n=t.shift();if(se(n)){e=n}}if(e){ae(e,"htmx:afterRequest",T);ae(e,"htmx:afterOnLoad",T)}}re(s)}catch(e){fe(r,"htmx:onLoadError",le({error:e},T));throw e}finally{m()}};g.onerror=function(){rn(R,q);fe(r,"htmx:afterRequest",T);fe(r,"htmx:sendError",T);re(l);m()};g.onabort=function(){rn(R,q);fe(r,"htmx:afterRequest",T);fe(r,"htmx:sendAbort",T);re(l);m()};g.ontimeout=function(){rn(R,q);fe(r,"htmx:afterRequest",T);fe(r,"htmx:timeout",T);re(l);m()};if(!ae(r,"htmx:beforeRequest",T)){re(s);m();return e}var R=tn(r);var q=nn(r);ie(["loadstart","loadend","progress","abort"],function(t){ie([g,g.upload],function(e){e.addEventListener(t,function(e){ae(r,"htmx:xhr:"+t,{lengthComputable:e.lengthComputable,loaded:e.loaded,total:e.total})})})});ae(r,"htmx:beforeSend",T);const J=E?null:wn(g,r,w);g.send(J);return e}function Mn(e,t){const n=t.xhr;let r=null;let o=null;if(T(n,/HX-Push:/i)){r=n.getResponseHeader("HX-Push");o="push"}else if(T(n,/HX-Push-Url:/i)){r=n.getResponseHeader("HX-Push-Url");o="push"}else if(T(n,/HX-Replace-Url:/i)){r=n.getResponseHeader("HX-Replace-Url");o="replace"}if(r){if(r==="false"){return{}}else{return{type:o,path:r}}}const i=t.pathInfo.finalRequestPath;const s=t.pathInfo.responsePath;let l=t.etc.push||ne(e,"hx-push-url");let u=t.etc.replace||ne(e,"hx-replace-url");if(l==="false")l=null;if(u==="false")u=null;const c=oe(e).boosted;let f=null;let a=null;if(l){f="push";a=l}else if(u){f="replace";a=u}else if(c){f="push";a=s||i}if(a){if(a==="true"){a=s||i}if(t.pathInfo.anchor&&a.indexOf("#")===-1){a=a+"#"+t.pathInfo.anchor}return{type:f,path:a}}else{return{}}}function Fn(e,t){var n=new RegExp(e.code);return n.test(t.toString(10))}function Bn(e){for(var t=0;t<Q.config.responseHandling.length;t++){var n=Q.config.responseHandling[t];if(Fn(n,e.status)){return n}}return{swap:false}}function Xn(e){if(e){const t=f("title");if(t){t.textContent=e}else{window.document.title=e}}}function Un(e,t){if(t==="this"){return e}const n=ue(ce(e,t));if(n==null){fe(e,"htmx:targetError",{target:t});throw new Error(`Invalid re-target ${t}`)}return n}function Vn(t,e){const n=e.xhr;let r=e.target;const o=e.etc;const i=e.select;if(!ae(t,"htmx:beforeOnLoad",e))return;if(T(n,/HX-Trigger:/i)){ze(n,"HX-Trigger",t)}if(T(n,/HX-Location:/i)){let e=n.getResponseHeader("HX-Location");var s={};if(e.indexOf("{")===0){s=v(e);e=s.path;delete s.path}s.push=s.push??"true";Nn("get",e,s);return}const l=T(n,/HX-Refresh:/i)&&n.getResponseHeader("HX-Refresh")==="true";if(T(n,/HX-Redirect:/i)){e.keepIndicators=true;Q.location.href=n.getResponseHeader("HX-Redirect");l&&Q.location.reload();return}if(l){e.keepIndicators=true;Q.location.reload();return}const u=Mn(t,e);const c=Bn(n);const f=c.swap;let a=!!c.error;let h=Q.config.ignoreTitle||c.ignoreTitle;let d=c.select;if(c.target){e.target=Un(t,c.target)}var p=o.swapOverride;if(p==null&&c.swapOverride){p=c.swapOverride}if(T(n,/HX-Retarget:/i)){e.target=Un(t,n.getResponseHeader("HX-Retarget"))}if(T(n,/HX-Reswap:/i)){p=n.getResponseHeader("HX-Reswap")}var g=n.response;var m=le({shouldSwap:f,serverResponse:g,isError:a,ignoreTitle:h,selectOverride:d,swapOverride:p},e);if(c.event&&!ae(r,c.event,m))return;if(!ae(r,"htmx:beforeSwap",m))return;r=m.target;g=m.serverResponse;a=m.isError;h=m.ignoreTitle;d=m.selectOverride;p=m.swapOverride;e.target=r;e.failed=a;e.successful=!a;if(m.shouldSwap){if(n.status===286){lt(t)}Vt(t,function(e){g=e.transformResponse(g,n,t)});if(u.type){Gt()}var y=bn(t,p);if(!y.hasOwnProperty("ignoreTitle")){y.ignoreTitle=h}w(r,Q.config.swappingClass);if(i){d=i}if(T(n,/HX-Reselect:/i)){d=n.getResponseHeader("HX-Reselect")}const x=o.selectOOB||ne(t,"hx-select-oob");const b=ne(t,"hx-select");_e(r,g,y,{select:d==="unset"?null:d||b,selectOOB:x,eventInfo:e,anchor:e.pathInfo.anchor,contextElement:t,afterSwapCallback:function(){if(T(n,/HX-Trigger-After-Swap:/i)){let e=t;if(!se(t)){e=te().body}ze(n,"HX-Trigger-After-Swap",e)}},afterSettleCallback:function(){if(T(n,/HX-Trigger-After-Settle:/i)){let e=t;if(!se(t)){e=te().body}ze(n,"HX-Trigger-After-Settle",e)}},beforeSwapCallback:function(){if(u.type){ae(te().body,"htmx:beforeHistoryUpdate",le({history:u},e));if(u.type==="push"){Wt(u.path);ae(te().body,"htmx:pushedIntoHistory",{path:u.path})}else{Zt(u.path);ae(te().body,"htmx:replacedInHistory",{path:u.path})}}}})}if(a){fe(t,"htmx:responseError",le({error:"Response Status Error Code "+n.status+" from "+e.pathInfo.requestPath},e))}}const jn={};function $n(){return{init:function(e){return null},getSelectors:function(){return null},onEvent:function(e,t){return true},transformResponse:function(e,t,n){return e},isInlineSwap:function(e){return false},handleSwap:function(e,t,n,r){return false},encodeParameters:function(e,t,n){return null}}}function _n(e,t){if(t.init){t.init(n)}jn[e]=le($n(),t)}function zn(e){delete jn[e]}function Jn(e,n,r){if(n==undefined){n=[]}if(e==undefined){return n}if(r==undefined){r=[]}const t=a(e,"hx-ext");if(t){ie(t.split(","),function(e){e=e.replace(/ /g,"");if(e.slice(0,7)=="ignore:"){r.push(e.slice(7));return}if(r.indexOf(e)<0){const t=jn[e];if(t&&n.indexOf(t)<0){n.push(t)}}})}return Jn(ue(c(e)),n,r)}var Kn=false;te().addEventListener("DOMContentLoaded",function(){Kn=true});function Gn(e){if(Kn||te().readyState==="complete"){e()}else{te().addEventListener("DOMContentLoaded",e)}}function Wn(){if(Q.config.includeIndicatorStyles!==false){const e=Q.config.inlineStyleNonce?` nonce="${Q.config.inlineStyleNonce}"`:"";const t=Q.config.indicatorClass;const n=Q.config.requestClass;te().head.insertAdjacentHTML("beforeend",`<style${e}>`+`.${t}{opacity:0;visibility: hidden} `+`.${n} .${t}, .${n}.${t}{opacity:1;visibility: visible;transition: opacity 200ms ease-in}`+"</style>")}}function Zn(){const e=te().querySelector('meta[name="htmx-config"]');if(e){return v(e.content)}else{return null}}function Yn(){const e=Zn();if(e){Q.config=le(Q.config,e)}}Gn(function(){Yn();Wn();let e=te().body;Ft(e);const t=te().querySelectorAll("[hx-trigger='restored'],[data-hx-trigger='restored']");e.addEventListener("htmx:abort",function(e){const t=e.detail.elt||e.target;const n=oe(t);if(n&&n.xhr){n.xhr.abort()}});const n=window.onpopstate?window.onpopstate.bind(window):null;window.onpopstate=function(e){if(e.state&&e.state.htmx){en();ie(t,function(e){ae(e,"htmx:restored",{document:te(),triggerEvent:ae})})}else{if(n){n(e)}}};x().setTimeout(function(){ae(e,"htmx:load",{});e=null},0)});return Q}();
+(() => {
+    const toggle = document.getElementById("ops-sidebar");
+    if (!toggle) return;
+
+    const desktop = window.matchMedia("(min-width: 1024px)");
+    const startsCollapsed = toggle.dataset.sidebarStartCollapsed === "true";
+    let savedState = null;
+
+    try {
+        savedState = sessionStorage.getItem("ops-sidebar-expanded");
+    } catch {
+        // Storage can be unavailable in restricted browser contexts.
+    }
+
+    toggle.checked = desktop.matches
+        && !startsCollapsed
+        && (savedState === null || savedState === "true");
+})();
 ```
 
 ## `theme/static_src/.gitignore`
@@ -10421,7 +10753,7 @@ module.exports = {
 
 ## `theme/static_src/src/styles.css`
 
-Size: 27.0 KB
+Size: 26.6 KB
 
 ```css
 @import "tailwindcss";
@@ -10526,7 +10858,6 @@ Size: 27.0 KB
 @source "../../../apps/media_library/**/*.{html,py,js}";
 @source "../../../apps/tasks/**/*.{html,py,js}";
 @source "../../static/**/*.js";
-@source not "../../static/js/vendor";
 
 @font-face {
     font-family: "InterVariable";
@@ -10579,8 +10910,6 @@ Size: 27.0 KB
     }
 
     .ops-topbar {
-        position: relative;
-        z-index: 50;
         height: 4rem;
         border-bottom: 1px solid var(--color-primary);
         background: var(--color-base-100);
@@ -10637,19 +10966,6 @@ Size: 27.0 KB
         padding: 0.3rem;
         color: var(--sidebar-item-text);
         list-style: none;
-    }
-
-    .ops-user-flyout {
-        position: relative;
-        flex: none;
-        line-height: 0;
-    }
-
-    .ops-user-menu {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        line-height: normal;
     }
 
     .ops-user-trigger::-webkit-details-marker {
@@ -11036,10 +11352,6 @@ Size: 27.0 KB
 
 }
 
-.drawer:not([data-sidebar-ready="true"]) .ops-sidebar {
-    transition: none;
-}
-
 /* Sidebar rules share daisyUI's utility layer so its menu defaults cannot
    flatten the established expanded/collapsed navigation treatment. */
 @layer utilities {
@@ -11386,4 +11698,15 @@ Size: 27.0 KB
         animation-iteration-count: 1 !important;
     }
 }
+```
+
+## `watch_tailwind.ps1`
+
+Size: 156 B
+
+```powershell
+$ErrorActionPreference = 'Stop'
+$root = Split-Path -Parent $MyInvocation.MyCommand.Path
+& (Join-Path $root 'install.ps1') tailwind @args
+exit $LASTEXITCODE
 ```

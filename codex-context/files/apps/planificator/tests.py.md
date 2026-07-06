@@ -2,7 +2,7 @@
 
 ## `apps/planificator/tests.py`
 
-Size: 24.6 KB
+Size: 22.7 KB
 
 ```python
 import io
@@ -90,54 +90,6 @@ class PlanificatorViewTests(TestCase):
         response = self.client.get("/planificator/")
 
         self.assertEqual(response.status_code, 404)
-
-    def test_history_htmx_request_returns_page_content_fragment(self):
-        response = self.client.get(
-            reverse("planificator:istoric"),
-            HTTP_HX_REQUEST="true",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "includes/htmx_page.html")
-        self.assertTemplateUsed(response, "planificator/_istoric_content.html")
-        self.assertTemplateNotUsed(response, "planificator/istoric.html")
-        self.assertContains(response, 'id="page-content"', count=1)
-        self.assertContains(
-            response,
-            f'data-active-nav-url="{reverse("planificator:istoric")}"',
-        )
-
-    def test_history_restore_request_returns_full_page(self):
-        response = self.client.get(
-            reverse("planificator:istoric"),
-            HTTP_HX_REQUEST="true",
-            HTTP_HX_HISTORY_RESTORE_REQUEST="true",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "planificator/istoric.html")
-        self.assertTemplateNotUsed(response, "includes/htmx_page.html")
-
-    def test_only_pilot_history_link_has_htmx_navigation(self):
-        response = self.client.get(reverse("planificator:istoric"))
-        history_url = reverse("planificator:istoric")
-        generator_url = reverse("planificator:generator_perioade")
-
-        self.assertContains(
-            response,
-            f'href="{history_url}" data-shell-nav-url="{history_url}" '
-            f'hx-get="{history_url}" hx-target="#page-content" '
-            'hx-swap="outerHTML show:#ops-main-scroll:top" '
-            'hx-push-url="true" hx-sync="#page-content:replace"',
-        )
-        self.assertContains(
-            response,
-            f'href="{generator_url}" data-shell-nav-url="{generator_url}"',
-        )
-        self.assertNotContains(
-            response,
-            f'data-shell-nav-url="{generator_url}" hx-get=',
-        )
 
     def test_generator_uses_daisyui_year_selector(self):
         response = self.client.get(reverse("planificator:generator_perioade"))

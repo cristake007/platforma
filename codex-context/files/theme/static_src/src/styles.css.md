@@ -2,7 +2,7 @@
 
 ## `theme/static_src/src/styles.css`
 
-Size: 27.0 KB
+Size: 26.6 KB
 
 ```css
 @import "tailwindcss";
@@ -107,7 +107,6 @@ Size: 27.0 KB
 @source "../../../apps/media_library/**/*.{html,py,js}";
 @source "../../../apps/tasks/**/*.{html,py,js}";
 @source "../../static/**/*.js";
-@source not "../../static/js/vendor";
 
 @font-face {
     font-family: "InterVariable";
@@ -160,8 +159,6 @@ Size: 27.0 KB
     }
 
     .ops-topbar {
-        position: relative;
-        z-index: 50;
         height: 4rem;
         border-bottom: 1px solid var(--color-primary);
         background: var(--color-base-100);
@@ -218,19 +215,6 @@ Size: 27.0 KB
         padding: 0.3rem;
         color: var(--sidebar-item-text);
         list-style: none;
-    }
-
-    .ops-user-flyout {
-        position: relative;
-        flex: none;
-        line-height: 0;
-    }
-
-    .ops-user-menu {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        line-height: normal;
     }
 
     .ops-user-trigger::-webkit-details-marker {
@@ -615,10 +599,6 @@ Size: 27.0 KB
         background: var(--sidebar-footer-bg);
     }
 
-}
-
-.drawer:not([data-sidebar-ready="true"]) .ops-sidebar {
-    transition: none;
 }
 
 /* Sidebar rules share daisyUI's utility layer so its menu defaults cannot

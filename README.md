@@ -12,15 +12,15 @@ cd tuvtk
 ./install.sh dev
 ```
 
-Windows PowerShell, without administrator rights:
+Windows Command Prompt, without administrator rights:
 
-```powershell
+```bat
 git clone https://github.com/OWNER/REPOSITORY.git tuvtk
-Set-Location tuvtk
-.\install.ps1 dev
+cd tuvtk
+install.cmd dev
 ```
 
-Windows Command Prompt may use `install.cmd dev`. Git Bash may use `./install.sh dev`; it delegates to PowerShell. The first `dev` run prepares dependencies, initializes PostgreSQL, installs Python and frontend packages, applies migrations, builds CSS, and starts development at `http://127.0.0.1:8000`.
+PowerShell may use `.\install.ps1 dev`. Git Bash may use `./install.sh dev`; it delegates to PowerShell. The first `dev` run prepares dependencies, initializes PostgreSQL, installs Python and frontend packages, applies migrations, builds CSS, and starts development at `http://127.0.0.1:8000`.
 
 Choose another development port with `dev --port=8001`.
 
@@ -40,7 +40,7 @@ On Debian 12, the shell launcher bootstraps Python 3 when necessary, then instal
 
 ## Commands
 
-Use `./install.sh` below on Linux. Replace it with `.\install.ps1` on Windows.
+Use `./install.sh` below on Linux. Replace it with `install.cmd` on Windows.
 
 ```bash
 ./install.sh help
@@ -58,6 +58,7 @@ Use `./install.sh` below on Linux. Replace it with `.\install.ps1` on Windows.
 ./install.sh collectstatic
 ./install.sh shell
 
+./install.sh fresh-db --yes --start
 ./install.sh tailwind
 ./install.sh npm run build
 ./install.sh context --max-file-kb 80
@@ -73,6 +74,14 @@ Deploy and start production from a clone:
 sudo ./install.sh deploy --domain=example.com
 sudo ./install.sh status
 sudo ./install.sh logs web
+```
+
+`deploy` prepares the environment, builds the image, starts and waits for
+PostgreSQL, runs the `init` migration/static step, then starts `web` and
+`nginx`. Optional installer settings pass through the wrapper:
+
+```bash
+sudo ./install.sh deploy --domain=example.com --http-port=8080 --data-dir=/var/lib/tuvtk
 ```
 
 Production remains HTTP-only. The wrapper refuses the previous SSL compatibility flags because Compose/Nginx does not currently configure TLS.
@@ -102,16 +111,18 @@ Unprefixed commands target the configured default mode. On Windows that mode is 
 
 Restore and SQL import require confirmation unless `--yes` is supplied. Imports replace the selected database and leave application services stopped. Mode-marked production data is refused by Windows development.
 
+`fresh-db` and `dev-db-reset` reset only the development database. On Windows this recreates `.postgresql/data`; on Debian development it removes the isolated `dev-postgres` Compose volume. Media, private media, static output, and Node modules are preserved.
+
 Debian also supports explicit `prod-*` and `dev-*` variants. Production reset remains deliberately difficult to invoke:
 
 ```bash
 sudo ./install.sh prod-db-reset --yes-i-understand-this-deletes-production-data
 ```
 
-It creates a backup first unless `--no-backup` is explicitly supplied. Development reset is:
+It creates a backup first unless `--no-backup` is explicitly supplied. Development reset can also be written as:
 
 ```bash
-./install.sh dev-db-reset --yes --start
+./install.sh fresh-db --yes --start
 ```
 
 Test backups and restores in a disposable environment before relying on them for disaster recovery.
@@ -141,4 +152,4 @@ bash -n bin/tuvtk
 git diff --check
 ```
 
-On Windows, validate the PowerShell launcher with `.\install.ps1 help`. Do not use production lifecycle commands, builds, migrations, restore, SQL import, clean, or database reset merely as validation.
+On Windows, validate the launcher with `install.cmd help`. Do not use production lifecycle commands, builds, migrations, restore, SQL import, clean, or database reset merely as validation.

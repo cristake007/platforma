@@ -2,7 +2,7 @@
 
 ## `core/templates/includes/sidebar.html`
 
-Size: 6.0 KB
+Size: 5.6 KB
 
 ```html
 {% load bootstrap_icons %}
@@ -30,7 +30,7 @@ Size: 6.0 KB
                                                 {% for child in item.children %}
                                                     <li>
                                                         {% if child.url_name %}
-                                                            <a href="{% url child.url_name %}" data-shell-nav-url="{% url child.url_name %}"{% if child.htmx %} hx-get="{% url child.url_name %}" hx-target="#page-content" hx-swap="outerHTML show:#ops-main-scroll:top" hx-push-url="true" hx-sync="#page-content:replace"{% endif %} class="transition-none{% if child.is_active %} active font-semibold{% endif %}" {% if child.is_active %}aria-current="page"{% endif %}><span class="ops-submenu-label">{{ child.label }}</span></a>
+                                                            <a href="{% url child.url_name %}" class="transition-none{% if child.is_active %} active font-semibold{% endif %}" {% if child.is_active %}aria-current="page"{% endif %}><span class="ops-submenu-label">{{ child.label }}</span></a>
                                                         {% else %}
                                                             <a href="#" class="transition-none"><span class="ops-submenu-label">{{ child.label }}</span></a>
                                                         {% endif %}
@@ -40,7 +40,7 @@ Size: 6.0 KB
                                         </details>
                                     {% else %}
                                         {% if item.url_name %}
-                                            <a href="{% url item.url_name %}" data-shell-nav-url="{% url item.url_name %}"{% if item.htmx %} hx-get="{% url item.url_name %}" hx-target="#page-content" hx-swap="outerHTML show:#ops-main-scroll:top" hx-push-url="true" hx-sync="#page-content:replace"{% endif %} class="is-drawer-close:tooltip is-drawer-close:tooltip-right is-drawer-close:justify-center transition-none{% if item.is_active %} active font-semibold{% endif %}" data-tip="{{ item.label }}" {% if item.is_active %}aria-current="page"{% endif %}>
+                                            <a href="{% url item.url_name %}" class="is-drawer-close:tooltip is-drawer-close:tooltip-right is-drawer-close:justify-center transition-none{% if item.is_active %} active font-semibold{% endif %}" data-tip="{{ item.label }}" {% if item.is_active %}aria-current="page"{% endif %}>
                                         {% else %}
                                             <a href="#" class="is-drawer-close:tooltip is-drawer-close:tooltip-right is-drawer-close:justify-center transition-none" data-tip="{{ item.label }}">
                                         {% endif %}

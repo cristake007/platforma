@@ -1,0 +1,11 @@
+# Source snapshot
+
+## `stop_postgres.bat`
+
+Size: 114 B
+
+```batch
+@echo off
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0install.ps1" stop
+exit /b %ERRORLEVEL%
+```

@@ -2,7 +2,7 @@
 
 ## `apps/planificator/views.py`
 
-Size: 31.8 KB
+Size: 31.6 KB
 
 ```python
 import base64
@@ -20,8 +20,6 @@ from django.utils import timezone
 from django.views import View
 from django.views.generic import ListView, TemplateView
 from docx.opc.exceptions import PackageNotFoundError
-
-from core.mixins import HtmxPageMixin
 
 from .constants import ROMANIAN_MONTH_NAMES
 from .file_handlers import create_excel_export, read_tabular_rows
@@ -769,11 +767,8 @@ class WordMatchGenerateView(WordMatcherPermissionMixin, View):
         return response
 
 
-class ScheduleHistoryView(HtmxPageMixin, PlanificatorPermissionMixin, ListView):
+class ScheduleHistoryView(PlanificatorPermissionMixin, ListView):
     template_name = "planificator/istoric.html"
-    htmx_content_template = "planificator/_istoric_content.html"
-    shell_page_title = "Istoric generări | Platforma TUVTK"
-    shell_nav_url_name = "planificator:istoric"
     context_object_name = "generations"
     paginate_by = 20
 

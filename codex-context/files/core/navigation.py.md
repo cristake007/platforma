@@ -2,19 +2,14 @@
 
 ## `core/navigation.py`
 
-Size: 5.5 KB
+Size: 5.4 KB
 
 ```python
 NAVIGATION = (
     {
         "label": "Overview",
         "items": (
-            {
-                "label": "Dashboard",
-                "icon": "grid-1x2-fill",
-                "url_name": "dashboard:index",
-                "htmx": True,
-            },
+            {"label": "Dashboard", "icon": "grid-1x2-fill", "url_name": "dashboard:index"},
             {
                 "label": "Task-uri",
                 "icon": "list-task",
@@ -65,7 +60,6 @@ NAVIGATION = (
                     {
                         "label": "Istoric",
                         "url_name": "planificator:istoric",
-                        "htmx": True,
                         "permission": "planificator.use_course_planning",
                         "active_url_names": (
                             "planificator:istoric",

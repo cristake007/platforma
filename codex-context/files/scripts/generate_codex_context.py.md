@@ -463,6 +463,7 @@ def discover_files(
             except UnicodeDecodeError:
                 skipped.append(SkippedEntry(relative, "not UTF-8 text"))
                 continue
+            content = content.replace("\r\n", "\n").replace("\r", "\n")
 
             safe_content, redactions = redact_content(content)
             if safe_content is None:
