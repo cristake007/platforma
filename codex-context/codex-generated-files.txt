@@ -14,7 +14,6 @@ files/.gitattributes.md
 files/.gitignore.md
 files/.tuvtk/config.json.md
 files/AGENTS.md.md
-files/CODEX_RESUME_PHASES.md.md
 files/Dockerfile.md
 files/HTMX_ALPINE_IMPLEMENTATION_PLAN.md.md
 files/README.md.md
@@ -173,6 +172,7 @@ files/apps/tasks/urls.py.md
 files/apps/tasks/validators.py.md
 files/apps/tasks/views.py.md
 files/bin/tuvtk.md
+files/codex-prompt-demos/README.md.md
 files/compose.dev.yaml.md
 files/compose.yaml.md
 files/core/__init__.py.md

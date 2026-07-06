@@ -5,7 +5,7 @@ relative_path	bytes	context_output
 .gitignore	320	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/.gitignore.md
 .tuvtk/config.json	84	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/.tuvtk/config.json.md
 activate_venv.bat	358	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/activate_venv.bat.md
-AGENTS.md	9456	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/AGENTS.md.md
+AGENTS.md	4848	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/AGENTS.md.md
 apps/__init__.py	0	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/apps/__init__.py.md
 apps/dashboard/__init__.py	0	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/apps/dashboard/__init__.py.md
 apps/dashboard/AGENTS.md	1204	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/apps/dashboard/AGENTS.md.md
@@ -160,7 +160,7 @@ apps/tasks/urls.py	1811	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/a
 apps/tasks/validators.py	630	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/apps/tasks/validators.py.md
 apps/tasks/views.py	20095	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/apps/tasks/views.py.md
 bin/tuvtk	32722	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/bin/tuvtk.md
-CODEX_RESUME_PHASES.md	27695	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/CODEX_RESUME_PHASES.md.md
+codex-prompt-demos/README.md	10462	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/codex-prompt-demos/README.md.md
 compose.dev.yaml	1570	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/compose.dev.yaml.md
 compose.yaml	3838	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/compose.yaml.md
 core/__init__.py	0	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/core/__init__.py.md
@@ -181,7 +181,7 @@ core/tests.py	3454	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/core/t
 docker/nginx.conf.template	1425	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/docker/nginx.conf.template.md
 docker/start-web.sh	225	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/docker/start-web.sh.md
 Dockerfile	1192	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/Dockerfile.md
-frontend.md	1355	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/frontend.md.md
+frontend.md	3256	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/frontend.md.md
 generate_codex_context.bat	85	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/generate_codex_context.bat.md
 generate_codex_context.ps1	86	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/generate_codex_context.ps1.md
 generate_codex_context.sh	170	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/generate_codex_context.sh.md
@@ -199,7 +199,7 @@ platforma_tuvtk/urls.py	1554	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/fi
 platforma_tuvtk/wsgi.py	407	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/platforma_tuvtk/wsgi.py.md
 plugins/playwright/.codex-plugin/plugin.json	1194	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/plugins/playwright/.codex-plugin/plugin.json.md
 plugins/playwright/.mcp.json	323	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/plugins/playwright/.mcp.json.md
-README.md	6432	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/README.md.md
+README.md	3503	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/README.md.md
 repomix.config.json	1293	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/repomix.config.json.md
 requirements-deploy.txt	90	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/requirements-deploy.txt.md
 requirements-dev.txt	171	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/requirements-dev.txt.md

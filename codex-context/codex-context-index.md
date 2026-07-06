@@ -1,12 +1,12 @@
 # Platforma TUVTK Codex context
 
-Generated: 2026-07-06T14:34:40+00:00
+Generated: 2026-07-06T15:53:46+00:00
 Project root: `C:\Users\Cristi Popa\Desktop\tuvtk`
 Context directory: `C:\Users\Cristi Popa\Desktop\tuvtk\codex-context`
 Included files: 224
-Skipped files: 37
+Skipped files: 34
 Pruned directories: 32
-Total included bytes: 1437376 (1403.7 KB)
+Total included bytes: 1414507 (1381.4 KB)
 Files with redacted assignments: 12
 Tests included: yes
 Django migrations: excluded by default
@@ -26,7 +26,7 @@ Use `codex-file-map.txt` to locate a file, then open the real repository source 
 - `AGENTS.md/`: 1 file(s)
 - `apps/`: 153 file(s)
 - `bin/`: 1 file(s)
-- `CODEX_RESUME_PHASES.md/`: 1 file(s)
+- `codex-prompt-demos/`: 1 file(s)
 - `compose.dev.yaml/`: 1 file(s)
 - `compose.yaml/`: 1 file(s)
 - `core/`: 15 file(s)
@@ -105,9 +105,6 @@ None.
 - `requirements-deploy.in`: unrecognized text file type
 - `requirements-dev.in`: unrecognized text file type
 - `requirements.in`: unrecognized text file type
-- `tasks-hub-desktop.png`: binary, archive, database, certificate, or media extension
-- `tasks-kanban-desktop-before.png`: binary, archive, database, certificate, or media extension
-- `tasks-kanban-final.png`: binary, archive, database, certificate, or media extension
 - `theme/static/fonts/inter/InterVariable.woff2`: binary, archive, database, certificate, or media extension
 - `theme/static/images/logo.svg`: binary, archive, database, certificate, or media extension
 

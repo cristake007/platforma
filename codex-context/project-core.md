@@ -4,157 +4,161 @@ Project-level, configuration, deployment, shared Django, and frontend source fil
 
 ## `AGENTS.md`
 
-Size: 9.2 KB
+Size: 4.7 KB
 
 ````markdown
 # Platforma TUVTK — Agent Router
 
-## Scope and workflow
+## Project
 
-These instructions apply to the whole repository. A deeper `AGENTS.md` adds app-specific rules for files below its directory.
+- Server-rendered Django application.
+- Stack: Django, PostgreSQL, Tailwind CSS, daisyUI, HTMX, Alpine.js.
+- Django templates and PostgreSQL are the source of truth.
+- HTMX is for server-rendered partial HTML updates.
+- Alpine.js is for local UI state only.
+- Existing custom JavaScript may remain when it is safer or clearer.
+- Do not convert the project into a SPA.
+- Do not add another frontend framework unless explicitly requested.
 
-The repository has a unified cross-platform command surface. Use `./install.sh` on Debian/Linux or `./install.ps1` on native Windows for setup, lifecycle, Django, frontend, test, data, and context commands. Linux production uses Docker Compose; Windows development uses user-space Python, Node, and PostgreSQL runtimes. `bin/tuvtk` is the Linux Compose implementation and is not the normal user entry point. Do not reconstruct long raw Compose commands unless validating Compose configuration itself.
+## Scope
 
-Primary agent commands:
+These rules apply to the whole repository.
 
-```bash
-./install.sh context --max-file-kb 80
-./install.sh check
-./install.sh test apps.dashboard
-```
+A deeper `AGENTS.md` adds app-specific rules for files below its directory.
 
-On Windows use the equivalent `./install.ps1` commands. `scripts/tuvtk_cli.py` is the shared router and `scripts/generate_codex_context.py` is the context implementation. Shell, batch, and PowerShell compatibility launchers delegate to these tracked entry points.
+Before editing, read only:
 
-## Smallest sufficient context
+1. this file;
+2. the deeper app `AGENTS.md` for the target app;
+3. the exact files named by the user;
+4. files directly imported, included, extended, or referenced by those files when required.
 
-Before editing:
+Do not preload:
 
-1. Read the applicable `AGENTS.md` files from the repository root to the target directory.
-2. If exact source paths are known, open those real files directly. Do not also read their generated snapshots.
-3. If paths or dependencies are unclear, read only `codex-context/apps/<app>.md` for app work or `codex-context/project-core.md` for project/core/theme work.
-4. Use `codex-file-map.txt` only to locate an unknown file. Use `codex-context-index.md` only for high-level orientation.
-5. Open `codex-context/files/<real-path>.md` only for targeted orientation. Before editing, open the real source file, which is authoritative.
-6. Expand into another app only when an import, URL, model relation, template include, navigation entry, or shared contract proves that dependency.
+- the whole repository;
+- all generated `codex-context/` files;
+- unrelated apps;
+- unrelated tests;
+- migration history;
+- Docker/deployment files;
+- generated/runtime folders.
 
-Do not preload the file map, context index, project core, every app guide, migration history, or unrelated tests for a local task. Broad reading is appropriate only for an explicit audit, cross-app change, or new application.
+Use `codex-context/apps/<app>.md` only when source paths are unknown.
 
-Generated context is navigation support, not a second source of truth. If stale, inspect real source and regenerate with:
+Use `codex-file-map.txt` only to locate an unknown file.
 
-```bash
-./install.sh context
-```
+Open real source files before editing. Generated context is navigation support, not authority.
 
-## Repository boundaries
+If required context is missing, stop and ask for scope expansion.
 
-* `platforma_tuvtk/`: settings, root URL inclusion, ASGI, and WSGI only.
-* `core/`: global shell, navigation, middleware, context processors, shared templates, and shared user profile behavior.
-* `theme/`: Tailwind/daisyUI source theme and global shell JavaScript.
-* `apps/`: business/domain Django apps. Each app owns its routes, views, forms, workflows, queries, validation, templates, static files, and focused tests.
+## App boundaries
 
-Do not duplicate a model, route, service, selector, template, or workflow before searching the owning app. Keep cross-app dependencies explicit and narrow.
+- `platforma_tuvtk/`: settings, root URLs, ASGI, WSGI.
+- `core/`: shared shell, navigation, middleware, context processors, shared templates.
+- `theme/`: Tailwind/daisyUI theme, global frontend assets.
+- `apps/`: domain apps. Each app owns its routes, views, forms, services, selectors, templates, static files, and tests.
 
-## Django contracts
+Do not duplicate an existing model, service, selector, route, template, or workflow.
 
-* Keep views thin. Put writes and multi-step workflows in `services.py`, ownership-filtered reads in `selectors.py`, request/form validation in `forms.py`, and reusable domain validation in `validators.py`.
-* Keep PostgreSQL as the source of truth. JavaScript may improve interaction but must not own validation or persistence.
-* Require authentication where the surrounding app does. Scope user-owned objects by owner and return 404 for cross-owner access.
-* Use CSRF protection and non-GET methods for state changes.
-* Use namespaced app URLs. Include them from `platforma_tuvtk/urls.py` and update `core/navigation.py` only for global navigation.
-* Create and review a Django migration for every schema change. Do not inspect all old migrations unless schema history is relevant.
-* Normal execution goes through `install.sh`/`install.ps1`. Debian uses Docker; Windows development uses `.venv` and the repository-local PostgreSQL runtime. Do not invoke implementation scripts directly unless diagnosing the wrapper.
+## Django rules
 
-## Shared frontend contract
+- Keep views thin.
+- Put writes and multi-step workflows in `services.py`.
+- Put permission-filtered reads in `selectors.py`.
+- Put request/form validation in `forms.py`.
+- Put reusable validation in `validators.py`.
+- Keep validation, authorization, ownership checks, and persistence server-side.
+- Use POST with CSRF for state changes.
+- Return 404 for cross-owner access where the app already follows that pattern.
+- Use namespaced app URLs.
+- Add migrations for schema changes, but do not inspect old migrations unless needed.
 
-* Server-rendered application pages extend `core/templates/layouts/base.html`. A deliberately standalone page such as login must still use `data-theme="tuvtk"` and the shared compiled stylesheet.
-* Use semantic daisyUI/Tailwind tokens defined in `theme/static_src/src/styles.css`: `base-*`, `base-content`, `primary`, `secondary`, `accent`, `info`, `success`, `warning`, `error`, and `text-muted`.
-* Do not add literal palette utilities, hex/RGB colors, or app-local chrome tokens. Add or adjust a global semantic token only when the design system lacks one. User-authored document/canvas colors are domain data.
-* Use daisyUI components and existing shared templates/includes before custom markup. Keep interfaces compact, flat, responsive, keyboard accessible, and visibly focusable.
-* Use `/diplome/istoric/` (`apps/diplome/templates/diplome/history_index.html`) as the canonical list-table model: compact `table-xs` density, bordered `base-*` surface, horizontal overflow, aligned columns, semantic status badges, right-aligned actions, and consistent empty state.
-* Row actions in list tables are compact icon-only square buttons with `aria-label`, `title`, decorative SVGs marked `aria-hidden="true"`, and visible keyboard focus.
-* Color table actions by intent with semantic tokens: `primary` for view/edit/navigation, `success` for download/confirm, `warning` for caution, and `error` for destructive actions.
-* Use vanilla JavaScript with progressive enhancement. Preserve server-side validation and native navigation/scrolling.
-* Every app whose templates/scripts use Tailwind classes needs an `@source` entry in `theme/static_src/src/styles.css`.
-* Read `frontend.md` and the exact template/static files for frontend changes. Read shared base/theme files only when changing global layout or tokens.
-* Run Tailwind/npm through `./install.sh tailwind` and `./install.sh npm ...`, or the equivalent `install.ps1` commands on Windows.
+## Frontend rules
 
-## Safety and preservation
+Detailed frontend rules live in `frontend.md`.
 
-* Preserve all unrelated tracked and untracked user changes. Never reset, discard, or overwrite them to simplify a task.
-* Inspect `.env.example`; never inspect or expose `.env` or `/etc/tuvtk/tuvtk.env` contents unless explicitly required and authorized.
-* Do not delete database volumes, persistent PostgreSQL storage, uploads, private media, secrets, or environment files.
-* Do not run `install.sh clean`, restore, SQL import, or other destructive database/filesystem commands unless explicitly requested.
-* Do not run full Docker rebuilds, production starts/restarts, migrations, collectstatic, npm installation, or service-changing commands merely for validation.
-* Do not claim SSL works. Current Compose/Nginx is HTTP-only and installer SSL modes intentionally refuse.
-* Preserve the unified router. Do not add standalone Windows lifecycle scripts or duplicate setup logic outside `scripts/tuvtk_cli.py`.
-* Preserve the Linux production lifecycle: build, start/wait for `db`, run `init`, then start `web` and `nginx`.
+Default frontend split:
 
-Avoid generated, runtime, dependency, binary, and local-tool paths unless directly required: `.tuvtk/`, `.venv/`, `.git/`, `.postgresql/`, `node_modules/`, `staticfiles/`, `media/`, `private_media/`, `.playwright-mcp/`, `test-results/`, `playwright-report/`, `apps/planificator-main/`, `theme/static/css/dist/`, `theme/static/fonts/`, and `theme/static/images/`.
+- Tailwind/daisyUI: layout and components.
+- HTMX: server-rendered partial updates, forms, filters, pagination, table/list refreshes.
+- Alpine.js: local toggles, dialogs, selected state, loading flags, upload labels.
+- Custom JavaScript: complex JSON, downloads, drag/drop, file parsing, canvas/editor workflows.
 
-## Verification policy
+Pages should extend `core/templates/layouts/base.html` unless intentionally standalone.
 
-Choose the smallest checks that exercise the changed boundary. Do not run automated test suites by default because they are expensive and create database state. Provide focused test commands for the user unless execution is explicitly requested or necessary for a narrow diagnosis.
+Use shared semantic theme tokens. Do not introduce app-local color systems.
 
-Primary project checks:
+## Commands
+
+Use the repository wrapper.
+
+Linux/Debian:
 
 ```bash
 ./install.sh check
 ./install.sh test <app-or-test-path>
-```
-
-The wrapper defaults tests to `-v 0`. Never run the full database-backed suite automatically.
-
-Safe workflow checks:
-
-```bash
-bash -n install.sh
-bash -n bin/tuvtk
-bash -n generate_codex_context.sh
-python3 -m py_compile scripts/tuvtk_cli.py
-python3 -m py_compile scripts/generate_codex_context.py
-./install.sh help
+./install.sh npm run build
 ./install.sh context --max-file-kb 80
-git diff --check
 ```
 
-If `python3` is unavailable, use `python -m py_compile scripts/generate_codex_context.py`.
+Windows:
 
-Optional read-only Compose rendering, only when Docker CLI and the deployment env file are available:
-
-```bash
-docker compose \
-  --env-file /etc/tuvtk/tuvtk.env \
-  --project-directory /opt/tuvtk \
-  -f /opt/tuvtk/compose.yaml \
-  -p tuvtk config --quiet
-
-docker compose \
-  --env-file /etc/tuvtk/tuvtk.env \
-  --project-directory /opt/tuvtk \
-  -f /opt/tuvtk/compose.yaml \
-  -f /opt/tuvtk/compose.dev.yaml \
-  -p tuvtk-dev config --quiet
+```powershell
+.\install.ps1 check
+.\install.ps1 test <app-or-test-path>
+.\install.ps1 npm run build
+.\install.ps1 context --max-file-kb 80
 ```
 
-For QA plans, cover invalid input, authorization and cross-owner access, destructive actions on referenced records, refresh/back navigation, and narrow-screen behavior where relevant.
+Do not reconstruct raw Docker Compose commands unless the task is Compose-specific.
 
-## File hygiene and completion reports
+## Safety
 
-Use small, reviewable changes. Keep established workflows unless the user explicitly requests replacement. Review model migrations for schema changes, but do not load migration history without a reason.
+- Preserve unrelated tracked and untracked changes.
+- Never inspect or expose `.env` or `/etc/tuvtk/tuvtk.env` unless explicitly authorized.
+- Do not delete database volumes, PostgreSQL data, media, private media, secrets, or environment files.
+- Do not run clean, restore, SQL import, database reset, production restart, or destructive commands unless explicitly requested.
+- Do not run full test suites by default. Use the smallest focused check.
+- Do not claim HTTPS works; current production Compose/Nginx is HTTP-only.
 
-Completion reports must state:
+Avoid generated, runtime, dependency, binary, and local-tool paths unless directly required:
 
-* files changed or removed;
-* behavior/instruction changes;
-* migrations created, if any;
-* checks actually run and checks skipped;
-* whether context generation ran;
-* remaining assumptions and manual checks.
+- `.tuvtk/`
+- `.venv/`
+- `.git/`
+- `.postgresql/`
+- `node_modules/`
+- `staticfiles/`
+- `media/`
+- `private_media/`
+- `.playwright-mcp/`
+- `test-results/`
+- `playwright-report/`
+- `theme/static/css/dist/`
+- `theme/static/fonts/`
+- `theme/static/images/`
 
-After source or instruction changes, regenerate context from the repository root when the active task permits it:
+## Stop conditions
 
-```bash
-./install.sh context
-```
+Stop and ask before expanding scope when:
+
+- the named file is missing;
+- another app must be changed but was not listed;
+- a schema migration is needed but not requested;
+- a workflow would require a broad rewrite;
+- validation would require destructive commands or full test suites.
+
+## Completion report
+
+Always report:
+
+- files changed;
+- behavior changed;
+- migrations created, if any;
+- checks run;
+- checks skipped;
+- context regeneration status;
+- manual checks still needed.
 ````
 
 ## `compose.dev.yaml`
@@ -3275,12 +3279,25 @@ Size: 155 B
 
 ## `README.md`
 
-Size: 6.3 KB
+Size: 3.4 KB
 
 ````markdown
 # Platforma TUVTK
 
-Platforma TUVTK is a server-rendered Django application using PostgreSQL, Tailwind CSS, daisyUI, Gunicorn, and Nginx. It has one command vocabulary across Windows development and Debian 12 development/production.
+Server-rendered Django operations platform for TUVTK internal workflows.
+
+Stack:
+
+- Django
+- PostgreSQL
+- Tailwind CSS
+- daisyUI
+- HTMX
+- Alpine.js
+- Gunicorn
+- Nginx
+
+The application is not a SPA. Django templates and PostgreSQL remain the source of truth.
 
 ## Start From a Clone
 
@@ -3292,7 +3309,7 @@ cd tuvtk
 ./install.sh dev
 ```
 
-Windows Command Prompt, without administrator rights:
+Windows Command Prompt:
 
 ```bat
 git clone https://github.com/OWNER/REPOSITORY.git tuvtk
@@ -3300,27 +3317,27 @@ cd tuvtk
 install.cmd dev
 ```
 
-PowerShell may use `.\install.ps1 dev`. Git Bash may use `./install.sh dev`; it delegates to PowerShell. The first `dev` run prepares dependencies, initializes PostgreSQL, installs Python and frontend packages, applies migrations, builds CSS, and starts development at `http://127.0.0.1:8000`.
+PowerShell:
 
-Choose another development port with `dev --port=8001`.
+```powershell
+.\install.ps1 dev
+```
 
-## Platform Backends
+Development starts at:
 
-On Windows, the wrapper uses user-space resources and does not register services or require administrator access:
+```text
+http://127.0.0.1:8000
+```
 
-- Python 3.12+ is installed privately when no compatible interpreter exists;
-- `.venv` contains project Python packages;
-- pinned Node 22 binaries are checksum-verified and downloaded under `.tuvtk/runtime` when unavailable;
-- pinned PostgreSQL 17 binaries are checksum-verified and downloaded under `.postgresql`, with data kept in `.postgresql/data`;
-- Django and Tailwind run as background processes with PID and log files under `.tuvtk`.
+Use another port:
 
-PostgreSQL listens only on `127.0.0.1` and uses password authentication. Windows supports development, tests, SQL, backup, and restore operations. Production deployment is intentionally refused on Windows.
+```bash
+./install.sh dev --port=8001
+```
 
-On Debian 12, the shell launcher bootstraps Python 3 when necessary, then installs/verifies Docker Engine and the Compose plugin through the existing installer. Development uses isolated Compose volumes. Production keeps configuration in `/etc/tuvtk/tuvtk.env` and persistent data under `/var/lib/tuvtk` by default.
+## Main Commands
 
-## Commands
-
-Use `./install.sh` below on Linux. Replace it with `install.cmd` on Windows.
+Linux/Debian:
 
 ```bash
 ./install.sh help
@@ -3338,17 +3355,66 @@ Use `./install.sh` below on Linux. Replace it with `install.cmd` on Windows.
 ./install.sh collectstatic
 ./install.sh shell
 
-./install.sh fresh-db --yes --start
 ./install.sh tailwind
 ./install.sh npm run build
 ./install.sh context --max-file-kb 80
 ```
 
-`test` defaults to verbosity 0 unless a verbosity option is supplied. `setup dev` prepares dependencies without starting Django or Tailwind. On Windows, `dev` runs Django and Tailwind in the current terminal and `Ctrl+C` stops both without opening additional console windows. Use `start` for hidden background processes; their output is written under `.tuvtk/logs`.
+Windows equivalents:
+
+```powershell
+.\install.ps1 help
+.\install.ps1 check
+.\install.ps1 test apps.dashboard
+.\install.ps1 tailwind
+.\install.ps1 npm run build
+.\install.ps1 context --max-file-kb 80
+```
+
+`test` defaults to low verbosity.
+
+## Frontend Rules
+
+See:
+
+```text
+frontend.md
+```
+
+Short version:
+
+- Tailwind/daisyUI: layout and components.
+- HTMX: server-rendered partial updates.
+- Alpine.js: local UI state only.
+- Custom JavaScript: complex workflows where safer.
+- Django/PostgreSQL: real business state.
+
+## Codex Rules
+
+See:
+
+```text
+AGENTS.md
+```
+
+For app-specific work, also read the target app file:
+
+```text
+apps/<app>/AGENTS.md
+```
+
+Use generated context only for discovery:
+
+```text
+codex-context/apps/<app>.md
+codex-file-map.txt
+```
+
+Do not load the whole generated context for normal work.
 
 ## Debian Production
 
-Deploy and start production from a clone:
+Deploy:
 
 ```bash
 sudo ./install.sh deploy --domain=example.com
@@ -3356,31 +3422,21 @@ sudo ./install.sh status
 sudo ./install.sh logs web
 ```
 
-`deploy` prepares the environment, builds the image, starts and waits for
-PostgreSQL, runs the `init` migration/static step, then starts `web` and
-`nginx`. Optional installer settings pass through the wrapper:
+Production configuration:
 
-```bash
-sudo ./install.sh deploy --domain=example.com --http-port=8080 --data-dir=/var/lib/tuvtk
+```text
+/etc/tuvtk/tuvtk.env
 ```
 
-Production remains HTTP-only. The wrapper refuses the previous SSL compatibility flags because Compose/Nginx does not currently configure TLS.
+Default persistent data:
 
-Explicit production and development commands remain available on Debian:
-
-```bash
-sudo ./install.sh prod-status
-sudo ./install.sh prod-start
-sudo ./install.sh prod-stop
-sudo ./install.sh dev-status
-sudo ./install.sh dev-stop
+```text
+/var/lib/tuvtk
 ```
 
-Legacy installer invocations such as `sudo bash install.sh --dev --yes` and `sudo bash install.sh --production --yes --domain=example.com` remain temporarily supported. They may still generate the deprecated `command.sh`; the new command workflow does not generate or use it.
+Current production Compose/Nginx is HTTP-only. SSL flags are refused until HTTPS is implemented.
 
 ## Backup, Restore, and SQL
-
-Unprefixed commands target the configured default mode. On Windows that mode is always development.
 
 ```bash
 ./install.sh backup BACKUP_DIRECTORY
@@ -3389,36 +3445,24 @@ Unprefixed commands target the configured default mode. On Windows that mode is 
 ./install.sh import-sql DATABASE.sql
 ```
 
-Restore and SQL import require confirmation unless `--yes` is supplied. Imports replace the selected database and leave application services stopped. Mode-marked production data is refused by Windows development.
+Restore and SQL import require confirmation unless `--yes` is supplied.
 
-`fresh-db` and `dev-db-reset` reset only the development database. On Windows this recreates `.postgresql/data`; on Debian development it removes the isolated `dev-postgres` Compose volume. Media, private media, static output, and Node modules are preserved.
-
-Debian also supports explicit `prod-*` and `dev-*` variants. Production reset remains deliberately difficult to invoke:
-
-```bash
-sudo ./install.sh prod-db-reset --yes-i-understand-this-deletes-production-data
-```
-
-It creates a backup first unless `--no-backup` is explicitly supplied. Development reset can also be written as:
-
-```bash
-./install.sh fresh-db --yes --start
-```
-
-Test backups and restores in a disposable environment before relying on them for disaster recovery.
+Use destructive database commands only in the intended environment.
 
 ## Local State
 
-These paths are generated and ignored by Git:
+Generated and ignored paths:
 
-- `.tuvtk/`: downloaded runtime state, configuration, logs, and PIDs;
-- `.venv/`: Windows Python virtual environment;
-- `.postgresql/`: Windows PostgreSQL binaries and database cluster;
-- `.env`: Windows-native development environment;
-- `.env.dev`: Docker development environment;
-- `media/`, `private_media/`, and `staticfiles/`: local generated or uploaded data.
+- `.tuvtk/`
+- `.venv/`
+- `.postgresql/`
+- `.env`
+- `.env.dev`
+- `media/`
+- `private_media/`
+- `staticfiles/`
 
-Do not delete `.postgresql`, media, private media, production bind mounts, environment files, or Docker volumes unless the associated data is no longer required.
+Do not delete local state, media, environment files, Docker volumes, or production bind mounts unless the data is no longer needed.
 
 ## Safe Validation
 
@@ -3428,11 +3472,16 @@ python3 -m py_compile scripts/generate_codex_context.py
 bash -n install.sh
 bash -n bin/tuvtk
 ./install.sh help
-./install.sh context --max-file-kb 80
 git diff --check
 ```
 
-On Windows, validate the launcher with `install.cmd help`. Do not use production lifecycle commands, builds, migrations, restore, SQL import, clean, or database reset merely as validation.
+On Windows:
+
+```bat
+install.cmd help
+```
+
+Do not use production lifecycle commands, builds, migrations, restore, SQL import, clean, or database reset merely as validation.
 ````
 
 ## `requirements-deploy.txt`
@@ -4389,760 +4438,516 @@ case "$command_name" in
 esac
 ```
 
-## `CODEX_RESUME_PHASES.md`
+## `codex-prompt-demos/README.md`
 
-Size: 27.0 KB
+Size: 10.2 KB
 
 ````markdown
-# TUVTK Django Linux/Docker Workflow Cleanup — Resume Plan
+# Codex Prompt Demos
 
-## 1. Objective
+Copy one prompt, replace the placeholders, and use it in Codex.
 
-This Django project already has a functional Linux Docker deployment, but the repository historically presented Windows local development as the primary workflow.
+Use short prompts. Keep each Codex session limited to one app, one workflow, and one safe change.
 
-The goal is to make the project Linux/Docker-first by adding:
-
-* a permanent Docker command wrapper;
-* an EspoCRM-style installer;
-* a development Compose workflow;
-* a cross-platform Codex context generator;
-* cleanup of obsolete Windows wrappers;
-* improved dependency reproducibility;
-* removal of personal `.vscode/` state;
-* Linux/Docker-first README and AGENTS instructions;
-* final safe validation.
-
-The EspoCRM installer is only a behavioral reference. Do not copy EspoCRM-specific PHP, MariaDB, or application logic.
-
-Useful EspoCRM-style patterns to preserve conceptually:
-
-* central argument parsing and action dispatch;
-* `--yes`, `--environment`, `--command`, and `--clean` modes;
-* backup paths and backup-before-overwrite behavior;
-* domain, SSL-mode, and public/private IP arguments;
-* prerequisite and Docker preparation;
-* command-wrapper-only updates;
-* a clear final installation summary.
-
-The required production lifecycle must remain:
-
-1. Build the application image.
-2. Start PostgreSQL and wait for readiness.
-3. Run the one-shot `init` service:
-   * `python manage.py migrate --noinput`
-   * `python manage.py collectstatic --noinput`
-4. Start Gunicorn (`web`) and Nginx (`nginx`).
-5. Run Django checks where safe.
-
-## 2. Completed phases
-
-### Phase 0 — Inspection
-
-Completed without modifying files.
-
-Important findings:
-
-* Deployment: `compose.yaml`, `Dockerfile`, `docker/start-web.sh`, `docker/nginx.conf.template`, `.dockerignore`, and `.env.example`.
-* Installer: `install.sh`.
-* Behavioral reference: `references/espocrm-install.sh`.
-* Documentation: `README.md` and `AGENTS.md`.
-* Dependencies: `requirements.txt`, `requirements-dev.txt`, and `requirements-deploy.txt`.
-* Frontend: `theme/static_src/package.json` and `theme/static_src/package-lock.json`.
-* Windows context tools: `generate_codex_context.bat`, `generate_codex_context_updated.bat`, and `generate_codex_context_v3_ascii.bat`.
-* Editor state: `.vscode/settings.json` and `.vscode/extensions.json`.
-* Production Compose services:
-  * `db`: PostgreSQL 17 with persistent storage and health check;
-  * `init`: migrations and static collection;
-  * `web`: Gunicorn;
-  * `nginx`: reverse proxy and static/media server.
-
-### Phase 1 — Permanent wrapper
-
-Completed.
-
-Added executable `bin/tuvtk`, replacing commands such as:
-
-```bash
-sudo docker compose \
-  --env-file /etc/tuvtk/tuvtk.env \
-  --project-directory /opt/tuvtk/app \
-  -f /opt/tuvtk/app/compose.yaml \
-  exec web python manage.py test apps.dashboard -v 0
-```
-
-with:
-
-```bash
-./bin/tuvtk test apps.dashboard
-```
-
-Defaults:
-
-* `APP_DIR=/opt/tuvtk/app`
-* `ENV_FILE=/etc/tuvtk/tuvtk.env`
-* `COMPOSE_FILE=/opt/tuvtk/app/compose.yaml`
-* `PROJECT_NAME=tuvtk`
-
-Supported overrides:
-
-* `TUVTK_APP_DIR`
-* `TUVTK_ENV_FILE`
-* `TUVTK_COMPOSE_FILE`
-* `TUVTK_PROJECT_NAME`
-
-Implemented production and maintenance commands include `help`, `status`, `ps`, `up`, `start`, `down`, `stop`, `restart`, `build`, `rebuild`, `logs`, `check`, `test`, `migrate`, `makemigrations`, `collectstatic`, `shell`, `dbshell`, `exec`, `django`, `context`, `backup`, `restore`, `export-sql`, `import-sql`, and `clean`.
-
-Backup/restore is deliberately conservative:
-
-* backup captures plain database SQL, environment/configuration, manifest, and basic deployment files;
-* media and Docker volumes are excluded;
-* restore validates the wrapper archive format but intentionally refuses mutation until installer/environment semantics are finalized further.
-
-Phase 1 validation completed:
-
-```bash
-bash -n bin/tuvtk
-chmod +x bin/tuvtk
-./bin/tuvtk help
-```
-
-`./bin/tuvtk status` was attempted but correctly refused because the non-interactive session lacked Docker daemon access and passwordless sudo.
-
-### Phase 2 — EspoCRM-style installer
-
-Completed by replacing `install.sh`. No Phase 2 compatibility change was needed in `bin/tuvtk`.
-
-Implemented options include:
-
-* `--help`, `--yes`, `--environment`, `--command`, `--network`, and `--clean`;
-* `--backup-path`, app/env/Compose/project/data path overrides;
-* repository URL, branch/ref, and SSH deploy-key support;
-* `--domain` and backward-compatible `--public-host`;
-* public/private IPv4 detection;
-* HTTP/HTTPS port options;
-* database and Django secret overrides;
-* admin credential parsing;
-* SSL, Let's Encrypt, and own-certificate mode parsing;
-* backward-compatible `--install-dir` and `--ref`.
-
-Important behavior:
-
-* central action dispatch;
-* Debian/Ubuntu prerequisite handling;
-* Docker Engine and Compose plugin detection;
-* existing Git checkout/update support;
-* existing environment values preserved;
-* environment backup before updates;
-* missing secrets/passwords generated securely;
-* deployment backup before checkout updates;
-* conservative `--clean` safety checks;
-* database/media persistence left untouched;
-* `/usr/local/bin/tuvtk` installed as a small launcher that preserves custom installer paths;
-* production `db` → `init` → `web`/`nginx` lifecycle preserved.
-
-Conservative decisions:
-
-* Current Compose/Nginx is HTTP-only. SSL modes fail before mutation instead of claiming HTTPS works.
-* Installer deployment backups exclude the database and media. Use `tuvtk backup` for the wrapper's operational backup format.
-* Automated superuser creation is deferred. Use `tuvtk django createsuperuser`.
-* `--clean` refuses tracked changes outside known deployment files.
-* `--network` is a harmless no-op because Compose declares no external network.
-
-Phase 2 validation completed:
-
-```bash
-bash -n install.sh
-bash install.sh --help
-chmod +x install.sh
-./install.sh --help
-git diff --check -- install.sh
-```
-
-The HTTPS negative path was also verified to fail with “No changes were made.” No package installation, build, restart, migration, static collection, clean, backup, or certificate action was run.
-
-### Phase 3 — Development Compose workflow
-
-Completed.
-
-Added `compose.dev.yaml` and updated `bin/tuvtk`. Production `compose.yaml` and `install.sh` were not changed in this phase.
-
-Development behavior:
-
-* `db`: isolated development PostgreSQL volume;
-* `init`: migrations/static collection against development volumes;
-* `web`: source-mounted Django `runserver` with `DEBUG=True`;
-* `tailwind`: dedicated Node 22 watcher/npm service;
-* production Nginx is not started by development commands;
-* default development HTTP port is `${TUVTK_DEV_PORT:-8000}`;
-* PostgreSQL and Tailwind expose no public ports;
-* project name is `${TUVTK_PROJECT_NAME:-tuvtk}-dev`;
-* development database, media, private media, static output, Bootstrap cache, and Node modules use development-specific volumes.
-
-Commands added:
-
-```bash
-./bin/tuvtk dev
-./bin/tuvtk dev-build
-./bin/tuvtk dev-logs
-./bin/tuvtk dev-logs web
-./bin/tuvtk tailwind
-./bin/tuvtk npm install
-./bin/tuvtk npm run build
-```
-
-`dev` starts development PostgreSQL, runs `init`, then starts Django and Tailwind detached. The first Tailwind start runs `npm ci` when its dependency volume is empty.
-
-Phase 3 validation completed:
-
-* wrapper syntax/help;
-* merged production/development Compose config;
-* development service and volume listings;
-* production-only Compose config;
-* wrapper whitespace check.
-
-No services, migrations, builds, npm installation, or watchers were actually started.
-
-### Phase 4 — Cross-platform Codex context generator
-
-Completed.
-
-Added:
-
-* `scripts/generate_codex_context.py`
-* `generate_codex_context.sh`
-* `generate_codex_context.ps1`
-
-Converted to thin Python compatibility wrappers:
-
-* `generate_codex_context.bat`
-* `generate_codex_context_updated.bat` (deprecated)
-* `generate_codex_context_v3_ascii.bat` (deprecated)
-
-Updated `bin/tuvtk context` to use host `python3`, then `python`, and to pass through generator arguments. Docker is not required when host Python is available.
-
-The generator:
-
-* uses only the Python standard library and is Python 3.12 compatible;
-* detects the Git/project root;
-* supports `--root`, `--output`, `--max-file-kb`, `--include-tests`, `--no-tests`, and `--verbose`;
-* detects Django apps;
-* excludes migrations by default;
-* excludes env files, secrets, media, archives, databases, certificates, private keys, generated context, node modules, caches, and binary formats;
-* redacts common secret assignments and skips private-key/secret-heavy content;
-* atomically regenerates the context output;
-* preserves `codex-context/files/...` source snapshots because the current `AGENTS.md` still references them;
-* writes both required root outputs and compatibility copies inside `codex-context/`.
-
-Generated outputs:
-
-* `codex-context/`
-* `codex-context-index.md`
-* `codex-file-map.txt`
-* `codex-context/project-core.md`
-* `codex-context/apps/<app>.md`
-* `codex-context/files/<source-path>.md`
-
-Final Phase 4 generation result with an 80 KB limit:
-
-* included files: 223;
-* skipped files: 10;
-* pruned directories: 13;
-* total included source size: approximately 1.35 MB;
-* tests included;
-* migrations excluded.
-
-Phase 4 validation completed:
-
-```bash
-python3 -m py_compile scripts/generate_codex_context.py
-bash -n bin/tuvtk
-bash -n generate_codex_context.sh
-./bin/tuvtk help
-python3 scripts/generate_codex_context.py --help
-./bin/tuvtk context --max-file-kb 80
-cmp codex-context-index.md codex-context/codex-context-index.md
-cmp codex-file-map.txt codex-context/codex-file-map.txt
-```
-
-Repeated generation produced stable counts. Path/content checks found no forbidden source paths, unredacted obvious secret assignments, or private-key markers in generated context.
-
-### Phase 5 — Windows wrapper cleanup
-
-Completed.
-
-Removed the obsolete Windows virtualenv, local PostgreSQL, Django runserver, Tailwind watcher, and duplicate/deprecated context-generator wrappers. The only Windows wrappers retained are the thin Python context-generator compatibility launchers:
-
-* `generate_codex_context.bat`;
-* `generate_codex_context.ps1`.
-
-`generate_codex_context.sh` remains the thin Linux/macOS launcher. Legacy references in `README.md` and `AGENTS.md` are intentionally deferred to the Phase 8 documentation rewrite.
-
-### Phase 6 — Dependency reproducibility
-
-Completed.
-
-Added readable direct-dependency inputs while preserving the existing Docker-compatible filenames:
-
-* `requirements.in` → `requirements.txt`;
-* `requirements-dev.in` → `requirements-dev.txt`;
-* `requirements-deploy.in` → `requirements-deploy.txt`.
-
-Pip-tools was unavailable and was not installed, so the `.txt` files remain explicitly documented direct-requirement manifests rather than fabricated transitive locks. The previously loose dependencies were pinned to `psycopg[binary]==3.3.4`, `python-docx==1.2.0`, and `rapidfuzz==3.14.5`. Docker image tags remain versioned but patch-floating so upstream security/base-image patches remain available. Phase 7 must remove `.vscode/` and add it to `.gitignore`.
-
-### Phase 7 — Remove `.vscode/`
-
-Completed.
-
-Removed tracked `.vscode/settings.json` and `.vscode/extensions.json`, removed the empty `.vscode/` directory, and added `.vscode/` to `.gitignore`. The directory is intentionally treated as personal editor state, not shared project configuration.
-
-### Phase 8 — Rewrite README.md and AGENTS.md
-
-Completed.
-
-Rewrote repository documentation around the Linux/Docker-first installer, permanent `tuvtk` wrapper, isolated development Compose workflow, Python context generator, direct dependency inputs/manifests, HTTP-only SSL limitation, removed Windows-local workflow, and safe agent validation policy. Phase 9 final validation is next.
-
-### Phase 9 — Final safe validation
-
-Completed.
-
-Shell syntax, Python compilation, wrapper help, context generation, generated-output exclusions/redaction, documentation consistency, `.vscode/` ignore behavior, global whitespace, and production/development Compose rendering all passed. Context generation included 214 files, skipped 13 files, and pruned 13 directories. No builds, service changes, migrations, static collection, npm commands, tests, imports, restores, or cleanup operations were run.
-
-## 3. Current repository state
-
-All planned Linux/Docker workflow cleanup phases are complete. Remaining work is limited to the manual follow-ups and operational validation recorded below.
-
-Workflow files currently changed or untracked by completed phases include:
-
-* modified `install.sh`;
-* new `bin/tuvtk`;
-* new `compose.dev.yaml`;
-* new `scripts/generate_codex_context.py`;
-* new `generate_codex_context.sh` and `generate_codex_context.ps1`;
-* modified thin/deprecated context batch wrappers;
-* regenerated `codex-context/`, `codex-context-index.md`, and `codex-file-map.txt`.
-
-The worktree also contains unrelated pre-existing application changes. They belong to the user and must be preserved. At the time of this resume file, these included changes in dashboard, planificator, core templates/navigation/tests, theme CSS/JavaScript, and untracked HTMX/template/vendor support files. Do not reset, discard, overwrite, or fold those changes into workflow cleanup without explicit authorization.
-
-The generated context intentionally reflects the current worktree, including uncommitted application source. Regeneration can therefore modify many tracked snapshot files and remove snapshots for excluded migrations or stale/deleted source files.
-
-Files intentionally not yet updated:
-
-* `README.md` remains Windows-first until Phase 8.
-* `AGENTS.md` still names the old batch generator until Phase 8; compatibility wrappers remain so those references are not broken.
-* Dependency files remain in their original structure until Phase 6.
-* `.vscode/` was removed in Phase 7 and is ignored as personal editor state.
-
-## 4. Important decisions already made
-
-### Production behavior
-
-Do not alter the existing production lifecycle or production Compose behavior without a demonstrated requirement. PostgreSQL, migrations/static collection, Gunicorn, and Nginx must remain ordered sensibly.
-
-### Wrapper model
-
-`bin/tuvtk` is the permanent project command. `/usr/local/bin/tuvtk` is installed by `install.sh --command` as a small launcher so custom app/env/Compose/project paths remain effective.
-
-### Installer `--command` model
-
-Match the useful EspoCRM behavior conceptually: update only the permanent command tool for an existing installation. Do not rebuild, restart, migrate, or reinstall the application in `--command` mode.
-
-### Backup and restore
-
-Keep backup/restore conservative until the environment and operational restore model receives dedicated testing. Do not present current wrapper restore as a complete disaster-recovery solution.
-
-### SSL
-
-Production remains HTTP-only. Installer SSL options are parsed but safely refused because current Compose/Nginx does not implement certificate automation or an HTTPS listener. Do not claim HTTPS works.
-
-### Development isolation
-
-Development uses a separate Compose project and separate persistent volumes. Do not point development PostgreSQL at the production bind-mounted database directory.
-
-### Windows compatibility
-
-The repository should become Linux/Docker-first. Keep only thin Windows compatibility wrappers that still provide clear value. Do not retain duplicate Windows implementations.
-
-### `.vscode/` policy
-
-The final decision supersedes the Phase 0 recommendation:
-
-* `.vscode/` is personal/temporary editor state;
-* remove tracked `.vscode/settings.json` and `.vscode/extensions.json` in Phase 7;
-* add `.vscode/` to `.gitignore`;
-* do not document `.vscode/` as shared project configuration.
-
-### Generated context
-
-The Python generator is authoritative. Shell, PowerShell, and batch files are launchers only. Keep compatibility copies of the index/map until `AGENTS.md` is rewritten and any consumers are checked.
-
-## 5. Remaining phases with detailed instructions
-
-### Phase 5 — Windows wrapper cleanup (completed)
-
-Goal: remove or deprecate obsolete Windows-only local development wrappers.
-
-Before deleting anything, search references in:
-
-* `README.md`;
-* `AGENTS.md`;
-* scripts and comments;
-* CI configuration, if present;
-* documentation, if present;
-* Compose and Docker files;
-* all shell, batch, and PowerShell files.
-
-Classify every tracked `.bat` and `.ps1` file.
-
-Expected keep:
-
-* `generate_codex_context.bat` as a thin compatibility launcher;
-* optionally `generate_codex_context.ps1`, also thin.
-
-Expected removal or deprecation after reference checks:
-
-* `activate_venv.bat`;
-* `runserver.bat`;
-* `runserver.ps1`;
-* `start_postgres.bat`;
-* `stop_postgres.bat`;
-* `watch_tailwind.ps1`;
-* `generate_codex_context_updated.bat`;
-* `generate_codex_context_v3_ascii.bat`.
-
-Current `README.md` and `AGENTS.md` still reference several of these. Because full documentation rewrite is Phase 8, either:
-
-1. keep short deprecation launchers/notes temporarily where deletion would create broken instructions; or
-2. make only the minimum reference correction necessary and explicitly defer the full rewrite.
-
-Do not leave the large Windows generator implementation; it has already been replaced with a thin deprecated launcher.
-
-Phase 5 validation:
-
-```bash
-rg -n 'activate_venv|runserver\.(bat|ps1)|start_postgres|stop_postgres|watch_tailwind|generate_codex_context_(updated|v3_ascii)' README.md AGENTS.md .github docs scripts . 2>/dev/null
-git status --short
-git diff --check
-```
-
-Do not proceed to dependency or documentation work in this phase.
-
-### Phase 6 — Dependency reproducibility (completed)
-
-Goal: improve dependency reproducibility without application changes or unjustified upgrades.
-
-Inspect:
-
-* `requirements.txt`;
-* `requirements-dev.txt`;
-* `requirements-deploy.txt`;
-* dependency installation in `Dockerfile`;
-* Python version constraints implied by Django and the container.
-
-Currently loose/ranged direct dependencies include:
-
-* `psycopg[binary]>=3.1.12,<4`;
-* `python-docx`;
-* `rapidfuzz`.
-
-Pinned direct dependencies already include Django, Pillow, OpenPyXL, Requests, ReportLab, svglib, django-tailwind, Gunicorn, and development tools.
-
-Preferred structure:
+## Daily Safe Task
 
 ```text
-requirements/base.in
-requirements/base.txt
-requirements/dev.in
-requirements/dev.txt
-requirements/deploy.in
-requirements/deploy.txt
+Work only on this task:
+
+[describe the task]
+
+Target app:
+- apps/<app>
+
+Read only:
+- AGENTS.md
+- frontend.md if frontend is involved
+- apps/<app>/AGENTS.md
+- exact files needed for this workflow
+
+Do not read:
+- the whole repository
+- all codex-context files
+- unrelated apps
+- unrelated tests
+- migration history
+- Docker/deployment files
+
+Before editing, report:
+- files you need to inspect
+- why each file is needed
+- whether this is app-local or cross-app
+
+Implement the smallest safe change and stop.
+
+Stop if another app, schema migration, or broad rewrite becomes necessary.
 ```
 
-A simpler `requirements.in`/`requirements.txt` structure is acceptable if it fits the repository better.
+## Investigation Only
+
+```text
+Investigate only. Do not edit files.
+
+Task idea:
+[describe what I want visually or functionally]
+
+Target app:
+- apps/<app>
+
+Read only:
+- AGENTS.md
+- frontend.md if frontend is involved
+- apps/<app>/AGENTS.md
+- exact files directly related to this workflow
+
+Output:
+- recommended approach
+- files that would need editing
+- HTMX vs Alpine vs custom JS decision, if frontend is involved
+- risks
+- focused test commands
+- exact implementation prompt I can use next
+
+Do not inspect unrelated apps.
+Do not read generated context unless source paths are unknown.
+Do not implement.
+```
+
+## Frontend Page Improvement
+
+```text
+Improve only this page:
+
+Target app:
+- apps/<app>
+
+Target page:
+- <template path>
+
+Read only:
+- AGENTS.md
+- frontend.md
+- apps/<app>/AGENTS.md
+- <template path>
+- related view only if needed
+- related tests only if rendered behavior changes
 
 Rules:
+- Use Django templates, Tailwind, and daisyUI.
+- Use HTMX only if server-rendered partial updates are needed.
+- Use Alpine only for local UI state.
+- Do not introduce a SPA pattern.
+- Do not touch unrelated pages.
 
-* preserve readable direct requirements;
-* pin currently loose direct dependencies;
-* lock transitive dependencies only with a real resolver;
-* use pip-tools if available and appropriate;
-* do not fabricate lock output if pip-tools or dependency resolution is unavailable;
-* do not install packages globally;
-* do not upgrade major versions unless required and justified;
-* do not modify application code.
+Goal:
+[describe visual/UX improvement]
 
-Review but do not casually change these image tags:
+Checks:
+- ./install.sh check
+- ./install.sh test apps.<app> only if behavior changed
+- git diff --check
 
-* `node:22-bookworm-slim`;
-* `python:3.12-slim-bookworm`;
-* `postgres:17-bookworm`;
-* `nginx:1.28-alpine`.
-
-If digest pinning is not adopted, Phase 8 documentation must state that patch/security image updates are intentionally allowed.
-
-Phase 6 validation should include the exact resolver/compile command if one is actually run and:
-
-```bash
-git diff --check
+Report files changed and manual browser checks needed.
 ```
 
-Do not run application tests automatically unless a narrow diagnostic genuinely requires them.
+## HTMX Workflow Conversion
 
-### Phase 7 — Remove `.vscode/` (completed)
+```text
+Convert only this workflow to HTMX:
 
-Goal: remove personal editor state and make the policy explicit through ignore rules.
+Target app:
+- apps/<app>
 
-Actions:
+Workflow:
+- [example: upload form + asset grid refresh]
 
-* remove `.vscode/settings.json`;
-* remove `.vscode/extensions.json`;
-* remove the now-empty `.vscode/` directory;
-* add `.vscode/` to `.gitignore`.
+Read only:
+- AGENTS.md
+- frontend.md
+- apps/<app>/AGENTS.md
+- the view file for this workflow
+- the template file for this workflow
+- the app tests file
 
-Do not preserve or document `.vscode/` as shared configuration.
+Use HTMX for:
+- server-rendered partial updates
+- form validation errors
+- refreshed messages
+- refreshed list/table/grid sections
 
-Validation:
+Do not use HTMX for:
+- direct downloads
+- JSON APIs consumed elsewhere
+- replacing Django validation or permissions
+
+Preserve:
+- normal full-page fallback
+- POST + CSRF for state changes
+- ownership checks
+- existing URLs unless a new partial endpoint is necessary
+
+Stop if this requires touching another app.
+
+Checks:
+- ./install.sh test apps.<app>
+- ./install.sh check
+- git diff --check
+```
+
+## Alpine Local UI Only
+
+```text
+Add Alpine.js only for local UI state.
+
+Target app:
+- apps/<app>
+
+Target template:
+- <template path>
+
+Read only:
+- AGENTS.md
+- frontend.md
+- apps/<app>/AGENTS.md
+- <template path>
+- related app JS file only if one already exists
+
+Use Alpine only for:
+- toggles
+- dialogs
+- disclosure panels
+- selected row/card state
+- loading indicators
+- upload filename display
+
+Do not use Alpine for:
+- validation
+- authorization
+- persistence
+- server state
+- business workflow state
+
+Do not touch Django models, services, or migrations.
+
+Checks:
+- ./install.sh check
+- git diff --check
+
+Report manual browser checks needed.
+```
+
+## Media Library Demo
+
+```text
+Work only on Media Library upload/list/delete UX.
+
+Target app:
+- apps/media_library
+
+Read only:
+- AGENTS.md
+- frontend.md
+- apps/media_library/AGENTS.md
+- apps/media_library/views.py
+- apps/media_library/urls.py
+- apps/media_library/forms.py
+- apps/media_library/templates/media_library/library.html
+- apps/media_library/tests.py
+
+Goal:
+Add HTMX partial refresh for upload and delete so the form, messages, and asset grid update without a full page reload.
+
+Use Alpine only for:
+- selected upload filename
+- local loading state
+
+Preserve:
+- normal full-page fallback
+- JSON API endpoints
+- private asset serving
+- ownership checks
+- POST + CSRF
+
+Do not touch:
+- apps/diplome
+- apps/tasks
+- apps/planificator
+- apps/flota
+- Docker/deployment files
+- generated context
+
+Checks:
+- ./install.sh test apps.media_library
+- ./install.sh check
+- git diff --check
+
+Stop after this workflow.
+```
+
+## Tasks List Demo
+
+```text
+Work only on Tasks list pages, not Kanban drag-and-drop.
+
+Target app:
+- apps/tasks
+
+Read only:
+- AGENTS.md
+- frontend.md
+- apps/tasks/AGENTS.md
+- apps/tasks/views.py
+- apps/tasks/urls.py
+- apps/tasks/forms.py
+- apps/tasks/templates/tasks/hub.html
+- apps/tasks/templates/tasks/board_list.html
+- apps/tasks/templates/tasks/board_settings.html
+- apps/tasks/templates/tasks/includes/messages.html
+- apps/tasks/templates/tasks/includes/form_fields.html
+- apps/tasks/tests.py
+
+Goal:
+Identify and implement small HTMX improvements for non-Kanban task list/settings workflows.
+
+Use HTMX for:
+- filters
+- local list refreshes
+- form sections that can return server-rendered partials
+
+Use Alpine for:
+- confirmation state
+- local dialog/disclosure state
+- loading indicators
+
+Do not touch:
+- board_kanban.html
+- drag-and-drop logic
+- BoardStateView JSON polling unless strictly required
+- unrelated apps
+
+Preserve:
+- native form fallback
+- permissions
+- POST + CSRF
+- existing task movement behavior
+
+Checks:
+- ./install.sh test apps.tasks
+- ./install.sh check
+- git diff --check
+
+Stop before Kanban work.
+```
+
+## Planificator Investigation Demo
+
+```text
+Investigate Planificator generator/history only. Do not edit files.
+
+Target app:
+- apps/planificator
+
+Read only:
+- AGENTS.md
+- frontend.md
+- apps/planificator/AGENTS.md
+- apps/planificator/views.py
+- apps/planificator/forms.py
+- apps/planificator/templates/planificator/generator_perioade.html
+- apps/planificator/templates/planificator/includes/upload.html
+- apps/planificator/templates/planificator/includes/settings.html
+- apps/planificator/templates/planificator/includes/result_table.html
+- apps/planificator/templates/planificator/includes/actions.html
+- apps/planificator/templates/planificator/includes/messages.html
+- apps/planificator/templates/planificator/istoric.html
+- apps/planificator/static/planificator/generator.js
+- apps/planificator/tests.py
+- apps/planificator/tests_scheduler.py
+
+Output only:
+- HTMX targets
+- Alpine targets
+- custom JavaScript to preserve
+- risks around exports/downloads
+- exact implementation plan
+- focused tests
+
+Do not inspect:
+- XML converter
+- Word converter
+- course updater
+- diplome
+- tasks
+- flota
+- media_library
+
+Do not implement.
+```
+
+## Planificator Implementation Demo
+
+```text
+Implement only the Planificator generator/history improvements approved in the previous investigation.
+
+Target app:
+- apps/planificator
+
+Read only the files listed in the approved investigation.
+
+Use HTMX for:
+- server-rendered form/message/result sections where safe
+- history list/detail partial refreshes only if native fallback remains clean
+
+Use Alpine for:
+- month selection UI
+- holiday row UI
+- upload filename state
+- local step/disclosure state
+
+Preserve:
+- schedule export behavior
+- file download behavior
+- server-side validation
+- horizontal scrolling result tables
+- existing permissions
+
+Do not touch:
+- XML converter
+- Word converter
+- course updater
+- unrelated apps
+
+Checks:
+- ./install.sh test apps.planificator.tests
+- ./install.sh test apps.planificator.tests_scheduler
+- ./install.sh check
+- git diff --check
+
+Stop after this workflow.
+```
+
+## Diplome Investigation Demo
+
+```text
+Investigate ordinary Diplome pages only. Do not edit files.
+
+Target app:
+- apps/diplome
+
+Read only:
+- AGENTS.md
+- frontend.md
+- apps/diplome/AGENTS.md
+- apps/diplome/views.py
+- apps/diplome/urls.py
+- apps/diplome/forms.py
+- apps/diplome/templates/diplome/template_list.html
+- apps/diplome/templates/diplome/template_form.html
+- apps/diplome/templates/diplome/history_index.html
+- apps/diplome/templates/diplome/batch_detail.html
+- apps/diplome/templates/diplome/participant_list.html
+- apps/diplome/templates/diplome/participant_list_detail.html
+- relevant diplome tests only
+
+Output:
+- which pages can safely use HTMX
+- which UI state can use Alpine
+- what must remain custom JavaScript
+- what must not be touched
+- risks around downloads/PDF/history snapshots
+- exact next implementation prompt
+
+Do not inspect:
+- template_editor.js
+- template_renderer.js
+- template_editor.html
+unless you find a direct dependency and explain why.
+
+Do not implement.
+```
+
+## Bug Fix
+
+```text
+Fix only this bug:
+
+Bug:
+[paste exact bug/error/behavior]
+
+Target app:
+- apps/<app>
+
+Read only:
+- AGENTS.md
+- apps/<app>/AGENTS.md
+- exact files needed to reproduce or fix the bug
+
+Do not read:
+- unrelated apps
+- generated context unless file paths are unknown
+- migration history unless schema is involved
+
+Before editing:
+- identify likely cause
+- list files to inspect
+- say whether this is frontend, backend, or template-only
+
+Implement the smallest safe fix.
+
+Checks:
+- focused test for the changed app/file
+- ./install.sh check
+- git diff --check
+
+Stop if the bug requires a broad rewrite.
+```
+
+## Documentation Only
+
+```text
+Update documentation only.
+
+Read only:
+- AGENTS.md
+- README.md
+- frontend.md
+- the exact docs mentioned below
+
+Task:
+[describe doc update]
+
+Do not edit application code.
+Do not inspect unrelated apps.
+Do not regenerate codex context unless explicitly requested.
+
+Checks:
+- git diff --check
+
+Report files changed.
+```
+
+## After Codex Finishes
+
+Check status:
 
 ```bash
 git status --short
-git diff --check -- .gitignore
-```
-
-### Phase 8 — Rewrite README.md and AGENTS.md (completed)
-
-Goal: make Linux/Docker the primary documented workflow.
-
-README requirements:
-
-* quick/fresh install;
-* environment-only preparation;
-* wrapper-only command update;
-* production start, stop, restart, logs, and status;
-* focused low-verbosity tests;
-* migrations and static collection;
-* conservative backup/restore status;
-* development mode and development logs;
-* Tailwind/npm development commands;
-* HTTP-only SSL/domain warning;
-* file locations;
-* dependency/image reproducibility note.
-
-Use examples such as:
-
-```bash
-tuvtk status
-tuvtk start
-tuvtk stop
-tuvtk restart
-tuvtk logs
-tuvtk check
-tuvtk test apps.dashboard
-tuvtk migrate
-tuvtk collectstatic
-tuvtk backup /opt/tuvtk-backups
-tuvtk dev
-tuvtk dev-logs
-tuvtk tailwind
-tuvtk npm run build
-```
-
-Document paths:
-
-* `/opt/tuvtk/app`;
-* `/etc/tuvtk/tuvtk.env`;
-* `/usr/local/bin/tuvtk`;
-* `/opt/tuvtk-backups`.
-
-Document development details:
-
-* `compose.dev.yaml` uses isolated development database/media/static/node-module volumes;
-* Nginx is not started by development commands;
-* development uses `${TUVTK_DEV_PORT:-8000}`.
-
-Document SSL accurately: current production is HTTP-only and installer SSL modes refuse safely.
-
-AGENTS requirements:
-
-* use `bin/tuvtk context`;
-* use `bin/tuvtk check`;
-* use `bin/tuvtk test <app>`;
-* do not require `generate_codex_context.bat` as the primary workflow;
-* a thin `.bat` launcher may be mentioned only as Windows compatibility;
-* retain repository routing, ownership, security, frontend, and focused-test guidance that remains valid.
-
-Remove Windows-first instructions involving local `.venv`, bundled `.postgresql`, PowerShell runserver, and obsolete Windows wrappers.
-
-Validation:
-
-```bash
-git diff --check -- README.md AGENTS.md
-rg -n 'start_postgres|runserver\.(bat|ps1)|watch_tailwind|generate_codex_context_v3_ascii' README.md AGENTS.md
-```
-
-After documentation/instruction changes, regenerate context with:
-
-```bash
-bin/tuvtk context --max-file-kb 80
-```
-
-### Phase 9 — Final safe validation (completed)
-
-Run safe checks only:
-
-```bash
-bash -n install.sh
-bash -n bin/tuvtk
-bash -n generate_codex_context.sh
-python3 -m py_compile scripts/generate_codex_context.py
-./bin/tuvtk help
-./bin/tuvtk context --max-file-kb 80
 git diff --check
 ```
 
-If `python3` is unavailable, use:
+Commit tracked modified files only:
 
 ```bash
-python -m py_compile scripts/generate_codex_context.py
+git add -u
+git commit -m "Your commit message"
 ```
 
-If Docker is available and safe, render configurations without starting services:
+Commit new files too:
 
 ```bash
-docker compose \
-  --env-file /etc/tuvtk/tuvtk.env \
-  --project-directory /opt/tuvtk/app \
-  -f /opt/tuvtk/app/compose.yaml \
-  -p tuvtk config --quiet
-
-docker compose \
-  --env-file /etc/tuvtk/tuvtk.env \
-  --project-directory /opt/tuvtk/app \
-  -f /opt/tuvtk/app/compose.yaml \
-  -f /opt/tuvtk/app/compose.dev.yaml \
-  -p tuvtk-dev config --quiet
-```
-
-Do not run service-changing or destructive commands unless separately authorized:
-
-* no full build/rebuild;
-* no service start/restart;
-* no migration or collectstatic;
-* no npm installation;
-* no database import/restore;
-* no clean operation.
-
-The final report must list completed phases, files added/changed/removed, the final command set, fresh install, environment-only preparation, wrapper-only update, context generation, low-verbosity testing, development startup, backup usage, `.vscode/` removal, and remaining manual risks.
-
-## 6. Validation commands
-
-Use the smallest checks appropriate to the active phase. The consolidated safe validation set is:
-
-```bash
-bash -n install.sh
-bash -n bin/tuvtk
-bash -n generate_codex_context.sh
-python3 -m py_compile scripts/generate_codex_context.py
-./bin/tuvtk help
-./bin/tuvtk context --max-file-kb 80
-git status --short
-git diff --check
-```
-
-Safe Compose rendering, when Docker CLI and the env file are available:
-
-```bash
-docker compose --env-file /etc/tuvtk/tuvtk.env \
-  --project-directory /opt/tuvtk/app \
-  -f /opt/tuvtk/app/compose.yaml \
-  -p tuvtk config --quiet
-
-docker compose --env-file /etc/tuvtk/tuvtk.env \
-  --project-directory /opt/tuvtk/app \
-  -f /opt/tuvtk/app/compose.yaml \
-  -f /opt/tuvtk/app/compose.dev.yaml \
-  -p tuvtk-dev config --quiet
-```
-
-Focused tests are not run automatically under repository policy. Give the user the command unless explicitly authorized:
-
-```bash
-bin/tuvtk test apps.dashboard
-```
-
-## 7. Safety rules
-
-* Always preserve unrelated uncommitted application changes.
-* Read applicable `AGENTS.md` files before editing.
-* Before removing files, search README, AGENTS, scripts, CI, Compose, Docker, documentation, and comments for references.
-* Do not modify Django application logic for workflow cleanup unless compatibility strictly requires it and the user authorizes it.
-* Do not delete database storage, Docker volumes, uploaded media, private media, secrets, or environment files.
-* Never overwrite an existing env file without a backup.
-* Do not point development PostgreSQL at production storage.
-* Do not claim SSL works unless Compose/Nginx truly implements HTTPS.
-* Do not fake lock files, test results, Docker results, or validation results.
-* Do not run automated test suites by default. Use the narrowest explicitly authorized target with `-v 0`.
-* Do not run builds, service restarts, migrations, collectstatic, npm installation, database import/restore, or clean operations merely for validation.
-* If Docker, Python, pip-tools, ShellCheck, or another tool is unavailable, report that honestly and continue with safe checks.
-* Keep changes phase-scoped and reviewable.
-* After source or instruction changes, regenerate cross-platform context with `bin/tuvtk context`; do not return to the old batch implementation.
-
-## 8. Exact resume prompts for future Codex sessions
-
-### Phase 5 historical prompt
-
-```text
-Proceed with Phase 5 only from CODEX_RESUME_PHASES.md.
-
-Clean up obsolete Windows wrappers after checking every reference required by the resume plan.
-
-Do not proceed to Phase 6. Preserve unrelated uncommitted changes. Keep only thin context-generation compatibility wrappers where useful, and do not break README.md or AGENTS.md references without a minimal compatibility/deprecation path.
-```
-
-### Phase 6 historical prompt
-
-```text
-Proceed with Phase 6 only from CODEX_RESUME_PHASES.md.
-
-Improve dependency reproducibility without modifying application logic or performing unjustified upgrades.
-
-Do not proceed to Phase 7. Do not fake resolved lock files if pip-tools or dependency resolution is unavailable. Report exact resolver commands and limitations.
-```
-
-### Phase 7 historical prompt
-
-```text
-Proceed with Phase 7 only from CODEX_RESUME_PHASES.md.
-
-Remove the tracked .vscode/ directory and add .vscode/ to .gitignore.
-
-Do not proceed to Phase 8. Preserve all unrelated changes and validate only the editor-policy change.
-```
-
-### Phase 8 historical prompt
-
-```text
-Proceed with Phase 8 only from CODEX_RESUME_PHASES.md.
-
-Rewrite README.md and AGENTS.md around the Linux/Docker-first installer, wrapper, development Compose, and Python context-generator workflows.
-
-Do not proceed to Phase 9. Remove Windows-first instructions, retain valid repository safety contracts, and regenerate Codex context after the documentation changes.
-```
-
-### Phase 9 historical prompt
-
-```text
-Proceed with Phase 9 only from CODEX_RESUME_PHASES.md.
-
-Run safe final validation and produce the final project report.
-
-Do not run builds, starts/restarts, migrations, collectstatic, npm installation, tests, clean, database import, or restore unless explicitly authorized and demonstrably safe.
-```
-
-### Generic status audit
-
-```text
-Read CODEX_RESUME_PHASES.md and inspect the current git status. Do not implement anything yet.
-
-Report which cleanup phases are complete, which phase is next, whether the worktree differs from the resume record, and any safety concerns before continuing.
+git add path/to/new-file
+git add -u
+git commit -m "Your commit message"
 ```
 ````
 
@@ -6024,22 +5829,131 @@ exec gunicorn platforma_tuvtk.wsgi:application \
 
 ## `frontend.md`
 
-Size: 1.3 KB
+Size: 3.2 KB
 
 ```markdown
 # Frontend Rules
 
-- Use the `tuvtk` daisyUI theme and its semantic color utilities; literal colors belong only in `theme/static_src/src/styles.css` token definitions and brand assets.
-- Use `--sidebar-*` only for sidebar-specific states that do not map cleanly to daisyUI semantics. The shared `ops-*` class names are styling and JavaScript hooks, not color tokens.
-- Use Tailwind for layout and daisyUI for accessible primitives. Do not add a second framework or SPA.
-- HTMX and Alpine.js are allowed only as progressive enhancement: HTMX for server-rendered partial updates, Alpine for local UI state.
-- Keep Django templates, views, forms, and PostgreSQL as the source of truth; do not move validation, authorization, persistence, or routing into JavaScript.
-- Load shared HTMX and Alpine assets once from the base layout. Apps may add scoped behavior, but must not duplicate global library loading.
-- Keep pages compact, flat, responsive, and keyboard accessible.
-- Application-specific JavaScript and template includes belong to their Django app.
-- Build feature interfaces directly from daisyUI components. Custom `ops-*` classes are reserved for the shared application shell and sidebar.
-- Preserve native scrolling behavior and visible focus indicators.
-- Generator results must remain usable on narrow screens through horizontal table scrolling.
+## Stack
+
+- Django templates
+- Tailwind CSS
+- daisyUI
+- HTMX
+- Alpine.js
+- scoped custom JavaScript when needed
+
+The application stays server-rendered.
+
+Do not turn it into a SPA.
+
+Do not add React, Vue, Svelte, Angular, Inertia, Next.js, Nuxt, or another frontend framework unless explicitly requested.
+
+## Source of truth
+
+- Django views choose responses.
+- Django forms validate requests.
+- Django services perform writes.
+- PostgreSQL stores business state.
+- JavaScript may improve interaction only.
+
+Do not move validation, authorization, routing, ownership checks, or persistence into JavaScript.
+
+## Tailwind and daisyUI
+
+- Use Tailwind for layout.
+- Use daisyUI for components.
+- Use the `tuvtk` daisyUI theme.
+- Use semantic utilities: `base-*`, `base-content`, `primary`, `secondary`, `accent`, `info`, `success`, `warning`, `error`, `text-muted`.
+- Do not add literal colors or app-local color systems.
+- Literal colors belong only in global token definitions, brand assets, or user-authored document/canvas data.
+- Add Tailwind `@source` entries only when a new app template/static path needs class scanning.
+
+## HTMX
+
+Use HTMX when the server returns HTML.
+
+Good HTMX uses:
+
+- form submissions with partial refresh;
+- validation-error partials;
+- filters;
+- search;
+- pagination;
+- table/list refreshes;
+- archive/restore actions;
+- delete actions;
+- message areas;
+- targeted swaps;
+- small server-rendered polling.
+
+Do not use HTMX for:
+
+- direct downloads unless intentionally designed and tested;
+- canvas/editor state;
+- drag-and-drop state ownership;
+- large JSON workflows where JSON is clearer;
+- replacing Django validation or permissions.
+
+State-changing HTMX requests must remain POST with CSRF.
+
+## Alpine.js
+
+Use Alpine.js only for local browser state.
+
+Good Alpine uses:
+
+- dropdowns;
+- dialogs;
+- disclosure panels;
+- tabs without server state;
+- selected rows/cards;
+- loading flags;
+- upload filename labels;
+- small counters;
+- narrow-screen filter toggles.
+
+Do not use Alpine.js for:
+
+- database state;
+- validation;
+- authorization;
+- ownership checks;
+- business workflows;
+- state that must survive refresh.
+
+## Custom JavaScript
+
+Keep or add scoped custom JavaScript when it is safer than forcing HTMX/Alpine.
+
+Good custom JavaScript cases:
+
+- drag and drop;
+- canvas/template editors;
+- file parsing;
+- JSON-heavy workflows;
+- direct download flows;
+- remote row-by-row updates;
+- complex preview/rendering logic.
+
+Application-specific JavaScript belongs to the owning Django app.
+
+Shared JavaScript belongs in `theme/` or `core/` only when it is truly global.
+
+## Templates
+
+- Standard pages extend `core/templates/layouts/base.html`.
+- Standalone pages must still use the shared theme and compiled stylesheet.
+- Prefer existing includes before new markup.
+- Keep tables horizontally scrollable on narrow screens.
+- Preserve native links/forms where practical.
+- Preserve keyboard access, visible focus, and native scrolling.
+
+## Global assets
+
+HTMX and Alpine are loaded once from the base layout.
+
+Apps may add scoped behavior, but must not duplicate global library loading.
 ```
 
 ## `generate_codex_context.bat`
