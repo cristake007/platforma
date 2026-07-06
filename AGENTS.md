@@ -4,17 +4,17 @@
 
 These instructions apply to the whole repository. A deeper `AGENTS.md` adds app-specific rules for files below its directory.
 
-The repository is Linux/Docker-first. Use `bin/tuvtk` for normal Django, Compose, development, test, and context commands. Do not reconstruct long raw Compose commands unless validating Compose configuration itself.
+The repository is Linux/Docker-first. Use the installed `command.sh` for normal Django, Compose, development, test, and context commands. Use `bin/tuvtk` only before `command.sh` has been installed. Do not reconstruct long raw Compose commands unless validating Compose configuration itself.
 
 Primary agent commands:
 
 ```bash
-bin/tuvtk context --max-file-kb 80
-bin/tuvtk check
-bin/tuvtk test apps.dashboard
+./command.sh context --max-file-kb 80
+./command.sh check
+./command.sh test apps.dashboard
 ```
 
-The shell, batch, and PowerShell context launchers are compatibility entry points only. `scripts/generate_codex_context.py` is the implementation; `bin/tuvtk context` is the primary workflow.
+The shell, batch, and PowerShell context launchers are compatibility entry points only. `scripts/generate_codex_context.py` is the implementation; `./command.sh context` is the primary installed workflow, with `./bin/tuvtk context` as the pre-install fallback.
 
 ## Smallest sufficient context
 
@@ -32,7 +32,7 @@ Do not preload the file map, context index, project core, every app guide, migra
 Generated context is navigation support, not a second source of truth. If stale, inspect real source and regenerate with:
 
 ```bash
-bin/tuvtk context
+./command.sh context
 ```
 
 ## Repository boundaries
@@ -52,7 +52,7 @@ Do not duplicate a model, route, service, selector, template, or workflow before
 * Use CSRF protection and non-GET methods for state changes.
 * Use namespaced app URLs. Include them from `platforma_tuvtk/urls.py` and update `core/navigation.py` only for global navigation.
 * Create and review a Django migration for every schema change. Do not inspect all old migrations unless schema history is relevant.
-* Normal Django execution occurs in Docker through `bin/tuvtk`; host Python is only required for the standard-library context generator.
+* Normal Django execution occurs in Docker through `command.sh`; use `bin/tuvtk` only before installation. Host Python is only required for the standard-library context generator.
 
 ## Shared frontend contract
 
@@ -66,14 +66,14 @@ Do not duplicate a model, route, service, selector, template, or workflow before
 * Use vanilla JavaScript with progressive enhancement. Preserve server-side validation and native navigation/scrolling.
 * Every app whose templates/scripts use Tailwind classes needs an `@source` entry in `theme/static_src/src/styles.css`.
 * Read `frontend.md` and the exact template/static files for frontend changes. Read shared base/theme files only when changing global layout or tokens.
-* Tailwind/npm development runs through the dedicated Node service: `bin/tuvtk tailwind` and `bin/tuvtk npm ...`.
+* Tailwind/npm development runs through the dedicated Node service: `./command.sh tailwind` and `./command.sh npm ...`.
 
 ## Safety and preservation
 
 * Preserve all unrelated tracked and untracked user changes. Never reset, discard, or overwrite them to simplify a task.
 * Inspect `.env.example`; never inspect or expose `.env` or `/etc/tuvtk/tuvtk.env` contents unless explicitly required and authorized.
 * Do not delete database volumes, persistent PostgreSQL storage, uploads, private media, secrets, or environment files.
-* Do not run `install.sh --clean`, `bin/tuvtk clean`, restore, SQL import, or other destructive database/filesystem commands unless explicitly requested.
+* Do not run `install.sh --clean`, `command.sh clean`, restore, SQL import, or other destructive database/filesystem commands unless explicitly requested.
 * Do not run full Docker rebuilds, production starts/restarts, migrations, collectstatic, npm installation, or service-changing commands merely for validation.
 * Do not claim SSL works. Current Compose/Nginx is HTTP-only and installer SSL modes intentionally refuse.
 * Do not reintroduce the removed Windows-local virtualenv, PostgreSQL, runserver, or Tailwind workflows. Windows batch/PowerShell files are context-generator compatibility launchers only.
@@ -88,8 +88,8 @@ Choose the smallest checks that exercise the changed boundary. Do not run automa
 Primary project checks:
 
 ```bash
-bin/tuvtk check
-bin/tuvtk test <app-or-test-path>
+./command.sh check
+./command.sh test <app-or-test-path>
 ```
 
 The wrapper defaults tests to `-v 0`. Never run the full database-backed suite automatically.
@@ -101,8 +101,8 @@ bash -n install.sh
 bash -n bin/tuvtk
 bash -n generate_codex_context.sh
 python3 -m py_compile scripts/generate_codex_context.py
-bin/tuvtk help
-bin/tuvtk context --max-file-kb 80
+./command.sh help
+./command.sh context --max-file-kb 80
 git diff --check
 ```
 
@@ -113,15 +113,15 @@ Optional read-only Compose rendering, only when Docker CLI and the deployment en
 ```bash
 docker compose \
   --env-file /etc/tuvtk/tuvtk.env \
-  --project-directory /opt/tuvtk/app \
-  -f /opt/tuvtk/app/compose.yaml \
+  --project-directory /opt/tuvtk \
+  -f /opt/tuvtk/compose.yaml \
   -p tuvtk config --quiet
 
 docker compose \
   --env-file /etc/tuvtk/tuvtk.env \
-  --project-directory /opt/tuvtk/app \
-  -f /opt/tuvtk/app/compose.yaml \
-  -f /opt/tuvtk/app/compose.dev.yaml \
+  --project-directory /opt/tuvtk \
+  -f /opt/tuvtk/compose.yaml \
+  -f /opt/tuvtk/compose.dev.yaml \
   -p tuvtk-dev config --quiet
 ```
 
@@ -143,5 +143,5 @@ Completion reports must state:
 After source or instruction changes, regenerate context from the repository root when the active task permits it:
 
 ```bash
-bin/tuvtk context
+./command.sh context
 ```
