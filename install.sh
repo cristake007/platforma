@@ -2,6 +2,45 @@
 set -Eeuo pipefail
 
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+
+if [[ "${TUVTK_LEGACY_INSTALL:-false}" != true ]]; then
+    legacy_action=false
+    for argument in "$@"; do
+        case "$argument" in
+            --dev|--production|--environment|--command|--clean) legacy_action=true ;;
+        esac
+    done
+    if [[ "$legacy_action" != true ]]; then
+        case "${OSTYPE:-}" in
+            msys*|mingw*|cygwin*)
+                exec powershell.exe -NoProfile -ExecutionPolicy Bypass \
+                    -File "$(cygpath -w "$SCRIPT_DIR/install.ps1")" "$@"
+                ;;
+        esac
+        if command -v python3 >/dev/null 2>&1; then
+            exec python3 "$SCRIPT_DIR/scripts/tuvtk_cli.py" "$@"
+        elif command -v python >/dev/null 2>&1; then
+            exec python "$SCRIPT_DIR/scripts/tuvtk_cli.py" "$@"
+        fi
+        if command -v apt-get >/dev/null 2>&1; then
+            printf '[tuvtk] Installing Python 3 for the command router.\n'
+            if [[ "$EUID" -eq 0 ]]; then
+                apt-get update
+                apt-get install --yes python3
+            elif command -v sudo >/dev/null 2>&1; then
+                sudo apt-get update
+                sudo apt-get install --yes python3
+            else
+                printf '[tuvtk] ERROR: sudo is required to install Python 3.\n' >&2
+                exit 1
+            fi
+            exec python3 "$SCRIPT_DIR/scripts/tuvtk_cli.py" "$@"
+        fi
+        printf '[tuvtk] ERROR: Python 3 is required and no supported package manager was found.\n' >&2
+        exit 1
+    fi
+fi
+
 readonly DEFAULT_PROD_ENV_FILE="/etc/tuvtk/tuvtk.env"
 readonly DEFAULT_PROJECT_NAME="tuvtk"
 readonly DEFAULT_DATA_DIR="/var/lib/tuvtk"
@@ -281,7 +320,7 @@ install_prerequisites() {
     load_supported_os
     export DEBIAN_FRONTEND=noninteractive
     apt-get update
-    apt-get install --yes ca-certificates curl git openssh-client openssl iproute2
+    apt-get install --yes ca-certificates curl git openssh-client openssl iproute2 python3
     if ! command -v docker >/dev/null 2>&1; then
         configure_docker_repository
         apt-get update
@@ -331,14 +370,17 @@ prepare_dev_environment() {
     ensure_env_value "$DEV_ENV_FILE" TUVTK_DATA_DIR "/var/lib/${PROJECT_NAME}-dev"
     ensure_env_value "$DEV_ENV_FILE" TUVTK_IMAGE_TAG local
     ensure_env_value "$DEV_ENV_FILE" TUVTK_PUBLIC_HOST localhost
-    ensure_env_value "$DEV_ENV_FILE" TUVTK_HTTP_PORT "$DEV_PORT"
+    set_env_value "$DEV_ENV_FILE" TUVTK_HTTP_PORT "$DEV_PORT"
     ensure_env_value "$DEV_ENV_FILE" POSTGRES_DB platforma_tuvtk
     ensure_env_value "$DEV_ENV_FILE" POSTGRES_USER postgres
     ensure_env_value "$DEV_ENV_FILE" POSTGRES_PASSWORD "$(openssl rand -hex 32)"
     ensure_env_value "$DEV_ENV_FILE" DJANGO_SECRET_KEY "$(openssl rand -hex 48)"
     ensure_env_value "$DEV_ENV_FILE" DJANGO_ALLOWED_HOSTS "127.0.0.1,localhost,[::1]"
-    ensure_env_value "$DEV_ENV_FILE" DJANGO_CSRF_TRUSTED_ORIGINS "http://127.0.0.1:${DEV_PORT},http://localhost:${DEV_PORT}"
+    set_env_value "$DEV_ENV_FILE" DJANGO_CSRF_TRUSTED_ORIGINS "http://127.0.0.1:${DEV_PORT},http://localhost:${DEV_PORT}"
     chmod 0600 "$DEV_ENV_FILE"
+    if [[ -n "${SUDO_UID:-}" && -n "${SUDO_GID:-}" ]]; then
+        chown "$SUDO_UID:$SUDO_GID" "$DEV_ENV_FILE"
+    fi
 }
 
 prepare_prod_environment() {
@@ -420,6 +462,14 @@ write_command_launchers() {
     chmod 0755 "$APP_DIR/bin/tuvtk"
 }
 
+maybe_write_command_launchers() {
+    if [[ "${TUVTK_SKIP_COMMAND:-false}" == true ]]; then
+        log "Skipped legacy command.sh generation; install.sh remains the command entry point."
+        return 0
+    fi
+    write_command_launchers
+}
+
 confirm_clean() {
     [[ "$YES" == true ]] && return 0
     [[ -t 0 ]] || fail "--clean requires interactive confirmation or --yes."
@@ -460,6 +510,20 @@ EOF
 }
 
 print_summary() {
+    if [[ "${TUVTK_SKIP_COMMAND:-false}" == true ]]; then
+        cat <<EOF
+
+TUVTK $ACTION preparation completed.
+
+Application:  $APP_DIR
+Default mode: $DEFAULT_MODE
+Environment:  $ENV_FILE
+
+No application stack was started.
+Next command: $APP_DIR/install.sh $([[ "$DEFAULT_MODE" == dev ]] && printf dev || printf start)
+EOF
+        return 0
+    fi
     cat <<EOF
 
 TUVTK $ACTION preparation completed.
@@ -491,7 +555,7 @@ run_action() {
             confirm_install
             install_prerequisites
             prepare_dev_environment
-            write_command_launchers
+            maybe_write_command_launchers
             print_summary
             ;;
         production)
@@ -499,7 +563,7 @@ run_action() {
             install_prerequisites
             prepare_prod_environment
             prepare_data_directories
-            write_command_launchers
+            maybe_write_command_launchers
             print_summary
             ;;
         clean)
