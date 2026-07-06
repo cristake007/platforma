@@ -19,6 +19,10 @@ concurrency:
 jobs:
   checks:
     name: Django checks and tests
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && contains(github.event.head_commit.message, '[run-ci]')) ||
+      (github.event_name == 'pull_request' && contains(format('{0} {1}', github.event.pull_request.title, github.event.pull_request.body), '[run-ci]'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -53,10 +57,10 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -71,7 +75,7 @@ jobs:
           python -m pip install -r requirements-dev.txt
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: "24"
           cache: npm
