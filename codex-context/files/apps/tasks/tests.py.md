@@ -2,7 +2,7 @@
 
 ## `apps/tasks/tests.py`
 
-Size: 12.5 KB
+Size: 16.5 KB
 
 ```python
 from datetime import timedelta
@@ -282,6 +282,102 @@ class TasksAppTests(TestCase):
         self.client.force_login(self.assignee)
         response = self.client.get(reverse("tasks:index"), {"relation": "assigned", "priority": Task.Priority.HIGH})
         self.assertContains(response, "Verifică documentele")
+
+    def test_hub_htmx_filter_returns_task_list_partial(self):
+        response = self.client.get(
+            reverse("tasks:index"),
+            {"relation": "created", "priority": Task.Priority.HIGH},
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="task-list-results"')
+        self.assertContains(response, self.task.title)
+        self.assertNotContains(response, "Task-urile mele")
+        self.assertNotContains(response, "<form")
+
+    def test_board_list_htmx_filter_returns_task_list_partial(self):
+        low_priority_title = "Task low priority"
+        create_task(
+            actor=self.owner,
+            board=self.board,
+            assignee=self.owner,
+            title=low_priority_title,
+            priority=Task.Priority.LOW,
+            due_at=timezone.now() + timedelta(days=1),
+        )
+        response = self.client.get(
+            reverse("tasks:board_list", args=[self.board.pk]),
+            {"priority": Task.Priority.HIGH},
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="task-list-results"')
+        self.assertContains(response, self.task.title)
+        self.assertNotContains(response, low_priority_title)
+        self.assertNotContains(response, self.board.name)
+        self.assertNotContains(response, "<form")
+
+    def test_board_create_htmx_invalid_returns_form_partial(self):
+        response = self.client.post(
+            reverse("tasks:board_create"),
+            {"name": ""},
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertContains(response, 'id="board-form-panel"', status_code=400)
+        self.assertNotContains(response, "Board nou", status_code=400)
+
+    def test_task_create_htmx_success_uses_hx_redirect(self):
+        due_at = timezone.localtime(timezone.now() + timedelta(days=1)).strftime("%Y-%m-%dT%H:%M")
+        response = self.client.post(
+            reverse("tasks:task_create", args=[self.board.pk]),
+            {
+                "title": "Task creat prin HTMX",
+                "description": "",
+                "assignee": self.assignee.pk,
+                "stage": self.todo.pk,
+                "priority": Task.Priority.MEDIUM,
+                "start_at": "",
+                "due_at": due_at,
+            },
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.headers["HX-Redirect"], reverse("tasks:board_kanban", args=[self.board.pk]))
+        self.assertTrue(Task.objects.filter(board=self.board, title="Task creat prin HTMX").exists())
+
+    def test_task_create_htmx_invalid_returns_form_partial(self):
+        response = self.client.post(
+            reverse("tasks:task_create", args=[self.board.pk]),
+            {
+                "title": "",
+                "description": "",
+                "assignee": self.assignee.pk,
+                "stage": self.todo.pk,
+                "priority": Task.Priority.MEDIUM,
+                "start_at": "",
+                "due_at": "",
+            },
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertContains(response, 'id="task-form-panel"', status_code=400)
+        self.assertNotContains(response, "Task nou", status_code=400)
+
+    def test_stage_create_htmx_refreshes_settings_section(self):
+        response = self.client.post(
+            reverse("tasks:stage_create", args=[self.board.pk]),
+            {
+                "new-stage-name": "Validare",
+                "new-stage-tone": TaskStage.Tone.INFO,
+            },
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="board-settings-content"')
+        self.assertContains(response, "Validare")
+        self.assertTrue(self.board.stages.filter(name="Validare").exists())
+        self.assertNotContains(response, "<html")
 
     def test_kanban_filters_by_assignee_and_priority(self):
         create_task(

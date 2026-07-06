@@ -1,9 +1,9 @@
 # Context generation audit
 
-Generated: 2026-07-06T15:53:46+00:00
+Generated: 2026-07-06T19:46:11+00:00
 
-Included files: 224
+Included files: 238
 
-Skipped files: 34
+Skipped files: 32
 
-Pruned directories: 32
+Pruned directories: 33

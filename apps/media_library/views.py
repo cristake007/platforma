@@ -108,7 +108,7 @@ class MediaAssetContentView(LoginRequiredMixin, View):
 
 
 class MediaAssetDeleteView(LoginRequiredMixin, View):
-    partial_template_name = "media_library/includes/asset_grid.html"
+    partial_template_name = "media_library/includes/delete_response.html"
 
     def _is_htmx(self, request) -> bool:
         return request.headers.get("HX-Request") == "true"
@@ -124,6 +124,6 @@ class MediaAssetDeleteView(LoginRequiredMixin, View):
             return render(
                 request,
                 self.partial_template_name,
-                {"assets": list_owned_media_assets(user=request.user)},
+                {"assets": list_owned_media_assets(user=request.user), "messages_oob": True},
             )
         return redirect("media_library:index")

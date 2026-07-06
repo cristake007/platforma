@@ -2,11 +2,19 @@
 
 ## `apps/tasks/templates/tasks/board_form.html`
 
-Size: 786 B
+Size: 563 B
 
 ```html
 {% extends "layouts/base.html" %}
 {% block title %}Board nou | Task-uri{% endblock %}
-{% block content %}<section class="mx-auto max-w-xl space-y-5"><div><p class="text-xs text-muted"><a href="{% url 'tasks:index' %}" class="hover:text-primary">Task-uri</a> / Board nou</p><h1 class="ops-title mt-1 text-2xl font-bold">Creează un board</h1><p class="mt-1 text-sm text-muted">Vei deveni proprietar și membru al board-ului.</p></div><form method="post" class="space-y-4 border border-base-300 bg-base-100 p-5">{% csrf_token %}{% include "tasks/includes/form_fields.html" %}<div class="flex justify-end gap-2"><a href="{% url 'tasks:index' %}" class="btn btn-ghost btn-sm">Anulează</a><button class="btn btn-primary btn-sm">Creează board</button></div></form></section>{% endblock %}
-
+{% block content %}
+<section class="mx-auto max-w-xl space-y-5">
+    <div>
+        <p class="text-xs text-muted"><a href="{% url 'tasks:index' %}" class="hover:text-primary">Task-uri</a> / Board nou</p>
+        <h1 class="ops-title mt-1 text-2xl font-bold">Creeaz&#259; un board</h1>
+        <p class="mt-1 text-sm text-muted">Vei deveni proprietar &#537;i membru al board-ului.</p>
+    </div>
+    {% include "tasks/includes/board_form_panel.html" %}
+</section>
+{% endblock %}
 ```

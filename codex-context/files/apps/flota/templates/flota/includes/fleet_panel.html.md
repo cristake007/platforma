@@ -2,7 +2,7 @@
 
 ## `apps/flota/templates/flota/includes/fleet_panel.html`
 
-Size: 10.1 KB
+Size: 10.7 KB
 
 ```html
 <div id="fleet-panel" class="space-y-5">
@@ -30,12 +30,16 @@ Size: 10.1 KB
         method="get"
         action="{% url 'flota:index' %}"
         class="grid grid-cols-2 gap-3 border-b border-base-300 pb-4 lg:grid-cols-7"
+        aria-busy="false"
+        data-fleet-loading-region
         hx-get="{% url 'flota:index' %}"
         hx-target="#fleet-panel"
         hx-swap="outerHTML show:top"
         hx-push-url="true"
-        hx-indicator="#fleet-filter-indicator"
+        hx-indicator="#fleet-table-loading"
         hx-trigger="submit, change delay:250ms, keyup changed delay:450ms from:input[name='q']"
+        hx-sync="this:replace"
+        hx-disabled-elt="find input, find select, find button"
     >
         <label class="fieldset col-span-2 lg:col-span-2">
             <span class="fieldset-legend">Caută</span>
@@ -85,13 +89,23 @@ Size: 10.1 KB
                 hx-target="#fleet-panel"
                 hx-swap="outerHTML show:top"
                 hx-push-url="true"
-                hx-indicator="#fleet-filter-indicator"
+                hx-indicator="#fleet-table-loading"
             >Resetează</a>
-            <span id="fleet-filter-indicator" class="htmx-indicator loading loading-spinner loading-sm text-primary" aria-hidden="true"></span>
         </div>
     </form>
 
-    <div class="overflow-x-auto border border-base-300 bg-base-100" aria-live="polite">
+    <div class="relative overflow-x-auto border border-base-300 bg-base-100" aria-live="polite" aria-busy="false" data-fleet-loading-region>
+        <div
+            id="fleet-table-loading"
+            class="htmx-indicator absolute inset-0 z-10 flex items-center justify-center bg-base-100/80"
+            role="status"
+            aria-live="polite"
+        >
+            <span class="inline-flex items-center gap-3 border border-base-300 bg-base-100 px-4 py-3 text-sm font-medium text-base-content shadow-sm">
+                <span class="loading loading-spinner loading-md text-primary" aria-hidden="true"></span>
+                Se actualizează lista de vehicule
+            </span>
+        </div>
         <table class="table table-xs min-w-[1000px]">
             <thead>
                 <tr>

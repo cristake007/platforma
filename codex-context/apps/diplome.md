@@ -9133,11 +9133,11 @@ class BulkDiplomaGenerationTests(TestCase):
 
         self.assertContains(
             generation,
-            f'href="{reverse("diplome:generation_index")}" class="active font-semibold" aria-current="page"',
+            f'href="{reverse("diplome:generation_index")}" class="transition-none active font-semibold" aria-current="page"',
         )
         self.assertContains(
             history_detail,
-            f'href="{reverse("diplome:history_index")}" class="active font-semibold" aria-current="page"',
+            f'href="{reverse("diplome:history_index")}" class="transition-none active font-semibold" aria-current="page"',
         )
 ```
 
@@ -9559,7 +9559,7 @@ class DiplomaGenerationTests(TestCase):
 
         self.assertContains(
             response,
-            f'href="{reverse("diplome:generation_index")}" class="active font-semibold" aria-current="page"',
+            f'href="{reverse("diplome:generation_index")}" class="transition-none active font-semibold" aria-current="page"',
         )
 ```
 

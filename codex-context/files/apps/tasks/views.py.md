@@ -2,7 +2,7 @@
 
 ## `apps/tasks/views.py`
 
-Size: 19.6 KB
+Size: 23.5 KB
 
 ```python
 import hashlib
@@ -14,7 +14,7 @@ from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import IntegrityError
 from django.db.models import Q
-from django.http import Http404, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views import View
@@ -64,6 +64,16 @@ def _error_text(exc: ValidationError) -> str:
     return " ".join(exc.messages)
 
 
+def _is_htmx(request) -> bool:
+    return request.headers.get("HX-Request") == "true"
+
+
+def _htmx_redirect(url: str) -> HttpResponse:
+    response = HttpResponse(status=204)
+    response["HX-Redirect"] = url
+    return response
+
+
 def _decorate_tasks(tasks, user):
     for task in tasks:
         task.can_edit = user_can_edit_task(user=user, task=task)
@@ -101,6 +111,7 @@ def _filtered_tasks(request, queryset):
 
 class TaskHubView(LoginRequiredMixin, View):
     template_name = "tasks/hub.html"
+    partial_template_name = "tasks/includes/hub_task_list.html"
 
     def get(self, request):
         boards = list(accessible_boards(user=request.user))
@@ -109,9 +120,10 @@ class TaskHubView(LoginRequiredMixin, View):
         page = paginator.get_page(request.GET.get("page"))
         _decorate_tasks(page.object_list, request.user)
         stage_options = TaskStage.objects.filter(board__in=boards).order_by("board__name", "position")
+        template_name = self.partial_template_name if request.headers.get("HX-Request") == "true" else self.template_name
         return render(
             request,
-            self.template_name,
+            template_name,
             {
                 "boards": boards,
                 "page": page,
@@ -125,6 +137,7 @@ class TaskHubView(LoginRequiredMixin, View):
 
 class BoardCreateView(LoginRequiredMixin, View):
     template_name = "tasks/board_form.html"
+    partial_template_name = "tasks/includes/board_form_panel.html"
 
     def get(self, request):
         return render(request, self.template_name, {"form": BoardForm()})
@@ -138,8 +151,11 @@ class BoardCreateView(LoginRequiredMixin, View):
                 form.add_error("name", "Ai deja un board cu acest nume.")
             else:
                 messages.success(request, "Board-ul a fost creat.")
+                if _is_htmx(request):
+                    return _htmx_redirect(reverse("tasks:board_kanban", kwargs={"board_id": board.pk}))
                 return redirect("tasks:board_kanban", board_id=board.pk)
-        return render(request, self.template_name, {"form": form}, status=400)
+        template_name = self.partial_template_name if _is_htmx(request) else self.template_name
+        return render(request, template_name, {"form": form}, status=400)
 
 
 def _board_context(*, request, board, task_form=None):
@@ -185,6 +201,7 @@ class BoardKanbanView(LoginRequiredMixin, View):
 
 class BoardListView(LoginRequiredMixin, View):
     template_name = "tasks/board_list.html"
+    partial_template_name = "tasks/includes/board_task_list.html"
 
     def get(self, request, board_id):
         board = get_accessible_board(user=request.user, board_id=board_id)
@@ -193,11 +210,13 @@ class BoardListView(LoginRequiredMixin, View):
         _decorate_tasks(page.object_list, request.user)
         context = _board_context(request=request, board=board)
         context.update({"page": page, "priority_choices": Task.Priority.choices, "filters": request.GET})
-        return render(request, self.template_name, context)
+        template_name = self.partial_template_name if request.headers.get("HX-Request") == "true" else self.template_name
+        return render(request, template_name, context)
 
 
 class TaskCreateView(LoginRequiredMixin, View):
     template_name = "tasks/task_form.html"
+    partial_template_name = "tasks/includes/task_form_panel.html"
 
     def get(self, request, board_id):
         board = get_accessible_board(user=request.user, board_id=board_id)
@@ -213,12 +232,16 @@ class TaskCreateView(LoginRequiredMixin, View):
                 form.add_error(None, _error_text(exc))
             else:
                 messages.success(request, "Task-ul a fost creat.")
+                if _is_htmx(request):
+                    return _htmx_redirect(reverse("tasks:board_kanban", kwargs={"board_id": board.pk}))
                 return redirect("tasks:board_kanban", board_id=board.pk)
-        return render(request, self.template_name, {"board": board, "form": form}, status=400)
+        template_name = self.partial_template_name if _is_htmx(request) else self.template_name
+        return render(request, template_name, {"board": board, "form": form}, status=400)
 
 
 class TaskEditView(LoginRequiredMixin, View):
     template_name = "tasks/task_form.html"
+    partial_template_name = "tasks/includes/task_form_panel.html"
 
     def dispatch(self, request, *args, **kwargs):
         self.task = get_visible_task(user=request.user, task_id=kwargs["task_id"])
@@ -239,8 +262,11 @@ class TaskEditView(LoginRequiredMixin, View):
                 form.add_error(None, _error_text(exc))
             else:
                 messages.success(request, "Task-ul a fost actualizat.")
+                if _is_htmx(request):
+                    return _htmx_redirect(reverse("tasks:board_kanban", kwargs={"board_id": self.task.board_id}))
                 return redirect("tasks:board_kanban", board_id=self.task.board_id)
-        return render(request, self.template_name, {"board": self.task.board, "task": self.task, "form": form}, status=400)
+        template_name = self.partial_template_name if _is_htmx(request) else self.template_name
+        return render(request, template_name, {"board": self.task.board, "task": self.task, "form": form}, status=400)
 
 
 class TaskMoveView(LoginRequiredMixin, View):
@@ -290,7 +316,56 @@ class TaskArchiveView(LoginRequiredMixin, View):
         except ValidationError as exc:
             raise Http404(_error_text(exc)) from exc
         messages.success(request, "Task arhivat." if archived else "Task restaurat.")
+        if _is_htmx(request):
+            next_url = request.POST.get("next") or reverse("tasks:board_kanban", kwargs={"board_id": task.board_id})
+            settings_url = reverse("tasks:board_settings", kwargs={"board_id": task.board_id})
+            if next_url == settings_url:
+                return _render_board_settings(request, task.board)
+            return _htmx_redirect(next_url)
         return redirect(request.POST.get("next") or reverse("tasks:board_kanban", kwargs={"board_id": task.board_id}))
+
+
+def _board_settings_context(
+    *,
+    request,
+    board,
+    member_form=None,
+    transfer_form=None,
+    stage_form=None,
+    stage_forms=None,
+    stage_delete_forms=None,
+):
+    stage_forms = stage_forms or {}
+    stage_delete_forms = stage_delete_forms or {}
+    stages = list(board.stages.order_by("position"))
+    stage_rows = [
+        {
+            "stage": stage,
+            "form": stage_forms.get(stage.pk) or StageForm(instance=stage, prefix=f"stage-{stage.pk}"),
+            "delete_form": stage_delete_forms.get(stage.pk) or StageDeleteForm(stage=stage, prefix=f"delete-{stage.pk}"),
+        }
+        for stage in stages
+    ]
+    archived_tasks = visible_board_tasks(user=request.user, board=board, include_archived=True).filter(archived_at__isnull=False)
+    return {
+        "board": board,
+        "members": board_members(board=board, active_only=False),
+        "member_form": member_form or MemberAddForm(board=board),
+        "transfer_form": transfer_form or OwnershipTransferForm(board=board),
+        "stage_form": stage_form or StageForm(prefix="new-stage"),
+        "stage_rows": stage_rows,
+        "archived_tasks": archived_tasks,
+    }
+
+
+def _render_board_settings(request, board, *, status=200, **context_overrides):
+    template_name = "tasks/includes/board_settings_content.html" if _is_htmx(request) else BoardSettingsView.template_name
+    return render(
+        request,
+        template_name,
+        _board_settings_context(request=request, board=board, **context_overrides),
+        status=status,
+    )
 
 
 class BoardSettingsView(LoginRequiredMixin, View):
@@ -299,29 +374,7 @@ class BoardSettingsView(LoginRequiredMixin, View):
     def get(self, request, board_id):
         board = get_accessible_board(user=request.user, board_id=board_id, include_archived=True)
         require_board_manager(user=request.user, board=board)
-        stages = list(board.stages.order_by("position"))
-        stage_rows = [
-            {
-                "stage": stage,
-                "form": StageForm(instance=stage, prefix=f"stage-{stage.pk}"),
-                "delete_form": StageDeleteForm(stage=stage, prefix=f"delete-{stage.pk}"),
-            }
-            for stage in stages
-        ]
-        archived_tasks = visible_board_tasks(user=request.user, board=board, include_archived=True).filter(archived_at__isnull=False)
-        return render(
-            request,
-            self.template_name,
-            {
-                "board": board,
-                "members": board_members(board=board, active_only=False),
-                "member_form": MemberAddForm(board=board),
-                "transfer_form": OwnershipTransferForm(board=board),
-                "stage_form": StageForm(prefix="new-stage"),
-                "stage_rows": stage_rows,
-                "archived_tasks": archived_tasks,
-            },
-        )
+        return _render_board_settings(request, board)
 
 
 class MemberAddView(LoginRequiredMixin, View):
@@ -334,6 +387,8 @@ class MemberAddView(LoginRequiredMixin, View):
             messages.success(request, "Membru adăugat.")
         else:
             messages.error(request, "Selectează un utilizator activ care nu este deja membru.")
+        if _is_htmx(request):
+            return _render_board_settings(request, board, member_form=form if form.errors else None, status=400 if form.errors else 200)
         return redirect("tasks:board_settings", board_id=board.pk)
 
 
@@ -348,6 +403,8 @@ class MemberRemoveView(LoginRequiredMixin, View):
             messages.error(request, _error_text(exc))
         else:
             messages.success(request, "Membru eliminat.")
+        if _is_htmx(request):
+            return _render_board_settings(request, board)
         return redirect("tasks:board_settings", board_id=board.pk)
 
 
@@ -361,6 +418,8 @@ class OwnershipTransferView(LoginRequiredMixin, View):
             messages.success(request, "Proprietatea board-ului a fost transferată.")
         else:
             messages.error(request, "Alege un membru activ.")
+        if _is_htmx(request):
+            return _render_board_settings(request, board, transfer_form=form if form.errors else None, status=400 if form.errors else 200)
         return redirect("tasks:board_settings", board_id=board.pk)
 
 
@@ -371,6 +430,10 @@ class BoardArchiveView(LoginRequiredMixin, View):
         archived = request.POST.get("archived", "1") != "0"
         set_board_archived(actor=request.user, board=board, archived=archived)
         messages.success(request, "Board arhivat." if archived else "Board restaurat.")
+        if _is_htmx(request):
+            if not archived:
+                return _htmx_redirect(reverse("tasks:board_kanban", kwargs={"board_id": board.pk}))
+            return _render_board_settings(request, board)
         return redirect("tasks:board_settings", board_id=board.pk) if archived else redirect("tasks:board_kanban", board_id=board.pk)
 
 
@@ -378,7 +441,7 @@ class StageCreateView(LoginRequiredMixin, View):
     def post(self, request, board_id):
         board = get_accessible_board(user=request.user, board_id=board_id, include_archived=True)
         require_board_manager(user=request.user, board=board)
-        form = StageForm(request.POST)
+        form = StageForm(request.POST, prefix="new-stage")
         if form.is_valid():
             try:
                 create_stage(actor=request.user, board=board, **form.cleaned_data)
@@ -388,6 +451,8 @@ class StageCreateView(LoginRequiredMixin, View):
                 messages.success(request, "Etapă adăugată.")
         else:
             messages.error(request, "Verifică datele etapei.")
+        if _is_htmx(request):
+            return _render_board_settings(request, board, stage_form=form if form.errors else None, status=400 if form.errors else 200)
         return redirect("tasks:board_settings", board_id=board.pk)
 
 
@@ -396,7 +461,7 @@ class StageUpdateView(LoginRequiredMixin, View):
         stage = get_object_or_404(TaskStage.objects.select_related("board"), pk=stage_id)
         get_accessible_board(user=request.user, board_id=stage.board_id, include_archived=True)
         require_board_manager(user=request.user, board=stage.board)
-        form = StageForm(request.POST, instance=stage)
+        form = StageForm(request.POST, instance=stage, prefix=f"stage-{stage.pk}")
         if form.is_valid():
             try:
                 update_stage(actor=request.user, stage=stage, **form.cleaned_data)
@@ -406,6 +471,9 @@ class StageUpdateView(LoginRequiredMixin, View):
                 messages.success(request, "Etapă actualizată.")
         else:
             messages.error(request, "Verifică datele etapei.")
+        if _is_htmx(request):
+            stage_forms = {stage.pk: form} if form.errors else None
+            return _render_board_settings(request, stage.board, stage_forms=stage_forms, status=400 if form.errors else 200)
         return redirect("tasks:board_settings", board_id=stage.board_id)
 
 
@@ -416,6 +484,8 @@ class StagePositionView(LoginRequiredMixin, View):
         require_board_manager(user=request.user, board=stage.board)
         direction = -1 if request.POST.get("direction") == "up" else 1
         move_stage_position(actor=request.user, stage=stage, direction=direction)
+        if _is_htmx(request):
+            return _render_board_settings(request, stage.board)
         return redirect("tasks:board_settings", board_id=stage.board_id)
 
 
@@ -424,7 +494,7 @@ class StageDeleteView(LoginRequiredMixin, View):
         stage = get_object_or_404(TaskStage.objects.select_related("board"), pk=stage_id)
         get_accessible_board(user=request.user, board_id=stage.board_id, include_archived=True)
         require_board_manager(user=request.user, board=stage.board)
-        form = StageDeleteForm(request.POST, stage=stage)
+        form = StageDeleteForm(request.POST, stage=stage, prefix=f"delete-{stage.pk}")
         if form.is_valid():
             try:
                 delete_stage(actor=request.user, stage=stage, replacement=form.cleaned_data["replacement_stage"])
@@ -434,6 +504,9 @@ class StageDeleteView(LoginRequiredMixin, View):
                 messages.success(request, "Etapa a fost eliminată, iar task-urile au fost mutate.")
         else:
             messages.error(request, "Alege o etapă validă de înlocuire.")
+        if _is_htmx(request):
+            stage_delete_forms = {stage.pk: form} if form.errors else None
+            return _render_board_settings(request, stage.board, stage_delete_forms=stage_delete_forms, status=400 if form.errors else 200)
         return redirect("tasks:board_settings", board_id=stage.board_id)
 
 

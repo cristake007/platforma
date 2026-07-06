@@ -5,7 +5,7 @@
 Size: 1.2 KB
 
 ```dockerfile
-FROM node:22-bookworm-slim AS frontend
+FROM node:24-bookworm-slim AS frontend
 
 WORKDIR /build
 

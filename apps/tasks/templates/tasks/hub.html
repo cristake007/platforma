@@ -32,9 +32,16 @@
         {% if first_board %}<a href="{% url 'tasks:board_kanban' first_board.pk %}" class="px-1 pb-2 text-sm font-medium hover:text-primary">Kanban</a>{% endif %}
     </nav>
 
-    <form method="get" class="grid gap-3 border-b border-base-300 pb-4 sm:grid-cols-2 lg:grid-cols-8">
+    <form
+        method="get"
+        class="grid gap-3 border-b border-base-300 pb-4 sm:grid-cols-2 lg:grid-cols-8"
+        hx-get="{% url 'tasks:index' %}"
+        hx-target="#task-list-results"
+        hx-swap="outerHTML"
+        hx-push-url="true"
+    >
         <label class="fieldset"><span class="fieldset-legend">Board</span><select name="board" class="select select-bordered select-sm w-full"><option value="">Toate board-urile</option>{% for board in boards %}<option value="{{ board.pk }}"{% if filters.board == board.pk|stringformat:'s' %} selected{% endif %}>{{ board.name }}</option>{% endfor %}</select></label>
-        <label class="fieldset lg:col-span-2"><span class="fieldset-legend">Caută</span><input name="q" value="{{ filters.q|default:'' }}" class="input input-bordered input-sm w-full" placeholder="Caută task-uri…"></label>
+        <label class="fieldset lg:col-span-2"><span class="fieldset-legend">Caută</span><input name="q" value="{{ filters.q|default:'' }}" class="input input-bordered input-sm w-full" placeholder="Caută task-uri..."></label>
         <label class="fieldset"><span class="fieldset-legend">Relație</span><select name="relation" class="select select-bordered select-sm w-full"><option value="">Toate</option><option value="assigned"{% if filters.relation == 'assigned' %} selected{% endif %}>Atribuite mie</option><option value="created"{% if filters.relation == 'created' %} selected{% endif %}>Create de mine</option>{% if request.user.is_staff %}<option value="mine"{% if filters.relation == 'mine' %} selected{% endif %}>Doar ale mele</option>{% endif %}</select></label>
         <label class="fieldset"><span class="fieldset-legend">Prioritate</span><select name="priority" class="select select-bordered select-sm w-full"><option value="">Toate</option>{% for value,label in priority_choices %}<option value="{{ value }}"{% if filters.priority == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
         <label class="fieldset"><span class="fieldset-legend">Etapă</span><select name="stage" class="select select-bordered select-sm w-full"><option value="">Toate</option>{% for stage in stage_options %}<option value="{{ stage.pk }}"{% if filters.stage == stage.pk|stringformat:'s' %} selected{% endif %}>{{ stage.board.name }} · {{ stage.name }}</option>{% endfor %}</select></label>
@@ -42,55 +49,7 @@
         <div class="flex items-end gap-2"><button class="btn btn-primary btn-sm flex-1">Filtrează</button><a href="{% url 'tasks:index' %}" class="btn btn-ghost btn-sm">Resetează</a></div>
     </form>
 
-    <div class="overflow-x-auto border border-base-300 bg-base-100">
-        <table class="table table-sm min-w-[980px]">
-            <thead><tr><th>Task</th><th>Board</th><th>Etapă</th><th>Prioritate</th><th>Responsabil</th><th>Termen</th><th>Timp rămas</th><th class="text-right">Acțiuni</th></tr></thead>
-            <tbody>
-            {% for task in page %}
-                <tr class="hover:bg-base-200/60">
-                    <td><div class="max-w-64"><p class="font-semibold text-base-content">{{ task.title }}</p>{% if task.origin_url %}<a href="{{ task.origin_url }}" class="text-xs text-primary hover:underline">{{ task.origin_label|default:"Deschide sursa" }} ↗</a>{% endif %}</div></td>
-                    <td><a href="{% url 'tasks:board_kanban' task.board_id %}" class="font-medium text-primary hover:underline">{{ task.board.name }}</a></td>
-                    <td><span class="badge badge-outline badge-sm">{{ task.stage.name }}</span></td>
-                    <td>{{ task.get_priority_display }}</td>
-                    <td>{{ task.assignee.get_full_name|default:task.assignee.username }}</td>
-                    <td class="whitespace-nowrap">{{ task.due_at|date:"d.m.Y H:i" }}</td>
-                    <td class="whitespace-nowrap">{% include "tasks/includes/timer.html" %}</td>
-                    <td>
-                        <div class="flex justify-end gap-1">
-                            {% if task.can_edit %}
-                                <a
-                                    href="{% url 'tasks:task_edit' task.pk %}"
-                                    class="btn btn-square btn-ghost btn-xs text-primary hover:bg-primary/10"
-                                    aria-label="Editează task-ul"
-                                    title="Editează task-ul"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m16.862 3.487 3.651 3.651M4.5 19.5l4.228-.845a2 2 0 0 0 1.024-.547L20.513 7.347a1.75 1.75 0 0 0 0-2.474l-1.386-1.386a1.75 1.75 0 0 0-2.474 0L5.892 14.248a2 2 0 0 0-.547 1.024L4.5 19.5Z" />
-                                    </svg>
-                                </a>
-                            {% endif %}
-                            <a
-                                href="{% url 'tasks:board_kanban' task.board_id %}"
-                                class="btn btn-square btn-ghost btn-xs text-primary hover:bg-primary/10"
-                                aria-label="Deschide board-ul în vizualizarea Kanban"
-                                title="Deschide board-ul în vizualizarea Kanban"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4.75 5.25h5.5v13.5h-5.5V5.25Zm9 0h5.5v8.5h-5.5v-8.5Z" />
-                                </svg>
-                            </a>
-                        </div>
-                    </td>
-                </tr>
-            {% empty %}
-                <tr><td colspan="8" class="py-12 text-center text-muted">Nu există task-uri pentru filtrele selectate.</td></tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% if page.paginator.num_pages > 1 %}
-    <div class="flex items-center justify-between text-sm text-muted"><span>Pagina {{ page.number }} din {{ page.paginator.num_pages }}</span><div class="join">{% if page.has_previous %}<a class="btn btn-sm join-item" href="?page={{ page.previous_page_number }}">‹</a>{% endif %}{% if page.has_next %}<a class="btn btn-sm join-item" href="?page={{ page.next_page_number }}">›</a>{% endif %}</div></div>
-    {% endif %}
+    {% include "tasks/includes/hub_task_list.html" %}
     {% else %}
     <div class="border border-dashed border-base-300 bg-base-100 px-6 py-14 text-center">
         <h2 class="text-lg font-semibold text-base-content">Creează primul board</h2>

@@ -2,7 +2,7 @@
 
 ## `apps/media_library/forms.py`
 
-Size: 1.1 KB
+Size: 1.2 KB
 
 ```python
 from pathlib import Path
@@ -25,6 +25,7 @@ class MediaAssetUploadForm(forms.Form):
             attrs={
                 "class": "file-input file-input-bordered w-full",
                 "accept": ".svg,.png,.jpg,.jpeg,.webp,image/svg+xml,image/png,image/jpeg,image/webp",
+                "x-on:change": "fileName = $event.target.files[0]?.name || ''",
             }
         ),
     )

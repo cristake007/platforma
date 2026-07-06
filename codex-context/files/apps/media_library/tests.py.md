@@ -2,7 +2,7 @@
 
 ## `apps/media_library/tests.py`
 
-Size: 17.9 KB
+Size: 22.3 KB
 
 ```python
 import json
@@ -94,6 +94,92 @@ class MediaLibraryTests(TestCase):
         self.assertEqual((asset.width_px, asset.height_px), (32, 20))
         self.assertTrue(asset.file.name.startswith(f"media_library/{self.user.pk}/"))
         self.assertTrue(asset.file.storage.exists(asset.file.name))
+
+    def test_htmx_upload_returns_refreshed_library_partial(self):
+        response = self.client.post(
+            reverse("media_library:index"),
+            {"name": "Logo HTMX", "file": self._png_upload()},
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        asset = MediaAsset.objects.get()
+        self.assertEqual(asset.owner, self.user)
+        self.assertContains(response, 'id="media-library-content"')
+        self.assertContains(response, 'id="media-library-messages"')
+        self.assertContains(response, "x-transition.opacity.duration.500ms")
+        self.assertContains(response, "Fișierul a fost adăugat în biblioteca media.")
+        self.assertContains(response, "Logo HTMX")
+        self.assertContains(response, 'hx-target="#media-library-content"')
+        self.assertNotContains(response, "<title>")
+
+    def test_htmx_upload_validation_error_returns_partial_with_errors(self):
+        response = self.client.post(
+            reverse("media_library:index"),
+            {"file": SimpleUploadedFile("notes.txt", b"not an image", content_type="text/plain")},
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(MediaAsset.objects.exists())
+        self.assertContains(response, 'id="media-library-content"')
+        self.assertContains(response, 'hx-target="#media-library-content"')
+
+    def test_library_asset_cards_use_htmx_delete_icon_button(self):
+        asset = self._create_asset(name="Logo de șters")
+
+        response = self.client.get(reverse("media_library:index"))
+
+        self.assertContains(response, 'x-ref="previewDialog"')
+        self.assertContains(response, 'x-on:click="$refs.previewDialog.showModal()"', count=1)
+        self.assertContains(response, 'aria-label="Deschide Logo de șters"')
+        self.assertContains(response, 'cursor-pointer')
+        self.assertContains(response, 'group-hover:opacity-100')
+        self.assertContains(response, 'id="preview-media-{}-title"'.format(asset.pk))
+        self.assertContains(response, 'modal-box max-w-5xl rounded-none')
+        self.assertContains(response, 'max-h-[64vh] max-w-full object-contain')
+        self.assertNotContains(response, 'target="_blank"')
+        self.assertNotContains(response, 'btn btn-outline btn-square btn-sm shrink-0" aria-label="Deschide')
+        self.assertContains(response, 'hx-post="{}"'.format(reverse("media_library:delete", kwargs={"asset_id": asset.pk})))
+        self.assertContains(response, 'hx-target="#media-asset-panel"')
+        self.assertContains(response, 'aria-label="Șterge Logo de șters"')
+        self.assertContains(response, 'viewBox="0 0 16 16"')
+        self.assertContains(response, 'focusable="false"')
+        self.assertContains(response, 'class="modal"')
+        self.assertContains(response, "Șterge fișierul?")
+        self.assertContains(response, "Anulează")
+
+    def test_htmx_delete_owned_asset_returns_refreshed_asset_panel(self):
+        deleted_asset = self._create_asset(name="Logo vechi")
+        remaining_asset = self._create_asset(name="Logo rămas")
+
+        response = self.client.post(
+            reverse("media_library:delete", kwargs={"asset_id": deleted_asset.pk}),
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(MediaAsset.objects.filter(pk=deleted_asset.pk).exists())
+        self.assertTrue(MediaAsset.objects.filter(pk=remaining_asset.pk).exists())
+        self.assertContains(response, 'id="media-library-messages"')
+        self.assertContains(response, 'hx-swap-oob="true"')
+        self.assertContains(response, "Fișierul a fost șters din biblioteca media.")
+        self.assertContains(response, 'id="media-asset-panel"')
+        self.assertContains(response, "Logo rămas")
+        self.assertNotContains(response, "Logo vechi")
+        self.assertContains(response, 'hx-target="#media-asset-panel"')
+        self.assertNotContains(response, "<title>")
+
+    def test_htmx_delete_foreign_asset_is_owner_scoped(self):
+        foreign_asset = self._create_asset(owner=self.other_user, name="Logo străin")
+
+        response = self.client.post(
+            reverse("media_library:delete", kwargs={"asset_id": foreign_asset.pk}),
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(MediaAsset.objects.filter(pk=foreign_asset.pk).exists())
 
     def test_json_asset_list_requires_login(self):
         self.client.logout()

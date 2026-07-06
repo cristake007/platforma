@@ -11,6 +11,7 @@ codex-file-map.txt
 files/.agents/plugins/marketplace.json.md
 files/.dockerignore.md
 files/.gitattributes.md
+files/.github/workflows/ci.yml.md
 files/.gitignore.md
 files/.tuvtk/config.json.md
 files/AGENTS.md.md
@@ -101,6 +102,11 @@ files/apps/media_library/services.py.md
 files/apps/media_library/signals.py.md
 files/apps/media_library/static/media_library/library.css.md
 files/apps/media_library/storage.py.md
+files/apps/media_library/templates/media_library/includes/asset_grid.html.md
+files/apps/media_library/templates/media_library/includes/delete_response.html.md
+files/apps/media_library/templates/media_library/includes/library_content.html.md
+files/apps/media_library/templates/media_library/includes/messages.html.md
+files/apps/media_library/templates/media_library/includes/upload_form.html.md
 files/apps/media_library/templates/media_library/library.html.md
 files/apps/media_library/tests.py.md
 files/apps/media_library/urls.py.md
@@ -163,8 +169,13 @@ files/apps/tasks/templates/tasks/board_kanban.html.md
 files/apps/tasks/templates/tasks/board_list.html.md
 files/apps/tasks/templates/tasks/board_settings.html.md
 files/apps/tasks/templates/tasks/hub.html.md
+files/apps/tasks/templates/tasks/includes/board_form_panel.html.md
+files/apps/tasks/templates/tasks/includes/board_settings_content.html.md
+files/apps/tasks/templates/tasks/includes/board_task_list.html.md
 files/apps/tasks/templates/tasks/includes/form_fields.html.md
+files/apps/tasks/templates/tasks/includes/hub_task_list.html.md
 files/apps/tasks/templates/tasks/includes/messages.html.md
+files/apps/tasks/templates/tasks/includes/task_form_panel.html.md
 files/apps/tasks/templates/tasks/includes/timer.html.md
 files/apps/tasks/templates/tasks/task_form.html.md
 files/apps/tasks/tests.py.md
@@ -173,6 +184,8 @@ files/apps/tasks/validators.py.md
 files/apps/tasks/views.py.md
 files/bin/tuvtk.md
 files/codex-prompt-demos/README.md.md
+files/codex-prompt-demos/custom-js-to-alpine.md.md
+files/codex-prompt-demos/htmx-alpine-phased-migration.md.md
 files/compose.dev.yaml.md
 files/compose.yaml.md
 files/core/__init__.py.md
@@ -192,6 +205,7 @@ files/core/templatetags/optional_browser_reload.py.md
 files/core/tests.py.md
 files/docker/nginx.conf.template.md
 files/docker/start-web.sh.md
+files/docs/frontend/table-patterns.md.md
 files/frontend.md.md
 files/generate_codex_context.bat.md
 files/generate_codex_context.ps1.md

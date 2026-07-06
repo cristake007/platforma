@@ -90,7 +90,7 @@ class MediaLibraryConfig(AppConfig):
 
 ## `apps/media_library/forms.py`
 
-Size: 1.1 KB
+Size: 1.2 KB
 
 ```python
 from pathlib import Path
@@ -113,6 +113,7 @@ class MediaAssetUploadForm(forms.Form):
             attrs={
                 "class": "file-input file-input-bordered w-full",
                 "accept": ".svg,.png,.jpg,.jpeg,.webp,image/svg+xml,image/png,image/jpeg,image/webp",
+                "x-on:change": "fileName = $event.target.files[0]?.name || ''",
             }
         ),
     )
@@ -394,9 +395,211 @@ class PrivateMediaStorage(FileSystemStorage):
         return None
 ```
 
+## `apps/media_library/templates/media_library/includes/asset_grid.html`
+
+Size: 8.1 KB
+
+```html
+<div id="media-asset-panel" class="border border-base-300 bg-base-100">
+    <div class="flex items-center justify-between border-b border-base-300 px-5 py-4">
+        <h2 class="font-semibold text-base-content">Fișierele mele</h2>
+        <span class="badge badge-ghost">{{ assets|length }}</span>
+    </div>
+    {% if assets %}
+        <div class="grid grid-cols-2 gap-4 p-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+            {% for asset in assets %}
+                <article class="flex h-full flex-col overflow-hidden border border-base-300 bg-base-100" x-data>
+                    <button
+                        type="button"
+                        class="group media-asset-preview relative block w-full shrink-0 cursor-pointer overflow-hidden bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                        aria-label="Deschide {{ asset.name }}"
+                        title="Deschide"
+                        x-on:click="$refs.previewDialog.showModal()"
+                    >
+                        <img src="{% url 'media_library:content' asset.pk %}" alt="{{ asset.name }}">
+                        <span class="absolute inset-0 flex items-center justify-center bg-neutral/35 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100" aria-hidden="true">
+                            <span class="flex h-10 w-10 items-center justify-center rounded-full bg-base-100/90 text-base-content shadow">
+                                <svg class="h-5 w-5" viewBox="0 0 16 16" fill="currentColor" focusable="false">
+                                    <path d="M6.5 12a5.5 5.5 0 1 1 4.389-2.185l3.148 3.148a.75.75 0 0 1-1.06 1.06l-3.148-3.148A5.475 5.475 0 0 1 6.5 12Zm0-1.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/>
+                                    <path d="M6.5 4a.5.5 0 0 1 .5.5V6h1.5a.5.5 0 0 1 0 1H7v1.5a.5.5 0 0 1-1 0V7H4.5a.5.5 0 0 1 0-1H6V4.5a.5.5 0 0 1 .5-.5Z"/>
+                                </svg>
+                            </span>
+                        </span>
+                    </button>
+                    <div class="flex flex-1 flex-col gap-3 p-3">
+                        <div class="grid h-10 min-w-0 grid-rows-2 content-start">
+                            <h3 class="h-5 truncate text-sm font-semibold leading-5 text-base-content" title="{{ asset.name }}">{{ asset.name }}</h3>
+                            <p class="h-5 truncate text-xs leading-5 text-muted" title="{{ asset.original_filename }}">{{ asset.original_filename }}</p>
+                        </div>
+                        <div class="mt-auto flex min-h-7 items-center justify-between gap-2">
+                            <span class="badge badge-outline h-7">{{ asset.extension|upper }}</span>
+                            <button
+                                type="button"
+                                class="btn btn-error btn-outline btn-square btn-sm shrink-0"
+                                aria-label="Șterge {{ asset.name }}"
+                                title="Șterge"
+                                x-on:click="$refs.deleteDialog.showModal()"
+                            >
+                                <svg class="h-4 w-4" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false">
+                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z"/>
+                                    <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1 0-2H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1ZM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118ZM2.5 3h11V2h-11v1Z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <dialog x-ref="previewDialog" class="modal" aria-labelledby="preview-media-{{ asset.pk }}-title">
+                        <div class="modal-box max-w-5xl rounded-none border border-base-300 bg-base-100 p-0 shadow-xl">
+                            <form method="dialog">
+                                <button class="btn btn-ghost btn-sm btn-circle absolute right-3 top-3 z-10 bg-base-100/80" aria-label="Închide">✕</button>
+                            </form>
+                            <div class="border-b border-base-300 px-5 py-4 pr-14">
+                                <h3 id="preview-media-{{ asset.pk }}-title" class="truncate text-lg font-semibold text-base-content" title="{{ asset.name }}">{{ asset.name }}</h3>
+                                <p class="truncate text-sm text-muted" title="{{ asset.original_filename }}">{{ asset.original_filename }}</p>
+                            </div>
+                            <div class="flex max-h-[70vh] items-center justify-center bg-base-200 p-4">
+                                <img
+                                    src="{% url 'media_library:content' asset.pk %}"
+                                    alt="{{ asset.name }}"
+                                    class="max-h-[64vh] max-w-full object-contain"
+                                >
+                            </div>
+                        </div>
+                        <form method="dialog" class="modal-backdrop"><button>Închide</button></form>
+                    </dialog>
+                    <dialog x-ref="deleteDialog" class="modal" aria-labelledby="delete-media-{{ asset.pk }}-title">
+                        <div class="modal-box max-w-md rounded-box border border-base-300 bg-base-100 shadow-xl">
+                            <form method="dialog">
+                                <button class="btn btn-ghost btn-sm btn-circle absolute right-3 top-3" aria-label="Închide">✕</button>
+                            </form>
+                            <h3 id="delete-media-{{ asset.pk }}-title" class="pr-8 text-lg font-semibold text-base-content">Șterge fișierul?</h3>
+                            <p class="mt-3 text-sm text-muted">
+                                Fișierul „{{ asset.name }}” va fi eliminat din biblioteca media dacă nu este folosit într-un template de diplomă.
+                            </p>
+                            <div class="modal-action">
+                                <form method="dialog">
+                                    <button class="btn btn-ghost btn-sm">Anulează</button>
+                                </form>
+                                <form
+                                    method="post"
+                                    action="{% url 'media_library:delete' asset.pk %}"
+                                    hx-post="{% url 'media_library:delete' asset.pk %}"
+                                    hx-target="#media-asset-panel"
+                                    hx-swap="outerHTML"
+                                >
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-error btn-sm">
+                                        <svg class="h-4 w-4" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false">
+                                            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z"/>
+                                            <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1 0-2H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1ZM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118ZM2.5 3h11V2h-11v1Z"/>
+                                        </svg>
+                                        Șterge
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        <form method="dialog" class="modal-backdrop"><button>Închide</button></form>
+                    </dialog>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="p-10 text-center text-sm text-muted">Biblioteca este goală.</div>
+    {% endif %}
+</div>
+```
+
+## `apps/media_library/templates/media_library/includes/delete_response.html`
+
+Size: 108 B
+
+```html
+{% include "media_library/includes/messages.html" %}
+{% include "media_library/includes/asset_grid.html" %}
+```
+
+## `apps/media_library/templates/media_library/includes/library_content.html`
+
+Size: 318 B
+
+```html
+<div id="media-library-content" class="space-y-6">
+    {% include "media_library/includes/messages.html" %}
+
+    <div class="grid gap-6 lg:grid-cols-[22rem_minmax(0,1fr)]">
+        {% include "media_library/includes/upload_form.html" %}
+        {% include "media_library/includes/asset_grid.html" %}
+    </div>
+</div>
+```
+
+## `apps/media_library/templates/media_library/includes/messages.html`
+
+Size: 754 B
+
+```html
+<div
+    id="media-library-messages"
+    class="toast toast-top toast-end z-50{% if not messages %} hidden{% endif %}"
+    aria-live="polite"
+    aria-atomic="true"
+    {% if messages %}x-data="{ visible: true }" x-init="setTimeout(() => visible = false, 4000)" x-show="visible" x-transition.opacity.duration.500ms{% endif %}
+    {% if messages_oob %}hx-swap-oob="true"{% endif %}
+>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %} py-2 text-sm shadow-lg" role="{% if message.tags == 'error' %}alert{% else %}status{% endif %}">
+                <span>{{ message }}</span>
+            </div>
+        {% endfor %}
+    {% endif %}
+</div>
+```
+
+## `apps/media_library/templates/media_library/includes/upload_form.html`
+
+Size: 1.5 KB
+
+```html
+<form
+    method="post"
+    enctype="multipart/form-data"
+    class="space-y-4 border border-base-300 bg-base-100 p-5"
+    hx-post="{% url 'media_library:index' %}"
+    hx-target="#media-library-content"
+    hx-swap="outerHTML"
+    x-data="{ fileName: '', uploading: false }"
+    x-on:submit="uploading = true"
+>
+    {% csrf_token %}
+    <div>
+        <h2 class="font-semibold text-base-content">Adaugă fișier</h2>
+        <p class="mt-1 text-xs text-muted">SVG static sigur, PNG, JPG, JPEG sau WEBP. Maximum 10 MB.</p>
+    </div>
+    {% if form.non_field_errors %}<div class="alert alert-error py-2 text-sm">{{ form.non_field_errors }}</div>{% endif %}
+    {% for field in form %}
+        <label class="form-control w-full">
+            <span class="label"><span class="label-text font-medium">{{ field.label }}</span></span>
+            {% if field.name == "file" %}
+                <div class="space-y-2">
+                    {{ field }}
+                    <p class="min-h-4 text-xs text-muted" x-text="fileName"></p>
+                </div>
+            {% else %}
+                {{ field }}
+            {% endif %}
+            {% for error in field.errors %}<span class="mt-1 text-xs text-error">{{ error }}</span>{% endfor %}
+        </label>
+    {% endfor %}
+    <button type="submit" class="btn btn-primary btn-sm w-full" x-bind:disabled="!fileName || uploading">
+        <span class="loading loading-spinner loading-xs" x-show="uploading" style="display: none;" aria-hidden="true"></span>
+        Încarcă în bibliotecă
+    </button>
+</form>
+```
+
 ## `apps/media_library/templates/media_library/library.html`
 
-Size: 3.9 KB
+Size: 800 B
 
 ```html
 {% extends "layouts/base.html" %}
@@ -418,54 +621,14 @@ Size: 3.9 KB
         </div>
     </header>
 
-    {% if messages %}
-        {% for message in messages %}<div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %} py-2 text-sm" role="status"><span>{{ message }}</span></div>{% endfor %}
-    {% endif %}
-
-    <div class="grid gap-6 lg:grid-cols-[22rem_minmax(0,1fr)]">
-        <form method="post" enctype="multipart/form-data" class="space-y-4 border border-base-300 bg-base-100 p-5">
-            {% csrf_token %}
-            <div><h2 class="font-semibold text-base-content">Adaugă fișier</h2><p class="mt-1 text-xs text-muted">SVG static sigur, PNG, JPG, JPEG sau WEBP. Maximum 10 MB.</p></div>
-            {% if form.non_field_errors %}<div class="alert alert-error py-2 text-sm">{{ form.non_field_errors }}</div>{% endif %}
-            {% for field in form %}
-                <label class="form-control w-full">
-                    <span class="label"><span class="label-text font-medium">{{ field.label }}</span></span>
-                    {{ field }}
-                    {% for error in field.errors %}<span class="mt-1 text-xs text-error">{{ error }}</span>{% endfor %}
-                </label>
-            {% endfor %}
-            <button type="submit" class="btn btn-primary btn-sm w-full">Încarcă în bibliotecă</button>
-        </form>
-
-        <div class="border border-base-300 bg-base-100">
-            <div class="flex items-center justify-between border-b border-base-300 px-5 py-4"><h2 class="font-semibold text-base-content">Fișierele mele</h2><span class="badge badge-ghost">{{ assets|length }}</span></div>
-            {% if assets %}
-                <div class="grid grid-cols-2 gap-4 p-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-                    {% for asset in assets %}
-                        <article class="flex h-full flex-col overflow-hidden border border-base-300 bg-base-100">
-                            <div class="media-asset-preview shrink-0 bg-base-200"><img src="{% url 'media_library:content' asset.pk %}" alt="{{ asset.name }}"></div>
-                            <div class="flex flex-1 flex-col gap-3 p-3">
-                                <div class="grid h-10 min-w-0 grid-rows-2 content-start">
-                                    <h3 class="h-5 truncate text-sm font-semibold leading-5 text-base-content" title="{{ asset.name }}">{{ asset.name }}</h3>
-                                    <p class="h-5 truncate text-xs leading-5 text-muted" title="{{ asset.original_filename }}">{{ asset.original_filename }}</p>
-                                </div>
-                                <div class="mt-auto flex min-h-7 items-center justify-between gap-2"><span class="badge badge-outline h-7">{{ asset.extension|upper }}</span><form method="post" action="{% url 'media_library:delete' asset.pk %}" class="flex items-center">{% csrf_token %}<button type="submit" class="btn btn-ghost h-7 min-h-7 px-2 text-error">Șterge</button></form></div>
-                            </div>
-                        </article>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="p-10 text-center text-sm text-muted">Biblioteca este goală.</div>
-            {% endif %}
-        </div>
-    </div>
+    {% include "media_library/includes/library_content.html" %}
 </section>
 {% endblock %}
 ```
 
 ## `apps/media_library/tests.py`
 
-Size: 17.9 KB
+Size: 22.3 KB
 
 ```python
 import json
@@ -557,6 +720,92 @@ class MediaLibraryTests(TestCase):
         self.assertEqual((asset.width_px, asset.height_px), (32, 20))
         self.assertTrue(asset.file.name.startswith(f"media_library/{self.user.pk}/"))
         self.assertTrue(asset.file.storage.exists(asset.file.name))
+
+    def test_htmx_upload_returns_refreshed_library_partial(self):
+        response = self.client.post(
+            reverse("media_library:index"),
+            {"name": "Logo HTMX", "file": self._png_upload()},
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        asset = MediaAsset.objects.get()
+        self.assertEqual(asset.owner, self.user)
+        self.assertContains(response, 'id="media-library-content"')
+        self.assertContains(response, 'id="media-library-messages"')
+        self.assertContains(response, "x-transition.opacity.duration.500ms")
+        self.assertContains(response, "Fișierul a fost adăugat în biblioteca media.")
+        self.assertContains(response, "Logo HTMX")
+        self.assertContains(response, 'hx-target="#media-library-content"')
+        self.assertNotContains(response, "<title>")
+
+    def test_htmx_upload_validation_error_returns_partial_with_errors(self):
+        response = self.client.post(
+            reverse("media_library:index"),
+            {"file": SimpleUploadedFile("notes.txt", b"not an image", content_type="text/plain")},
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(MediaAsset.objects.exists())
+        self.assertContains(response, 'id="media-library-content"')
+        self.assertContains(response, 'hx-target="#media-library-content"')
+
+    def test_library_asset_cards_use_htmx_delete_icon_button(self):
+        asset = self._create_asset(name="Logo de șters")
+
+        response = self.client.get(reverse("media_library:index"))
+
+        self.assertContains(response, 'x-ref="previewDialog"')
+        self.assertContains(response, 'x-on:click="$refs.previewDialog.showModal()"', count=1)
+        self.assertContains(response, 'aria-label="Deschide Logo de șters"')
+        self.assertContains(response, 'cursor-pointer')
+        self.assertContains(response, 'group-hover:opacity-100')
+        self.assertContains(response, 'id="preview-media-{}-title"'.format(asset.pk))
+        self.assertContains(response, 'modal-box max-w-5xl rounded-none')
+        self.assertContains(response, 'max-h-[64vh] max-w-full object-contain')
+        self.assertNotContains(response, 'target="_blank"')
+        self.assertNotContains(response, 'btn btn-outline btn-square btn-sm shrink-0" aria-label="Deschide')
+        self.assertContains(response, 'hx-post="{}"'.format(reverse("media_library:delete", kwargs={"asset_id": asset.pk})))
+        self.assertContains(response, 'hx-target="#media-asset-panel"')
+        self.assertContains(response, 'aria-label="Șterge Logo de șters"')
+        self.assertContains(response, 'viewBox="0 0 16 16"')
+        self.assertContains(response, 'focusable="false"')
+        self.assertContains(response, 'class="modal"')
+        self.assertContains(response, "Șterge fișierul?")
+        self.assertContains(response, "Anulează")
+
+    def test_htmx_delete_owned_asset_returns_refreshed_asset_panel(self):
+        deleted_asset = self._create_asset(name="Logo vechi")
+        remaining_asset = self._create_asset(name="Logo rămas")
+
+        response = self.client.post(
+            reverse("media_library:delete", kwargs={"asset_id": deleted_asset.pk}),
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(MediaAsset.objects.filter(pk=deleted_asset.pk).exists())
+        self.assertTrue(MediaAsset.objects.filter(pk=remaining_asset.pk).exists())
+        self.assertContains(response, 'id="media-library-messages"')
+        self.assertContains(response, 'hx-swap-oob="true"')
+        self.assertContains(response, "Fișierul a fost șters din biblioteca media.")
+        self.assertContains(response, 'id="media-asset-panel"')
+        self.assertContains(response, "Logo rămas")
+        self.assertNotContains(response, "Logo vechi")
+        self.assertContains(response, 'hx-target="#media-asset-panel"')
+        self.assertNotContains(response, "<title>")
+
+    def test_htmx_delete_foreign_asset_is_owner_scoped(self):
+        foreign_asset = self._create_asset(owner=self.other_user, name="Logo străin")
+
+        response = self.client.post(
+            reverse("media_library:delete", kwargs={"asset_id": foreign_asset.pk}),
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(MediaAsset.objects.filter(pk=foreign_asset.pk).exists())
 
     def test_json_asset_list_requires_login(self):
         self.client.logout()
@@ -1252,7 +1501,7 @@ def validate_and_prepare_media(uploaded_file) -> PreparedMedia:
 
 ## `apps/media_library/views.py`
 
-Size: 3.6 KB
+Size: 4.7 KB
 
 ```python
 from django.contrib import messages
@@ -1276,22 +1525,35 @@ def _json_form_errors(form) -> dict[str, list[str]]:
 
 class MediaLibraryView(LoginRequiredMixin, View):
     template_name = "media_library/library.html"
+    partial_template_name = "media_library/includes/library_content.html"
 
-    def get(self, request):
+    def _is_htmx(self, request) -> bool:
+        return request.headers.get("HX-Request") == "true"
+
+    def _render(self, request, *, form, assets, status=200):
+        template_name = self.partial_template_name if self._is_htmx(request) else self.template_name
         return render(
             request,
-            self.template_name,
-            {"form": MediaAssetUploadForm(), "assets": list_owned_media_assets(user=request.user)},
+            template_name,
+            {"form": form, "assets": assets},
+            status=status,
+        )
+
+    def get(self, request):
+        return self._render(
+            request,
+            form=MediaAssetUploadForm(),
+            assets=list_owned_media_assets(user=request.user),
         )
 
     def post(self, request):
         form = MediaAssetUploadForm(request.POST, request.FILES)
         if not form.is_valid():
-            return render(
+            return self._render(
                 request,
-                self.template_name,
-                {"form": form, "assets": list_owned_media_assets(user=request.user)},
-                status=400,
+                form=form,
+                assets=list_owned_media_assets(user=request.user),
+                status=200 if self._is_htmx(request) else 400,
             )
         create_media_asset(
             owner=request.user,
@@ -1300,6 +1562,12 @@ class MediaLibraryView(LoginRequiredMixin, View):
             prepared_media=form.prepared_media,
         )
         messages.success(request, "Fișierul a fost adăugat în biblioteca media.")
+        if self._is_htmx(request):
+            return self._render(
+                request,
+                form=MediaAssetUploadForm(),
+                assets=list_owned_media_assets(user=request.user),
+            )
         return redirect("media_library:index")
 
 
@@ -1346,6 +1614,11 @@ class MediaAssetContentView(LoginRequiredMixin, View):
 
 
 class MediaAssetDeleteView(LoginRequiredMixin, View):
+    partial_template_name = "media_library/includes/delete_response.html"
+
+    def _is_htmx(self, request) -> bool:
+        return request.headers.get("HX-Request") == "true"
+
     def post(self, request, *args, **kwargs):
         try:
             delete_media_asset(owner=request.user, asset_id=kwargs["asset_id"])
@@ -1353,5 +1626,11 @@ class MediaAssetDeleteView(LoginRequiredMixin, View):
             messages.error(request, exc.messages[0])
         else:
             messages.success(request, "Fișierul a fost șters din biblioteca media.")
+        if self._is_htmx(request):
+            return render(
+                request,
+                self.partial_template_name,
+                {"assets": list_owned_media_assets(user=request.user), "messages_oob": True},
+            )
         return redirect("media_library:index")
 ```

@@ -1153,13 +1153,21 @@ Size: 7.0 KB
 
 ## `apps/tasks/templates/tasks/board_form.html`
 
-Size: 786 B
+Size: 563 B
 
 ```html
 {% extends "layouts/base.html" %}
 {% block title %}Board nou | Task-uri{% endblock %}
-{% block content %}<section class="mx-auto max-w-xl space-y-5"><div><p class="text-xs text-muted"><a href="{% url 'tasks:index' %}" class="hover:text-primary">Task-uri</a> / Board nou</p><h1 class="ops-title mt-1 text-2xl font-bold">Creează un board</h1><p class="mt-1 text-sm text-muted">Vei deveni proprietar și membru al board-ului.</p></div><form method="post" class="space-y-4 border border-base-300 bg-base-100 p-5">{% csrf_token %}{% include "tasks/includes/form_fields.html" %}<div class="flex justify-end gap-2"><a href="{% url 'tasks:index' %}" class="btn btn-ghost btn-sm">Anulează</a><button class="btn btn-primary btn-sm">Creează board</button></div></form></section>{% endblock %}
-
+{% block content %}
+<section class="mx-auto max-w-xl space-y-5">
+    <div>
+        <p class="text-xs text-muted"><a href="{% url 'tasks:index' %}" class="hover:text-primary">Task-uri</a> / Board nou</p>
+        <h1 class="ops-title mt-1 text-2xl font-bold">Creeaz&#259; un board</h1>
+        <p class="mt-1 text-sm text-muted">Vei deveni proprietar &#537;i membru al board-ului.</p>
+    </div>
+    {% include "tasks/includes/board_form_panel.html" %}
+</section>
+{% endblock %}
 ```
 
 ## `apps/tasks/templates/tasks/board_kanban.html`
@@ -1258,51 +1266,66 @@ Size: 8.6 KB
 
 ## `apps/tasks/templates/tasks/board_list.html`
 
-Size: 3.8 KB
+Size: 2.6 KB
 
 ```html
 {% extends "layouts/base.html" %}
 {% load static %}
+
 {% block title %}{{ board.name }} — Listă | Task-uri{% endblock %}
+
 {% block content %}
 <section class="space-y-4">
     {% include "tasks/includes/messages.html" %}
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p class="text-xs text-muted"><a href="{% url 'tasks:index' %}" class="hover:text-primary">Task-uri</a> / Board</p><h1 class="ops-title mt-1 text-2xl font-bold sm:text-[2rem]">{{ board.name }}</h1></div><div class="flex gap-2">{% if can_manage_board %}<a href="{% url 'tasks:board_settings' board.pk %}" class="btn btn-outline btn-sm">Setări board</a>{% endif %}<a href="{% url 'tasks:task_create' board.pk %}" class="btn btn-primary btn-sm">Task nou</a></div></div>
-    <nav class="flex gap-5 border-b border-base-300"><a href="{% url 'tasks:board_kanban' board.pk %}" class="px-1 pb-2 text-sm font-medium hover:text-primary">Kanban</a><span class="border-b-2 border-primary px-1 pb-2 text-sm font-semibold text-primary">Listă</span></nav>
-    <form method="get" class="grid gap-3 border-b border-base-300 pb-4 sm:grid-cols-2 lg:grid-cols-5"><label class="fieldset lg:col-span-2"><span class="fieldset-legend">Caută</span><input name="q" value="{{ filters.q|default:'' }}" class="input input-bordered input-sm w-full" placeholder="Caută task-uri…"></label><label class="fieldset"><span class="fieldset-legend">Prioritate</span><select name="priority" class="select select-bordered select-sm w-full"><option value="">Toate</option>{% for value,label in priority_choices %}<option value="{{ value }}"{% if filters.priority == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><label class="fieldset"><span class="fieldset-legend">Sortare</span><select name="sort" class="select select-bordered select-sm w-full"><option value="due_asc">Termen crescător</option><option value="due_desc"{% if filters.sort == 'due_desc' %} selected{% endif %}>Termen descrescător</option></select></label><div class="flex items-end"><button class="btn btn-primary btn-sm w-full">Aplică</button></div></form>
-    <div class="overflow-x-auto border border-base-300"><table class="table table-sm min-w-[900px]"><thead><tr><th>Task</th><th>Etapă</th><th>Prioritate</th><th>Responsabil</th><th>Termen</th><th>Timp rămas</th><th class="text-right">Acțiuni</th></tr></thead><tbody>{% for task in page %}<tr class="hover:bg-base-200/60"><td><p class="font-semibold">{{ task.title }}</p>{% if task.origin_url %}<a href="{{ task.origin_url }}" class="text-xs text-primary">{{ task.origin_label|default:'Deschide sursa' }} ↗</a>{% endif %}</td><td><span class="badge badge-outline badge-sm">{{ task.stage.name }}</span></td><td>{{ task.get_priority_display }}</td><td>{{ task.assignee.get_full_name|default:task.assignee.username }}</td><td class="whitespace-nowrap">{{ task.due_at|date:'d.m.Y H:i' }}</td><td>{% include "tasks/includes/timer.html" %}</td><td><div class="flex justify-end gap-1">{% if task.can_edit %}<a href="{% url 'tasks:task_edit' task.pk %}" class="btn btn-square btn-ghost btn-xs text-primary hover:bg-primary/10" aria-label="Editează task-ul" title="Editează task-ul"><svg xmlns="http://www.w3.org/2000/svg" class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m16.862 3.487 3.651 3.651M4.5 19.5l4.228-.845a2 2 0 0 0 1.024-.547L20.513 7.347a1.75 1.75 0 0 0 0-2.474l-1.386-1.386a1.75 1.75 0 0 0-2.474 0L5.892 14.248a2 2 0 0 0-.547 1.024L4.5 19.5Z" /></svg></a>{% endif %}</div></td></tr>{% empty %}<tr><td colspan="7" class="py-12 text-center text-muted">Nu există task-uri.</td></tr>{% endfor %}</tbody></table></div>
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+            <p class="text-xs text-muted"><a href="{% url 'tasks:index' %}" class="hover:text-primary">Task-uri</a> / Board</p>
+            <h1 class="ops-title mt-1 text-2xl font-bold sm:text-[2rem]">{{ board.name }}</h1>
+        </div>
+        <div class="flex gap-2">
+            {% if can_manage_board %}<a href="{% url 'tasks:board_settings' board.pk %}" class="btn btn-outline btn-sm">Setări board</a>{% endif %}
+            <a href="{% url 'tasks:task_create' board.pk %}" class="btn btn-primary btn-sm">Task nou</a>
+        </div>
+    </div>
+    <nav class="flex gap-5 border-b border-base-300">
+        <a href="{% url 'tasks:board_kanban' board.pk %}" class="px-1 pb-2 text-sm font-medium hover:text-primary">Kanban</a>
+        <span class="border-b-2 border-primary px-1 pb-2 text-sm font-semibold text-primary">Listă</span>
+    </nav>
+    <form
+        method="get"
+        class="grid gap-3 border-b border-base-300 pb-4 sm:grid-cols-2 lg:grid-cols-5"
+        hx-get="{% url 'tasks:board_list' board.pk %}"
+        hx-target="#task-list-results"
+        hx-swap="outerHTML"
+        hx-push-url="true"
+    >
+        <label class="fieldset lg:col-span-2"><span class="fieldset-legend">Caută</span><input name="q" value="{{ filters.q|default:'' }}" class="input input-bordered input-sm w-full" placeholder="Caută task-uri..."></label>
+        <label class="fieldset"><span class="fieldset-legend">Prioritate</span><select name="priority" class="select select-bordered select-sm w-full"><option value="">Toate</option>{% for value,label in priority_choices %}<option value="{{ value }}"{% if filters.priority == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+        <label class="fieldset"><span class="fieldset-legend">Sortare</span><select name="sort" class="select select-bordered select-sm w-full"><option value="due_asc">Termen crescător</option><option value="due_desc"{% if filters.sort == 'due_desc' %} selected{% endif %}>Termen descrescător</option></select></label>
+        <div class="flex items-end"><button class="btn btn-primary btn-sm w-full">Aplică</button></div>
+    </form>
+    {% include "tasks/includes/board_task_list.html" %}
 </section>
 {% endblock %}
+
 {% block page_scripts %}<script src="{% static 'tasks/tasks.js' %}" defer></script>{% endblock %}
 ```
 
 ## `apps/tasks/templates/tasks/board_settings.html`
 
-Size: 6.2 KB
+Size: 203 B
 
 ```html
 {% extends "layouts/base.html" %}
-{% block title %}Setări {{ board.name }} | Task-uri{% endblock %}
+{% block title %}Set&#259;ri {{ board.name }} | Task-uri{% endblock %}
 {% block content %}
-<section class="space-y-6">
-    {% include "tasks/includes/messages.html" %}
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p class="text-xs text-muted"><a href="{% url 'tasks:index' %}" class="hover:text-primary">Task-uri</a> / Setări</p><h1 class="ops-title mt-1 text-2xl font-bold">{{ board.name }}</h1><p class="mt-1 text-sm text-muted">Membri, proprietate și flux Kanban.</p></div>{% if not board.is_archived %}<a href="{% url 'tasks:board_kanban' board.pk %}" class="btn btn-outline btn-sm">Înapoi la Kanban</a>{% endif %}</div>
-
-    <div class="grid gap-5 lg:grid-cols-2">
-        <section class="border border-base-300 bg-base-100 p-5"><h2 class="font-semibold text-base-content">Membri</h2><p class="mt-1 text-xs text-muted">Task-urile pot fi atribuite doar membrilor activi.</p><div class="mt-4 divide-y divide-base-300">{% for membership in members %}<div class="flex items-center justify-between gap-3 py-3"><div><p class="text-sm font-medium">{{ membership.user.get_full_name|default:membership.user.username }}</p><p class="text-xs text-muted">{% if membership.user_id == board.owner_id %}Proprietar{% else %}Membru{% endif %}{% if not membership.user.is_active %} · Inactiv{% endif %}</p></div>{% if membership.user_id != board.owner_id %}<form method="post" action="{% url 'tasks:member_remove' board.pk membership.user_id %}">{% csrf_token %}<button class="btn btn-ghost btn-xs text-error">Elimină</button></form>{% endif %}</div>{% endfor %}</div>{% if member_form.fields.user.queryset.exists %}<form method="post" action="{% url 'tasks:member_add' board.pk %}" class="mt-4 flex items-end gap-2">{% csrf_token %}<fieldset class="fieldset flex-1"><label class="fieldset-legend" for="{{ member_form.user.id_for_label }}">Adaugă membru</label>{{ member_form.user }}</fieldset><button class="btn btn-primary btn-sm">Adaugă</button></form>{% endif %}</section>
-        <section class="border border-base-300 bg-base-100 p-5"><h2 class="font-semibold">Proprietate și arhivare</h2><p class="mt-1 text-xs text-muted">Proprietarul configurează board-ul; staff-ul păstrează acces de administrare.</p>{% if transfer_form.fields.new_owner.queryset.exists %}<form method="post" action="{% url 'tasks:ownership_transfer' board.pk %}" class="mt-4 space-y-3">{% csrf_token %}<fieldset class="fieldset"><label class="fieldset-legend" for="{{ transfer_form.new_owner.id_for_label }}">Transferă proprietatea</label>{{ transfer_form.new_owner }}</fieldset><button class="btn btn-outline btn-primary btn-sm">Transferă</button></form>{% endif %}<form method="post" action="{% url 'tasks:board_archive' board.pk %}" class="mt-6 border-t border-base-300 pt-4">{% csrf_token %}<input type="hidden" name="archived" value="{% if board.is_archived %}0{% else %}1{% endif %}"><button class="btn btn-outline {% if board.is_archived %}btn-success{% else %}btn-error{% endif %} btn-sm">{% if board.is_archived %}Restaurează board-ul{% else %}Arhivează board-ul{% endif %}</button></form></section>
-    </div>
-
-    <section class="border border-base-300 bg-base-100 p-5"><div><h2 class="font-semibold">Etape Kanban</h2><p class="mt-1 text-xs text-muted">Păstrează cel puțin o etapă activă și una terminală.</p></div><div class="mt-4 space-y-3">{% for row in stage_rows %}<article class="border border-base-300 bg-base-200/40 p-4"><form method="post" action="{% url 'tasks:stage_update' row.stage.pk %}" class="grid items-end gap-3 md:grid-cols-[1.4fr_1fr_auto_auto]">{% csrf_token %}<fieldset class="fieldset"><label class="fieldset-legend" for="{{ row.form.name.id_for_label }}">Nume</label>{{ row.form.name }}</fieldset><fieldset class="fieldset"><label class="fieldset-legend" for="{{ row.form.tone.id_for_label }}">Ton semantic</label>{{ row.form.tone }}</fieldset><label class="flex h-8 items-center gap-2 text-sm">{{ row.form.is_terminal }} Terminală</label><div class="flex gap-1"><button class="btn btn-primary btn-sm">Salvează</button></div></form><div class="mt-3 flex flex-wrap items-end justify-between gap-3 border-t border-base-300 pt-3"><form method="post" action="{% url 'tasks:stage_position' row.stage.pk %}" class="join">{% csrf_token %}<button name="direction" value="up" class="btn btn-ghost btn-xs join-item" aria-label="Mută etapa în sus">↑</button><button name="direction" value="down" class="btn btn-ghost btn-xs join-item" aria-label="Mută etapa în jos">↓</button></form><form method="post" action="{% url 'tasks:stage_delete' row.stage.pk %}" class="flex items-end gap-2">{% csrf_token %}<fieldset class="fieldset"><label class="fieldset-legend" for="{{ row.delete_form.replacement_stage.id_for_label }}">Înlocuire</label>{{ row.delete_form.replacement_stage }}</fieldset><button class="btn btn-ghost btn-xs text-error">Șterge etapa</button></form></div></article>{% endfor %}</div><form method="post" action="{% url 'tasks:stage_create' board.pk %}" class="mt-5 grid items-end gap-3 border-t border-base-300 pt-5 md:grid-cols-[1.4fr_1fr_auto_auto]">{% csrf_token %}<fieldset class="fieldset"><label class="fieldset-legend" for="{{ stage_form.name.id_for_label }}">Etapă nouă</label>{{ stage_form.name }}</fieldset><fieldset class="fieldset"><label class="fieldset-legend" for="{{ stage_form.tone.id_for_label }}">Ton semantic</label>{{ stage_form.tone }}</fieldset><label class="flex h-8 items-center gap-2 text-sm">{{ stage_form.is_terminal }} Terminală</label><button class="btn btn-outline btn-primary btn-sm">Adaugă</button></form></section>
-
-    {% if archived_tasks %}<section class="border border-base-300 bg-base-100 p-5"><h2 class="font-semibold">Task-uri arhivate</h2><div class="mt-3 divide-y divide-base-300">{% for task in archived_tasks %}<div class="flex items-center justify-between gap-3 py-3"><span class="text-sm">{{ task.title }}</span><form method="post" action="{% url 'tasks:task_archive' task.pk %}">{% csrf_token %}<input type="hidden" name="archived" value="0"><input type="hidden" name="next" value="{% url 'tasks:board_settings' board.pk %}"><button class="btn btn-ghost btn-xs text-success">Restaurează</button></form></div>{% endfor %}</div></section>{% endif %}
-</section>
+    {% include "tasks/includes/board_settings_content.html" %}
 {% endblock %}
 ```
 
 ## `apps/tasks/templates/tasks/hub.html`
 
-Size: 8.5 KB
+Size: 4.8 KB
 
 ```html
 {% extends "layouts/base.html" %}
@@ -1339,9 +1362,16 @@ Size: 8.5 KB
         {% if first_board %}<a href="{% url 'tasks:board_kanban' first_board.pk %}" class="px-1 pb-2 text-sm font-medium hover:text-primary">Kanban</a>{% endif %}
     </nav>
 
-    <form method="get" class="grid gap-3 border-b border-base-300 pb-4 sm:grid-cols-2 lg:grid-cols-8">
+    <form
+        method="get"
+        class="grid gap-3 border-b border-base-300 pb-4 sm:grid-cols-2 lg:grid-cols-8"
+        hx-get="{% url 'tasks:index' %}"
+        hx-target="#task-list-results"
+        hx-swap="outerHTML"
+        hx-push-url="true"
+    >
         <label class="fieldset"><span class="fieldset-legend">Board</span><select name="board" class="select select-bordered select-sm w-full"><option value="">Toate board-urile</option>{% for board in boards %}<option value="{{ board.pk }}"{% if filters.board == board.pk|stringformat:'s' %} selected{% endif %}>{{ board.name }}</option>{% endfor %}</select></label>
-        <label class="fieldset lg:col-span-2"><span class="fieldset-legend">Caută</span><input name="q" value="{{ filters.q|default:'' }}" class="input input-bordered input-sm w-full" placeholder="Caută task-uri…"></label>
+        <label class="fieldset lg:col-span-2"><span class="fieldset-legend">Caută</span><input name="q" value="{{ filters.q|default:'' }}" class="input input-bordered input-sm w-full" placeholder="Caută task-uri..."></label>
         <label class="fieldset"><span class="fieldset-legend">Relație</span><select name="relation" class="select select-bordered select-sm w-full"><option value="">Toate</option><option value="assigned"{% if filters.relation == 'assigned' %} selected{% endif %}>Atribuite mie</option><option value="created"{% if filters.relation == 'created' %} selected{% endif %}>Create de mine</option>{% if request.user.is_staff %}<option value="mine"{% if filters.relation == 'mine' %} selected{% endif %}>Doar ale mele</option>{% endif %}</select></label>
         <label class="fieldset"><span class="fieldset-legend">Prioritate</span><select name="priority" class="select select-bordered select-sm w-full"><option value="">Toate</option>{% for value,label in priority_choices %}<option value="{{ value }}"{% if filters.priority == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
         <label class="fieldset"><span class="fieldset-legend">Etapă</span><select name="stage" class="select select-bordered select-sm w-full"><option value="">Toate</option>{% for stage in stage_options %}<option value="{{ stage.pk }}"{% if filters.stage == stage.pk|stringformat:'s' %} selected{% endif %}>{{ stage.board.name }} · {{ stage.name }}</option>{% endfor %}</select></label>
@@ -1349,6 +1379,282 @@ Size: 8.5 KB
         <div class="flex items-end gap-2"><button class="btn btn-primary btn-sm flex-1">Filtrează</button><a href="{% url 'tasks:index' %}" class="btn btn-ghost btn-sm">Resetează</a></div>
     </form>
 
+    {% include "tasks/includes/hub_task_list.html" %}
+    {% else %}
+    <div class="border border-dashed border-base-300 bg-base-100 px-6 py-14 text-center">
+        <h2 class="text-lg font-semibold text-base-content">Creează primul board</h2>
+        <p class="mt-2 text-sm text-muted">Board-urile grupează membri, etape și task-uri colaborative.</p>
+        <a href="{% url 'tasks:board_create' %}" class="btn btn-primary btn-sm mt-5">Board nou</a>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block page_scripts %}<script src="{% static 'tasks/tasks.js' %}" defer></script>{% endblock %}
+```
+
+## `apps/tasks/templates/tasks/includes/board_form_panel.html`
+
+Size: 513 B
+
+```html
+<form
+    id="board-form-panel"
+    method="post"
+    class="space-y-4 border border-base-300 bg-base-100 p-5"
+    hx-post="{% url 'tasks:board_create' %}"
+    hx-target="#board-form-panel"
+    hx-swap="outerHTML"
+>
+    {% csrf_token %}
+    {% include "tasks/includes/form_fields.html" %}
+    <div class="flex justify-end gap-2">
+        <a href="{% url 'tasks:index' %}" class="btn btn-ghost btn-sm">Anuleaz&#259;</a>
+        <button class="btn btn-primary btn-sm">Creeaz&#259; board</button>
+    </div>
+</form>
+```
+
+## `apps/tasks/templates/tasks/includes/board_settings_content.html`
+
+Size: 10.8 KB
+
+```html
+<section id="board-settings-content" class="space-y-6">
+    {% include "tasks/includes/messages.html" %}
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+            <p class="text-xs text-muted"><a href="{% url 'tasks:index' %}" class="hover:text-primary">Task-uri</a> / Set&#259;ri</p>
+            <h1 class="ops-title mt-1 text-2xl font-bold">{{ board.name }}</h1>
+            <p class="mt-1 text-sm text-muted">Membri, proprietate &#537;i flux Kanban.</p>
+        </div>
+        {% if not board.is_archived %}<a href="{% url 'tasks:board_kanban' board.pk %}" class="btn btn-outline btn-sm">&#206;napoi la Kanban</a>{% endif %}
+    </div>
+
+    <div class="grid gap-5 lg:grid-cols-2">
+        <section class="border border-base-300 bg-base-100 p-5">
+            <h2 class="font-semibold text-base-content">Membri</h2>
+            <p class="mt-1 text-xs text-muted">Task-urile pot fi atribuite doar membrilor activi.</p>
+            <div class="mt-4 divide-y divide-base-300">
+                {% for membership in members %}
+                    <div class="flex items-center justify-between gap-3 py-3">
+                        <div>
+                            <p class="text-sm font-medium">{{ membership.user.get_full_name|default:membership.user.username }}</p>
+                            <p class="text-xs text-muted">{% if membership.user_id == board.owner_id %}Proprietar{% else %}Membru{% endif %}{% if not membership.user.is_active %} &middot; Inactiv{% endif %}</p>
+                        </div>
+                        {% if membership.user_id != board.owner_id %}
+                            <form method="post" action="{% url 'tasks:member_remove' board.pk membership.user_id %}" hx-post="{% url 'tasks:member_remove' board.pk membership.user_id %}" hx-target="#board-settings-content" hx-swap="outerHTML">
+                                {% csrf_token %}
+                                <button class="btn btn-ghost btn-xs text-error">Elimin&#259;</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            {% if member_form.fields.user.queryset.exists %}
+                <form method="post" action="{% url 'tasks:member_add' board.pk %}" class="mt-4 flex items-end gap-2" hx-post="{% url 'tasks:member_add' board.pk %}" hx-target="#board-settings-content" hx-swap="outerHTML">
+                    {% csrf_token %}
+                    <fieldset class="fieldset flex-1">
+                        <label class="fieldset-legend" for="{{ member_form.user.id_for_label }}">Adaug&#259; membru</label>
+                        {{ member_form.user }}
+                        {% if member_form.user.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ member_form.user.errors|join:", " }}</p>{% endif %}
+                    </fieldset>
+                    <button class="btn btn-primary btn-sm">Adaug&#259;</button>
+                </form>
+            {% endif %}
+        </section>
+
+        <section class="border border-base-300 bg-base-100 p-5">
+            <h2 class="font-semibold">Proprietate &#537;i arhivare</h2>
+            <p class="mt-1 text-xs text-muted">Proprietarul configureaz&#259; board-ul; staff-ul p&#259;streaz&#259; acces de administrare.</p>
+            {% if transfer_form.fields.new_owner.queryset.exists %}
+                <form method="post" action="{% url 'tasks:ownership_transfer' board.pk %}" class="mt-4 space-y-3" hx-post="{% url 'tasks:ownership_transfer' board.pk %}" hx-target="#board-settings-content" hx-swap="outerHTML">
+                    {% csrf_token %}
+                    <fieldset class="fieldset">
+                        <label class="fieldset-legend" for="{{ transfer_form.new_owner.id_for_label }}">Transfer&#259; proprietatea</label>
+                        {{ transfer_form.new_owner }}
+                        {% if transfer_form.new_owner.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ transfer_form.new_owner.errors|join:", " }}</p>{% endif %}
+                    </fieldset>
+                    <button class="btn btn-outline btn-primary btn-sm">Transfer&#259;</button>
+                </form>
+            {% endif %}
+            <form method="post" action="{% url 'tasks:board_archive' board.pk %}" class="mt-6 border-t border-base-300 pt-4" hx-post="{% url 'tasks:board_archive' board.pk %}" hx-target="#board-settings-content" hx-swap="outerHTML">
+                {% csrf_token %}
+                <input type="hidden" name="archived" value="{% if board.is_archived %}0{% else %}1{% endif %}">
+                <button class="btn btn-outline {% if board.is_archived %}btn-success{% else %}btn-error{% endif %} btn-sm">{% if board.is_archived %}Restaureaz&#259; board-ul{% else %}Arhiveaz&#259; board-ul{% endif %}</button>
+            </form>
+        </section>
+    </div>
+
+    <section class="border border-base-300 bg-base-100 p-5">
+        <div>
+            <h2 class="font-semibold">Etape Kanban</h2>
+            <p class="mt-1 text-xs text-muted">P&#259;streaz&#259; cel pu&#539;in o etap&#259; activ&#259; &#537;i una terminal&#259;.</p>
+        </div>
+        <div class="mt-4 space-y-3">
+            {% for row in stage_rows %}
+                <article class="border border-base-300 bg-base-200/40 p-4">
+                    <form method="post" action="{% url 'tasks:stage_update' row.stage.pk %}" class="grid items-end gap-3 md:grid-cols-[1.4fr_1fr_auto_auto]" hx-post="{% url 'tasks:stage_update' row.stage.pk %}" hx-target="#board-settings-content" hx-swap="outerHTML">
+                        {% csrf_token %}
+                        <fieldset class="fieldset">
+                            <label class="fieldset-legend" for="{{ row.form.name.id_for_label }}">Nume</label>
+                            {{ row.form.name }}
+                            {% if row.form.name.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ row.form.name.errors|join:", " }}</p>{% endif %}
+                        </fieldset>
+                        <fieldset class="fieldset">
+                            <label class="fieldset-legend" for="{{ row.form.tone.id_for_label }}">Ton semantic</label>
+                            {{ row.form.tone }}
+                            {% if row.form.tone.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ row.form.tone.errors|join:", " }}</p>{% endif %}
+                        </fieldset>
+                        <label class="flex h-8 items-center gap-2 text-sm">{{ row.form.is_terminal }} Terminal&#259;</label>
+                        <div class="flex gap-1"><button class="btn btn-primary btn-sm">Salveaz&#259;</button></div>
+                    </form>
+                    <div class="mt-3 flex flex-wrap items-end justify-between gap-3 border-t border-base-300 pt-3">
+                        <form method="post" action="{% url 'tasks:stage_position' row.stage.pk %}" class="join" hx-post="{% url 'tasks:stage_position' row.stage.pk %}" hx-target="#board-settings-content" hx-swap="outerHTML">
+                            {% csrf_token %}
+                            <button name="direction" value="up" class="btn btn-ghost btn-xs join-item" aria-label="Mut&#259; etapa &#238;n sus">&uarr;</button>
+                            <button name="direction" value="down" class="btn btn-ghost btn-xs join-item" aria-label="Mut&#259; etapa &#238;n jos">&darr;</button>
+                        </form>
+                        <form method="post" action="{% url 'tasks:stage_delete' row.stage.pk %}" class="flex items-end gap-2" hx-post="{% url 'tasks:stage_delete' row.stage.pk %}" hx-target="#board-settings-content" hx-swap="outerHTML">
+                            {% csrf_token %}
+                            <fieldset class="fieldset">
+                                <label class="fieldset-legend" for="{{ row.delete_form.replacement_stage.id_for_label }}">&#206;nlocuire</label>
+                                {{ row.delete_form.replacement_stage }}
+                                {% if row.delete_form.replacement_stage.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ row.delete_form.replacement_stage.errors|join:", " }}</p>{% endif %}
+                            </fieldset>
+                            <button class="btn btn-ghost btn-xs text-error">&#536;terge etapa</button>
+                        </form>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+        <form method="post" action="{% url 'tasks:stage_create' board.pk %}" class="mt-5 grid items-end gap-3 border-t border-base-300 pt-5 md:grid-cols-[1.4fr_1fr_auto_auto]" hx-post="{% url 'tasks:stage_create' board.pk %}" hx-target="#board-settings-content" hx-swap="outerHTML">
+            {% csrf_token %}
+            <fieldset class="fieldset">
+                <label class="fieldset-legend" for="{{ stage_form.name.id_for_label }}">Etap&#259; nou&#259;</label>
+                {{ stage_form.name }}
+                {% if stage_form.name.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ stage_form.name.errors|join:", " }}</p>{% endif %}
+            </fieldset>
+            <fieldset class="fieldset">
+                <label class="fieldset-legend" for="{{ stage_form.tone.id_for_label }}">Ton semantic</label>
+                {{ stage_form.tone }}
+                {% if stage_form.tone.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ stage_form.tone.errors|join:", " }}</p>{% endif %}
+            </fieldset>
+            <label class="flex h-8 items-center gap-2 text-sm">{{ stage_form.is_terminal }} Terminal&#259;</label>
+            <button class="btn btn-outline btn-primary btn-sm">Adaug&#259;</button>
+        </form>
+    </section>
+
+    {% if archived_tasks %}
+        <section class="border border-base-300 bg-base-100 p-5">
+            <h2 class="font-semibold">Task-uri arhivate</h2>
+            <div class="mt-3 divide-y divide-base-300">
+                {% for task in archived_tasks %}
+                    <div class="flex items-center justify-between gap-3 py-3">
+                        <span class="text-sm">{{ task.title }}</span>
+                        <form method="post" action="{% url 'tasks:task_archive' task.pk %}" hx-post="{% url 'tasks:task_archive' task.pk %}" hx-target="#board-settings-content" hx-swap="outerHTML">
+                            {% csrf_token %}
+                            <input type="hidden" name="archived" value="0">
+                            <input type="hidden" name="next" value="{% url 'tasks:board_settings' board.pk %}">
+                            <button class="btn btn-ghost btn-xs text-success">Restaureaz&#259;</button>
+                        </form>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+    {% endif %}
+</section>
+```
+
+## `apps/tasks/templates/tasks/includes/board_task_list.html`
+
+Size: 3.5 KB
+
+```html
+<div id="task-list-results" class="space-y-3">
+    <div class="overflow-x-auto border border-base-300">
+        <table class="table table-sm min-w-[900px]">
+            <thead><tr><th>Task</th><th>Etapă</th><th>Prioritate</th><th>Responsabil</th><th>Termen</th><th>Timp rămas</th><th class="text-right">Acțiuni</th></tr></thead>
+            <tbody>
+            {% for task in page %}
+                <tr class="hover:bg-base-200/60">
+                    <td><p class="font-semibold">{{ task.title }}</p>{% if task.origin_url %}<a href="{{ task.origin_url }}" class="text-xs text-primary">{{ task.origin_label|default:'Deschide sursa' }} ↗</a>{% endif %}</td>
+                    <td><span class="badge badge-outline badge-sm">{{ task.stage.name }}</span></td>
+                    <td>{{ task.get_priority_display }}</td>
+                    <td>{{ task.assignee.get_full_name|default:task.assignee.username }}</td>
+                    <td class="whitespace-nowrap">{{ task.due_at|date:'d.m.Y H:i' }}</td>
+                    <td>{% include "tasks/includes/timer.html" %}</td>
+                    <td>
+                        <div class="flex justify-end gap-1">
+                            {% if task.can_edit %}
+                                <a href="{% url 'tasks:task_edit' task.pk %}" class="btn btn-square btn-ghost btn-xs text-primary hover:bg-primary/10" aria-label="Editează task-ul" title="Editează task-ul">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m16.862 3.487 3.651 3.651M4.5 19.5l4.228-.845a2 2 0 0 0 1.024-.547L20.513 7.347a1.75 1.75 0 0 0 0-2.474l-1.386-1.386a1.75 1.75 0 0 0-2.474 0L5.892 14.248a2 2 0 0 0-.547 1.024L4.5 19.5Z" /></svg>
+                                </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="7" class="py-12 text-center text-muted">Nu există task-uri.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if page.paginator.num_pages > 1 %}
+    <div class="flex items-center justify-between text-sm text-muted">
+        <span>Pagina {{ page.number }} din {{ page.paginator.num_pages }}</span>
+        <div class="join">
+            {% if page.has_previous %}
+                <a
+                    class="btn btn-sm join-item"
+                    href="?{% if filters.urlencode %}{{ filters.urlencode }}&{% endif %}page={{ page.previous_page_number }}"
+                    hx-get="?{% if filters.urlencode %}{{ filters.urlencode }}&{% endif %}page={{ page.previous_page_number }}"
+                    hx-target="#task-list-results"
+                    hx-swap="outerHTML"
+                    hx-push-url="true"
+                >‹</a>
+            {% endif %}
+            {% if page.has_next %}
+                <a
+                    class="btn btn-sm join-item"
+                    href="?{% if filters.urlencode %}{{ filters.urlencode }}&{% endif %}page={{ page.next_page_number }}"
+                    hx-get="?{% if filters.urlencode %}{{ filters.urlencode }}&{% endif %}page={{ page.next_page_number }}"
+                    hx-target="#task-list-results"
+                    hx-swap="outerHTML"
+                    hx-push-url="true"
+                >›</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+```
+
+## `apps/tasks/templates/tasks/includes/form_fields.html`
+
+Size: 775 B
+
+```html
+{% if form.non_field_errors %}
+    <div class="alert alert-error py-2 text-sm" role="alert">{{ form.non_field_errors|join:", " }}</div>
+{% endif %}
+{% for field in form %}
+    <fieldset class="fieldset min-w-0 {% if field.name == 'description' %}sm:col-span-2{% endif %}">
+        <label class="fieldset-legend" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="text-error" aria-hidden="true"> *</span>{% endif %}</label>
+        {{ field }}
+        {% if field.help_text %}<p class="label whitespace-normal text-xs text-muted">{{ field.help_text }}</p>{% endif %}
+        {% if field.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ field.errors|join:", " }}</p>{% endif %}
+    </fieldset>
+{% endfor %}
+
+```
+
+## `apps/tasks/templates/tasks/includes/hub_task_list.html`
+
+Size: 4.8 KB
+
+```html
+<div id="task-list-results" class="space-y-3">
     <div class="overflow-x-auto border border-base-300 bg-base-100">
         <table class="table table-sm min-w-[980px]">
             <thead><tr><th>Task</th><th>Board</th><th>Etapă</th><th>Prioritate</th><th>Responsabil</th><th>Termen</th><th>Timp rămas</th><th class="text-right">Acțiuni</th></tr></thead>
@@ -1396,38 +1702,33 @@ Size: 8.5 KB
         </table>
     </div>
     {% if page.paginator.num_pages > 1 %}
-    <div class="flex items-center justify-between text-sm text-muted"><span>Pagina {{ page.number }} din {{ page.paginator.num_pages }}</span><div class="join">{% if page.has_previous %}<a class="btn btn-sm join-item" href="?page={{ page.previous_page_number }}">‹</a>{% endif %}{% if page.has_next %}<a class="btn btn-sm join-item" href="?page={{ page.next_page_number }}">›</a>{% endif %}</div></div>
-    {% endif %}
-    {% else %}
-    <div class="border border-dashed border-base-300 bg-base-100 px-6 py-14 text-center">
-        <h2 class="text-lg font-semibold text-base-content">Creează primul board</h2>
-        <p class="mt-2 text-sm text-muted">Board-urile grupează membri, etape și task-uri colaborative.</p>
-        <a href="{% url 'tasks:board_create' %}" class="btn btn-primary btn-sm mt-5">Board nou</a>
+    <div class="flex items-center justify-between text-sm text-muted">
+        <span>Pagina {{ page.number }} din {{ page.paginator.num_pages }}</span>
+        <div class="join">
+            {% if page.has_previous %}
+                <a
+                    class="btn btn-sm join-item"
+                    href="?{% if filters.urlencode %}{{ filters.urlencode }}&{% endif %}page={{ page.previous_page_number }}"
+                    hx-get="?{% if filters.urlencode %}{{ filters.urlencode }}&{% endif %}page={{ page.previous_page_number }}"
+                    hx-target="#task-list-results"
+                    hx-swap="outerHTML"
+                    hx-push-url="true"
+                >‹</a>
+            {% endif %}
+            {% if page.has_next %}
+                <a
+                    class="btn btn-sm join-item"
+                    href="?{% if filters.urlencode %}{{ filters.urlencode }}&{% endif %}page={{ page.next_page_number }}"
+                    hx-get="?{% if filters.urlencode %}{{ filters.urlencode }}&{% endif %}page={{ page.next_page_number }}"
+                    hx-target="#task-list-results"
+                    hx-swap="outerHTML"
+                    hx-push-url="true"
+                >›</a>
+            {% endif %}
+        </div>
     </div>
     {% endif %}
-</section>
-{% endblock %}
-
-{% block page_scripts %}<script src="{% static 'tasks/tasks.js' %}" defer></script>{% endblock %}
-```
-
-## `apps/tasks/templates/tasks/includes/form_fields.html`
-
-Size: 775 B
-
-```html
-{% if form.non_field_errors %}
-    <div class="alert alert-error py-2 text-sm" role="alert">{{ form.non_field_errors|join:", " }}</div>
-{% endif %}
-{% for field in form %}
-    <fieldset class="fieldset min-w-0 {% if field.name == 'description' %}sm:col-span-2{% endif %}">
-        <label class="fieldset-legend" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="text-error" aria-hidden="true"> *</span>{% endif %}</label>
-        {{ field }}
-        {% if field.help_text %}<p class="label whitespace-normal text-xs text-muted">{{ field.help_text }}</p>{% endif %}
-        {% if field.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ field.errors|join:", " }}</p>{% endif %}
-    </fieldset>
-{% endfor %}
-
+</div>
 ```
 
 ## `apps/tasks/templates/tasks/includes/messages.html`
@@ -1443,6 +1744,39 @@ Size: 316 B
 </div>
 {% endif %}
 
+```
+
+## `apps/tasks/templates/tasks/includes/task_form_panel.html`
+
+Size: 971 B
+
+```html
+<form
+    id="task-form-panel"
+    method="post"
+    class="space-y-5 border border-base-300 bg-base-100 p-5"
+    {% if not task %}
+        hx-post="{% url 'tasks:task_create' board.pk %}"
+        hx-target="#task-form-panel"
+        hx-swap="outerHTML"
+    {% endif %}
+>
+    {% csrf_token %}
+    <div class="grid gap-x-4 sm:grid-cols-2">
+        {% include "tasks/includes/form_fields.html" %}
+    </div>
+    <div class="flex flex-wrap justify-between gap-2">
+        <div>
+            {% if task %}
+                <button type="submit" formaction="{% url 'tasks:task_archive' task.pk %}" name="archived" value="1" class="btn btn-outline btn-error btn-sm">Arhiveaz&#259;</button>
+            {% endif %}
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'tasks:board_kanban' board.pk %}" class="btn btn-ghost btn-sm">Anuleaz&#259;</a>
+            <button class="btn btn-primary btn-sm">Salveaz&#259;</button>
+        </div>
+    </div>
+</form>
 ```
 
 ## `apps/tasks/templates/tasks/includes/timer.html`
@@ -1465,18 +1799,25 @@ Size: 573 B
 
 ## `apps/tasks/templates/tasks/task_form.html`
 
-Size: 1.1 KB
+Size: 588 B
 
 ```html
 {% extends "layouts/base.html" %}
-{% block title %}{% if task %}Editează {{ task.title }}{% else %}Task nou{% endif %} | Task-uri{% endblock %}
-{% block content %}<section class="mx-auto max-w-2xl space-y-5"><div><p class="text-xs text-muted"><a href="{% url 'tasks:board_kanban' board.pk %}" class="hover:text-primary">{{ board.name }}</a> / Task</p><h1 class="ops-title mt-1 text-2xl font-bold">{% if task %}Editează task-ul{% else %}Task nou{% endif %}</h1></div><form method="post" class="space-y-5 border border-base-300 bg-base-100 p-5">{% csrf_token %}<div class="grid gap-x-4 sm:grid-cols-2">{% include "tasks/includes/form_fields.html" %}</div><div class="flex flex-wrap justify-between gap-2"><div>{% if task %}<button type="submit" formaction="{% url 'tasks:task_archive' task.pk %}" name="archived" value="1" class="btn btn-outline btn-error btn-sm">Arhivează</button>{% endif %}</div><div class="flex gap-2"><a href="{% url 'tasks:board_kanban' board.pk %}" class="btn btn-ghost btn-sm">Anulează</a><button class="btn btn-primary btn-sm">Salvează</button></div></div></form></section>{% endblock %}
-
+{% block title %}{% if task %}Editeaz&#259; {{ task.title }}{% else %}Task nou{% endif %} | Task-uri{% endblock %}
+{% block content %}
+<section class="mx-auto max-w-2xl space-y-5">
+    <div>
+        <p class="text-xs text-muted"><a href="{% url 'tasks:board_kanban' board.pk %}" class="hover:text-primary">{{ board.name }}</a> / Task</p>
+        <h1 class="ops-title mt-1 text-2xl font-bold">{% if task %}Editeaz&#259; task-ul{% else %}Task nou{% endif %}</h1>
+    </div>
+    {% include "tasks/includes/task_form_panel.html" %}
+</section>
+{% endblock %}
 ```
 
 ## `apps/tasks/tests.py`
 
-Size: 12.5 KB
+Size: 16.5 KB
 
 ```python
 from datetime import timedelta
@@ -1757,6 +2098,102 @@ class TasksAppTests(TestCase):
         response = self.client.get(reverse("tasks:index"), {"relation": "assigned", "priority": Task.Priority.HIGH})
         self.assertContains(response, "Verifică documentele")
 
+    def test_hub_htmx_filter_returns_task_list_partial(self):
+        response = self.client.get(
+            reverse("tasks:index"),
+            {"relation": "created", "priority": Task.Priority.HIGH},
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="task-list-results"')
+        self.assertContains(response, self.task.title)
+        self.assertNotContains(response, "Task-urile mele")
+        self.assertNotContains(response, "<form")
+
+    def test_board_list_htmx_filter_returns_task_list_partial(self):
+        low_priority_title = "Task low priority"
+        create_task(
+            actor=self.owner,
+            board=self.board,
+            assignee=self.owner,
+            title=low_priority_title,
+            priority=Task.Priority.LOW,
+            due_at=timezone.now() + timedelta(days=1),
+        )
+        response = self.client.get(
+            reverse("tasks:board_list", args=[self.board.pk]),
+            {"priority": Task.Priority.HIGH},
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="task-list-results"')
+        self.assertContains(response, self.task.title)
+        self.assertNotContains(response, low_priority_title)
+        self.assertNotContains(response, self.board.name)
+        self.assertNotContains(response, "<form")
+
+    def test_board_create_htmx_invalid_returns_form_partial(self):
+        response = self.client.post(
+            reverse("tasks:board_create"),
+            {"name": ""},
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertContains(response, 'id="board-form-panel"', status_code=400)
+        self.assertNotContains(response, "Board nou", status_code=400)
+
+    def test_task_create_htmx_success_uses_hx_redirect(self):
+        due_at = timezone.localtime(timezone.now() + timedelta(days=1)).strftime("%Y-%m-%dT%H:%M")
+        response = self.client.post(
+            reverse("tasks:task_create", args=[self.board.pk]),
+            {
+                "title": "Task creat prin HTMX",
+                "description": "",
+                "assignee": self.assignee.pk,
+                "stage": self.todo.pk,
+                "priority": Task.Priority.MEDIUM,
+                "start_at": "",
+                "due_at": due_at,
+            },
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.headers["HX-Redirect"], reverse("tasks:board_kanban", args=[self.board.pk]))
+        self.assertTrue(Task.objects.filter(board=self.board, title="Task creat prin HTMX").exists())
+
+    def test_task_create_htmx_invalid_returns_form_partial(self):
+        response = self.client.post(
+            reverse("tasks:task_create", args=[self.board.pk]),
+            {
+                "title": "",
+                "description": "",
+                "assignee": self.assignee.pk,
+                "stage": self.todo.pk,
+                "priority": Task.Priority.MEDIUM,
+                "start_at": "",
+                "due_at": "",
+            },
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertContains(response, 'id="task-form-panel"', status_code=400)
+        self.assertNotContains(response, "Task nou", status_code=400)
+
+    def test_stage_create_htmx_refreshes_settings_section(self):
+        response = self.client.post(
+            reverse("tasks:stage_create", args=[self.board.pk]),
+            {
+                "new-stage-name": "Validare",
+                "new-stage-tone": TaskStage.Tone.INFO,
+            },
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="board-settings-content"')
+        self.assertContains(response, "Validare")
+        self.assertTrue(self.board.stages.filter(name="Validare").exists())
+        self.assertNotContains(response, "<html")
+
     def test_kanban_filters_by_assignee_and_priority(self):
         create_task(
             actor=self.owner,
@@ -1835,7 +2272,7 @@ def validate_stage_balance(*, terminal_count: int, non_terminal_count: int) -> N
 
 ## `apps/tasks/views.py`
 
-Size: 19.6 KB
+Size: 23.5 KB
 
 ```python
 import hashlib
@@ -1847,7 +2284,7 @@ from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import IntegrityError
 from django.db.models import Q
-from django.http import Http404, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views import View
@@ -1897,6 +2334,16 @@ def _error_text(exc: ValidationError) -> str:
     return " ".join(exc.messages)
 
 
+def _is_htmx(request) -> bool:
+    return request.headers.get("HX-Request") == "true"
+
+
+def _htmx_redirect(url: str) -> HttpResponse:
+    response = HttpResponse(status=204)
+    response["HX-Redirect"] = url
+    return response
+
+
 def _decorate_tasks(tasks, user):
     for task in tasks:
         task.can_edit = user_can_edit_task(user=user, task=task)
@@ -1934,6 +2381,7 @@ def _filtered_tasks(request, queryset):
 
 class TaskHubView(LoginRequiredMixin, View):
     template_name = "tasks/hub.html"
+    partial_template_name = "tasks/includes/hub_task_list.html"
 
     def get(self, request):
         boards = list(accessible_boards(user=request.user))
@@ -1942,9 +2390,10 @@ class TaskHubView(LoginRequiredMixin, View):
         page = paginator.get_page(request.GET.get("page"))
         _decorate_tasks(page.object_list, request.user)
         stage_options = TaskStage.objects.filter(board__in=boards).order_by("board__name", "position")
+        template_name = self.partial_template_name if request.headers.get("HX-Request") == "true" else self.template_name
         return render(
             request,
-            self.template_name,
+            template_name,
             {
                 "boards": boards,
                 "page": page,
@@ -1958,6 +2407,7 @@ class TaskHubView(LoginRequiredMixin, View):
 
 class BoardCreateView(LoginRequiredMixin, View):
     template_name = "tasks/board_form.html"
+    partial_template_name = "tasks/includes/board_form_panel.html"
 
     def get(self, request):
         return render(request, self.template_name, {"form": BoardForm()})
@@ -1971,8 +2421,11 @@ class BoardCreateView(LoginRequiredMixin, View):
                 form.add_error("name", "Ai deja un board cu acest nume.")
             else:
                 messages.success(request, "Board-ul a fost creat.")
+                if _is_htmx(request):
+                    return _htmx_redirect(reverse("tasks:board_kanban", kwargs={"board_id": board.pk}))
                 return redirect("tasks:board_kanban", board_id=board.pk)
-        return render(request, self.template_name, {"form": form}, status=400)
+        template_name = self.partial_template_name if _is_htmx(request) else self.template_name
+        return render(request, template_name, {"form": form}, status=400)
 
 
 def _board_context(*, request, board, task_form=None):
@@ -2018,6 +2471,7 @@ class BoardKanbanView(LoginRequiredMixin, View):
 
 class BoardListView(LoginRequiredMixin, View):
     template_name = "tasks/board_list.html"
+    partial_template_name = "tasks/includes/board_task_list.html"
 
     def get(self, request, board_id):
         board = get_accessible_board(user=request.user, board_id=board_id)
@@ -2026,11 +2480,13 @@ class BoardListView(LoginRequiredMixin, View):
         _decorate_tasks(page.object_list, request.user)
         context = _board_context(request=request, board=board)
         context.update({"page": page, "priority_choices": Task.Priority.choices, "filters": request.GET})
-        return render(request, self.template_name, context)
+        template_name = self.partial_template_name if request.headers.get("HX-Request") == "true" else self.template_name
+        return render(request, template_name, context)
 
 
 class TaskCreateView(LoginRequiredMixin, View):
     template_name = "tasks/task_form.html"
+    partial_template_name = "tasks/includes/task_form_panel.html"
 
     def get(self, request, board_id):
         board = get_accessible_board(user=request.user, board_id=board_id)
@@ -2046,12 +2502,16 @@ class TaskCreateView(LoginRequiredMixin, View):
                 form.add_error(None, _error_text(exc))
             else:
                 messages.success(request, "Task-ul a fost creat.")
+                if _is_htmx(request):
+                    return _htmx_redirect(reverse("tasks:board_kanban", kwargs={"board_id": board.pk}))
                 return redirect("tasks:board_kanban", board_id=board.pk)
-        return render(request, self.template_name, {"board": board, "form": form}, status=400)
+        template_name = self.partial_template_name if _is_htmx(request) else self.template_name
+        return render(request, template_name, {"board": board, "form": form}, status=400)
 
 
 class TaskEditView(LoginRequiredMixin, View):
     template_name = "tasks/task_form.html"
+    partial_template_name = "tasks/includes/task_form_panel.html"
 
     def dispatch(self, request, *args, **kwargs):
         self.task = get_visible_task(user=request.user, task_id=kwargs["task_id"])
@@ -2072,8 +2532,11 @@ class TaskEditView(LoginRequiredMixin, View):
                 form.add_error(None, _error_text(exc))
             else:
                 messages.success(request, "Task-ul a fost actualizat.")
+                if _is_htmx(request):
+                    return _htmx_redirect(reverse("tasks:board_kanban", kwargs={"board_id": self.task.board_id}))
                 return redirect("tasks:board_kanban", board_id=self.task.board_id)
-        return render(request, self.template_name, {"board": self.task.board, "task": self.task, "form": form}, status=400)
+        template_name = self.partial_template_name if _is_htmx(request) else self.template_name
+        return render(request, template_name, {"board": self.task.board, "task": self.task, "form": form}, status=400)
 
 
 class TaskMoveView(LoginRequiredMixin, View):
@@ -2123,7 +2586,56 @@ class TaskArchiveView(LoginRequiredMixin, View):
         except ValidationError as exc:
             raise Http404(_error_text(exc)) from exc
         messages.success(request, "Task arhivat." if archived else "Task restaurat.")
+        if _is_htmx(request):
+            next_url = request.POST.get("next") or reverse("tasks:board_kanban", kwargs={"board_id": task.board_id})
+            settings_url = reverse("tasks:board_settings", kwargs={"board_id": task.board_id})
+            if next_url == settings_url:
+                return _render_board_settings(request, task.board)
+            return _htmx_redirect(next_url)
         return redirect(request.POST.get("next") or reverse("tasks:board_kanban", kwargs={"board_id": task.board_id}))
+
+
+def _board_settings_context(
+    *,
+    request,
+    board,
+    member_form=None,
+    transfer_form=None,
+    stage_form=None,
+    stage_forms=None,
+    stage_delete_forms=None,
+):
+    stage_forms = stage_forms or {}
+    stage_delete_forms = stage_delete_forms or {}
+    stages = list(board.stages.order_by("position"))
+    stage_rows = [
+        {
+            "stage": stage,
+            "form": stage_forms.get(stage.pk) or StageForm(instance=stage, prefix=f"stage-{stage.pk}"),
+            "delete_form": stage_delete_forms.get(stage.pk) or StageDeleteForm(stage=stage, prefix=f"delete-{stage.pk}"),
+        }
+        for stage in stages
+    ]
+    archived_tasks = visible_board_tasks(user=request.user, board=board, include_archived=True).filter(archived_at__isnull=False)
+    return {
+        "board": board,
+        "members": board_members(board=board, active_only=False),
+        "member_form": member_form or MemberAddForm(board=board),
+        "transfer_form": transfer_form or OwnershipTransferForm(board=board),
+        "stage_form": stage_form or StageForm(prefix="new-stage"),
+        "stage_rows": stage_rows,
+        "archived_tasks": archived_tasks,
+    }
+
+
+def _render_board_settings(request, board, *, status=200, **context_overrides):
+    template_name = "tasks/includes/board_settings_content.html" if _is_htmx(request) else BoardSettingsView.template_name
+    return render(
+        request,
+        template_name,
+        _board_settings_context(request=request, board=board, **context_overrides),
+        status=status,
+    )
 
 
 class BoardSettingsView(LoginRequiredMixin, View):
@@ -2132,29 +2644,7 @@ class BoardSettingsView(LoginRequiredMixin, View):
     def get(self, request, board_id):
         board = get_accessible_board(user=request.user, board_id=board_id, include_archived=True)
         require_board_manager(user=request.user, board=board)
-        stages = list(board.stages.order_by("position"))
-        stage_rows = [
-            {
-                "stage": stage,
-                "form": StageForm(instance=stage, prefix=f"stage-{stage.pk}"),
-                "delete_form": StageDeleteForm(stage=stage, prefix=f"delete-{stage.pk}"),
-            }
-            for stage in stages
-        ]
-        archived_tasks = visible_board_tasks(user=request.user, board=board, include_archived=True).filter(archived_at__isnull=False)
-        return render(
-            request,
-            self.template_name,
-            {
-                "board": board,
-                "members": board_members(board=board, active_only=False),
-                "member_form": MemberAddForm(board=board),
-                "transfer_form": OwnershipTransferForm(board=board),
-                "stage_form": StageForm(prefix="new-stage"),
-                "stage_rows": stage_rows,
-                "archived_tasks": archived_tasks,
-            },
-        )
+        return _render_board_settings(request, board)
 
 
 class MemberAddView(LoginRequiredMixin, View):
@@ -2167,6 +2657,8 @@ class MemberAddView(LoginRequiredMixin, View):
             messages.success(request, "Membru adăugat.")
         else:
             messages.error(request, "Selectează un utilizator activ care nu este deja membru.")
+        if _is_htmx(request):
+            return _render_board_settings(request, board, member_form=form if form.errors else None, status=400 if form.errors else 200)
         return redirect("tasks:board_settings", board_id=board.pk)
 
 
@@ -2181,6 +2673,8 @@ class MemberRemoveView(LoginRequiredMixin, View):
             messages.error(request, _error_text(exc))
         else:
             messages.success(request, "Membru eliminat.")
+        if _is_htmx(request):
+            return _render_board_settings(request, board)
         return redirect("tasks:board_settings", board_id=board.pk)
 
 
@@ -2194,6 +2688,8 @@ class OwnershipTransferView(LoginRequiredMixin, View):
             messages.success(request, "Proprietatea board-ului a fost transferată.")
         else:
             messages.error(request, "Alege un membru activ.")
+        if _is_htmx(request):
+            return _render_board_settings(request, board, transfer_form=form if form.errors else None, status=400 if form.errors else 200)
         return redirect("tasks:board_settings", board_id=board.pk)
 
 
@@ -2204,6 +2700,10 @@ class BoardArchiveView(LoginRequiredMixin, View):
         archived = request.POST.get("archived", "1") != "0"
         set_board_archived(actor=request.user, board=board, archived=archived)
         messages.success(request, "Board arhivat." if archived else "Board restaurat.")
+        if _is_htmx(request):
+            if not archived:
+                return _htmx_redirect(reverse("tasks:board_kanban", kwargs={"board_id": board.pk}))
+            return _render_board_settings(request, board)
         return redirect("tasks:board_settings", board_id=board.pk) if archived else redirect("tasks:board_kanban", board_id=board.pk)
 
 
@@ -2211,7 +2711,7 @@ class StageCreateView(LoginRequiredMixin, View):
     def post(self, request, board_id):
         board = get_accessible_board(user=request.user, board_id=board_id, include_archived=True)
         require_board_manager(user=request.user, board=board)
-        form = StageForm(request.POST)
+        form = StageForm(request.POST, prefix="new-stage")
         if form.is_valid():
             try:
                 create_stage(actor=request.user, board=board, **form.cleaned_data)
@@ -2221,6 +2721,8 @@ class StageCreateView(LoginRequiredMixin, View):
                 messages.success(request, "Etapă adăugată.")
         else:
             messages.error(request, "Verifică datele etapei.")
+        if _is_htmx(request):
+            return _render_board_settings(request, board, stage_form=form if form.errors else None, status=400 if form.errors else 200)
         return redirect("tasks:board_settings", board_id=board.pk)
 
 
@@ -2229,7 +2731,7 @@ class StageUpdateView(LoginRequiredMixin, View):
         stage = get_object_or_404(TaskStage.objects.select_related("board"), pk=stage_id)
         get_accessible_board(user=request.user, board_id=stage.board_id, include_archived=True)
         require_board_manager(user=request.user, board=stage.board)
-        form = StageForm(request.POST, instance=stage)
+        form = StageForm(request.POST, instance=stage, prefix=f"stage-{stage.pk}")
         if form.is_valid():
             try:
                 update_stage(actor=request.user, stage=stage, **form.cleaned_data)
@@ -2239,6 +2741,9 @@ class StageUpdateView(LoginRequiredMixin, View):
                 messages.success(request, "Etapă actualizată.")
         else:
             messages.error(request, "Verifică datele etapei.")
+        if _is_htmx(request):
+            stage_forms = {stage.pk: form} if form.errors else None
+            return _render_board_settings(request, stage.board, stage_forms=stage_forms, status=400 if form.errors else 200)
         return redirect("tasks:board_settings", board_id=stage.board_id)
 
 
@@ -2249,6 +2754,8 @@ class StagePositionView(LoginRequiredMixin, View):
         require_board_manager(user=request.user, board=stage.board)
         direction = -1 if request.POST.get("direction") == "up" else 1
         move_stage_position(actor=request.user, stage=stage, direction=direction)
+        if _is_htmx(request):
+            return _render_board_settings(request, stage.board)
         return redirect("tasks:board_settings", board_id=stage.board_id)
 
 
@@ -2257,7 +2764,7 @@ class StageDeleteView(LoginRequiredMixin, View):
         stage = get_object_or_404(TaskStage.objects.select_related("board"), pk=stage_id)
         get_accessible_board(user=request.user, board_id=stage.board_id, include_archived=True)
         require_board_manager(user=request.user, board=stage.board)
-        form = StageDeleteForm(request.POST, stage=stage)
+        form = StageDeleteForm(request.POST, stage=stage, prefix=f"delete-{stage.pk}")
         if form.is_valid():
             try:
                 delete_stage(actor=request.user, stage=stage, replacement=form.cleaned_data["replacement_stage"])
@@ -2267,6 +2774,9 @@ class StageDeleteView(LoginRequiredMixin, View):
                 messages.success(request, "Etapa a fost eliminată, iar task-urile au fost mutate.")
         else:
             messages.error(request, "Alege o etapă validă de înlocuire.")
+        if _is_htmx(request):
+            stage_delete_forms = {stage.pk: form} if form.errors else None
+            return _render_board_settings(request, stage.board, stage_delete_forms=stage_delete_forms, status=400 if form.errors else 200)
         return redirect("tasks:board_settings", board_id=stage.board_id)
 
 

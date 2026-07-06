@@ -363,7 +363,7 @@ services:
 Size: 1.2 KB
 
 ```dockerfile
-FROM node:22-bookworm-slim AS frontend
+FROM node:24-bookworm-slim AS frontend
 
 WORKDIR /build
 
@@ -3279,7 +3279,7 @@ Size: 155 B
 
 ## `README.md`
 
-Size: 3.4 KB
+Size: 3.7 KB
 
 ````markdown
 # Platforma TUVTK
@@ -3381,6 +3381,14 @@ See:
 frontend.md
 ```
 
+Additional focused guides:
+
+```text
+docs/frontend/table-patterns.md
+codex-prompt-demos/custom-js-to-alpine.md
+codex-prompt-demos/htmx-alpine-phased-migration.md
+```
+
 Short version:
 
 - Tailwind/daisyUI: layout and components.
@@ -3401,6 +3409,12 @@ For app-specific work, also read the target app file:
 
 ```text
 apps/<app>/AGENTS.md
+```
+
+Prompt examples live in:
+
+```text
+codex-prompt-demos/README.md
 ```
 
 Use generated context only for discovery:
@@ -3597,6 +3611,112 @@ Dockerfile text eol=lf
 *.py text eol=lf
 ```
 
+## `.github/workflows/ci.yml`
+
+Size: 2.7 KB
+
+Redacted secret-like assignments: 3
+
+```yaml
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Django checks and tests
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && contains(github.event.head_commit.message, '[run-ci]')) ||
+      (github.event_name == 'pull_request' && contains(format('{0} {1}', github.event.pull_request.title, github.event.pull_request.body), '[run-ci]'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:17-bookworm
+        env:
+          POSTGRES_DB: platforma_tuvtk
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: <redacted>
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d platforma_tuvtk"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DJANGO_DEPLOYMENT_MODE: development
+      DJANGO_DEBUG: "true"
+      DJANGO_SECRET_KEY: <redacted>
+      DJANGO_ALLOWED_HOSTS: 127.0.0.1,localhost,testserver
+      POSTGRES_DB: platforma_tuvtk
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: <redacted>
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: "5432"
+      POSTGRES_CONN_MAX_AGE: "0"
+      POSTGRES_CONN_HEALTH_CHECKS: "true"
+      NPM_BIN_PATH: npm
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+            requirements-deploy.txt
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: theme/static_src/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm --prefix theme/static_src ci
+
+      - name: Build frontend assets
+        run: npm --prefix theme/static_src run build
+
+      - name: Check Django configuration
+        run: python manage.py check
+
+      - name: Check for missing migrations
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Run tests
+        run: python manage.py test --verbosity 2
+```
+
 ## `.gitignore`
 
 Size: 320 B
@@ -3636,7 +3756,7 @@ Size: 84 B
 {
   "backend": "windows-native",
   "default_mode": "dev",
-  "dev_port": 8000
+  "dev_port": 8027
 }
 ```
 
@@ -4437,6 +4557,380 @@ case "$command_name" in
     *) fail "unknown command: $command_name (run './install.sh help')" ;;
 esac
 ```
+
+## `codex-prompt-demos/custom-js-to-alpine.md`
+
+Size: 4.0 KB
+
+````markdown
+# Custom JavaScript to Alpine.js Prompt Guide
+
+Use this when you want Codex to check whether an existing custom JavaScript behavior can be replaced by Alpine.js.
+
+The goal is not to delete all JavaScript. The goal is to move simple local UI state into templates with Alpine and keep custom JavaScript for workflows that truly need it.
+
+## Decision rule
+
+Alpine.js is a good replacement when the behavior is local to the page and does not own business state.
+
+Good Alpine candidates:
+
+- dropdown open/close state;
+- modal/dialog visibility;
+- tabs and disclosure panels;
+- selected row/card visual state;
+- upload filename labels;
+- local loading indicators;
+- simple counters;
+- mobile filter/sidebar toggles;
+- show/hide advanced filters.
+
+Keep custom JavaScript for:
+
+- drag and drop;
+- canvas/template editors;
+- direct download flows;
+- file parsing;
+- JSON-heavy workflows;
+- row-by-row remote updates;
+- complex preview/rendering logic;
+- browser APIs that are clearer in a dedicated file.
+
+Never move these to Alpine:
+
+- validation authority;
+- permissions;
+- ownership checks;
+- persistence;
+- business workflow state;
+- anything that must survive refresh unless the server also stores it.
+
+## Investigation prompt
+
+```text
+Investigate whether this app/page can replace scoped custom JavaScript with Alpine.js.
+Do not edit files.
+
+Target app:
+- apps/<app>
+
+Target page or workflow:
+- <describe page/workflow>
+
+Read only:
+- AGENTS.md
+- frontend.md
+- apps/<app>/AGENTS.md
+- the target template
+- the related view only if needed
+- the existing app-specific JS file
+
+Output:
+1. Custom JS behaviors found
+2. Which behaviors can move to Alpine.js
+3. Which behaviors should stay as custom JS
+4. Risks
+5. Exact implementation prompt for the first small change
+
+Rules:
+- Do not inspect unrelated apps.
+- Do not implement.
+- Do not propose a SPA pattern.
+- Keep Django as source of truth.
+```
+
+## First implementation prompt
+
+```text
+Replace only one simple custom JavaScript behavior with Alpine.js.
+
+Target app:
+- apps/<app>
+
+Behavior:
+- <example: upload filename display>
+
+Allowed files:
+- <template path>
+- <existing JS path only if removing now-unused code is necessary>
+
+Rules:
+- Alpine may handle local UI state only.
+- Do not change backend behavior.
+- Do not change validation, permissions, or persistence.
+- Do not remove custom JS that still handles complex workflows.
+- Keep the visual behavior the same or simpler.
+- Return a minimal diff.
+
+Checks:
+- ./install.sh check
+- git diff --check
+
+Manual browser checks:
+- open the target page;
+- trigger the changed UI behavior;
+- confirm there are no console errors;
+- confirm the form/action still works after refresh.
+```
+
+## Example: upload filename display
+
+Before asking for a full conversion, ask only for this:
+
+```text
+Replace only the upload filename preview custom JS with Alpine.js.
+Do not touch upload processing.
+Do not touch HTMX endpoints.
+Do not touch unrelated JS behavior.
+```
+
+Expected Alpine shape:
+
+```html
+<div x-data="{ fileName: '' }">
+  <input
+    type="file"
+    name="file"
+    @change="fileName = $event.target.files[0]?.name || ''"
+  >
+  <p x-show="fileName" x-text="fileName"></p>
+</div>
+```
+
+## Example: modal visibility
+
+```html
+<div x-data="{ open: false }">
+  <button type="button" @click="open = true">Open</button>
+
+  <div x-show="open" x-cloak>
+    <button type="button" @click="open = false">Close</button>
+    <!-- modal content -->
+  </div>
+</div>
+```
+
+## Example: advanced filters toggle
+
+```html
+<section x-data="{ filtersOpen: false }">
+  <button type="button" @click="filtersOpen = !filtersOpen">
+    Filters
+  </button>
+
+  <div x-show="filtersOpen" x-cloak>
+    <!-- filter form fields -->
+  </div>
+</section>
+```
+
+## Anti-patterns
+
+Do not ask Codex:
+
+```text
+Replace all custom JS with Alpine.
+```
+
+Ask instead:
+
+```text
+Investigate this one JS file and classify each behavior as Alpine, HTMX, keep custom JS, or remove.
+```
+
+Then implement one behavior at a time.
+````
+
+## `codex-prompt-demos/htmx-alpine-phased-migration.md`
+
+Size: 4.4 KB
+
+````markdown
+# HTMX + Alpine Phased Migration Prompts
+
+Use these prompts when converting ordinary Django HTML pages into a more dynamic server-rendered interface.
+
+Do not migrate a whole app in one prompt. Migrate one behavior at a time.
+
+## Phase 0 — investigation only
+
+```text
+Investigate only. Do not edit files.
+
+Target app:
+- apps/<app>
+
+Goal:
+I want this app/page to feel more dynamic with HTMX and Alpine.js, but I do not want a SPA.
+
+Read only:
+- AGENTS.md
+- frontend.md
+- apps/<app>/AGENTS.md
+- the templates/views directly related to this page
+- existing app-specific JS only if the page uses it
+
+Output:
+1. Existing page flow
+2. Candidate HTMX partials
+3. Candidate Alpine local state
+4. Custom JS that should remain
+5. Risks
+6. Recommended first implementation phase
+7. Exact next prompt
+
+Do not inspect unrelated apps.
+Do not load the whole generated context unless file paths are unknown.
+```
+
+## Phase 1 — list/table refresh only
+
+```text
+Convert only this list/table area to HTMX.
+
+Target app:
+- apps/<app>
+
+Target page:
+- <template path>
+
+Goal:
+The table/list should refresh without a full page reload when filters/search/pagination change.
+
+Allowed files:
+- the target view
+- the target template
+- new partial template(s) only if needed
+- the app tests file only if behavior changes
+
+Rules:
+- Keep full-page fallback working.
+- Use server-rendered HTML partials.
+- Preserve existing permissions and query filtering.
+- Do not change create/edit/delete flows.
+- Do not redesign the page.
+- Do not touch unrelated apps.
+
+Output:
+- minimal diff
+- files changed
+- focused tests/checks
+- manual browser checks
+```
+
+## Phase 2 — form validation partial only
+
+```text
+Convert only this form to HTMX partial submission.
+
+Target app:
+- apps/<app>
+
+Target form/page:
+- <template path>
+
+Goal:
+Submit the form with HTMX and show validation errors without a full page reload.
+
+Rules:
+- POST must keep CSRF.
+- Django form validation remains authoritative.
+- On validation error, return the form partial.
+- On success, return the smallest useful updated partial or preserve existing redirect fallback.
+- Do not change models or migrations.
+- Do not change unrelated forms.
+
+Output:
+- minimal diff
+- files changed
+- tests/checks
+- manual browser checks
+```
+
+## Phase 3 — Alpine local UI state only
+
+```text
+Add Alpine.js only for local UI state on this page.
+
+Target app:
+- apps/<app>
+
+Target behavior:
+- <dropdown/modal/tabs/selected rows/upload filename/filter drawer>
+
+Rules:
+- Alpine may not own server state.
+- Do not move validation, permissions, or persistence into Alpine.
+- Do not add global JS.
+- Do not duplicate Alpine loading.
+- Keep keyboard and refresh behavior acceptable.
+
+Output:
+- minimal diff
+- files changed
+- manual browser checks
+```
+
+## Phase 4 — extract shared table partials only after repetition exists
+
+```text
+Extract reusable table/list partials only where duplication already exists.
+
+Target app:
+- apps/<app>
+
+Candidate templates:
+- <list templates>
+
+Rules:
+- Do not create an over-generic table framework.
+- Keep different column sets explicit and readable.
+- Extract only shared shell pieces: empty state, loading area, pagination, table wrapper, action button patterns.
+- Do not hide business-specific columns in complex template magic.
+- Preserve existing visual output.
+
+Output:
+- minimal diff
+- files changed
+- before/after template structure
+- manual browser checks
+```
+
+## Phase 5 — infinite scroll / lazy rows
+
+Use only when pagination is not desired and the data set is not too large for the browser over time.
+
+```text
+Implement lazy row loading for this list/table.
+
+Target app:
+- apps/<app>
+
+Target page:
+- <template path>
+
+Goal:
+The table area stays inside a fixed-height scroll container. Rows load in chunks as the user scrolls near the bottom.
+
+Rules:
+- Keep a normal fallback if practical.
+- Use server-rendered row partials.
+- Do not load all rows at once.
+- Use stable ordering.
+- Preserve filters/search.
+- Do not use frontend-owned data state.
+- Add clear empty/end-of-list behavior.
+
+Output:
+- minimal diff
+- files changed
+- manual browser checks with 2,000 rows or fixture data
+```
+
+Notes:
+- Infinite scroll is useful for visual flow, but pagination is easier to debug and bookmark.
+- For internal operations, consider a fixed-height table with HTMX-loaded pages/chunks rather than endless browser memory growth.
+````
 
 ## `codex-prompt-demos/README.md`
 
@@ -5826,6 +6320,190 @@ exec gunicorn platforma_tuvtk.wsgi:application \
     --access-logfile - \
     --error-logfile -
 ```
+
+## `docs/frontend/table-patterns.md`
+
+Size: 4.0 KB
+
+````markdown
+# Frontend Table Patterns
+
+Guidance for Django templates, HTMX, Alpine.js, Tailwind, and daisyUI table/list screens.
+
+## Preferred default
+
+Use ordinary Django pagination first unless the workflow clearly benefits from lazy loading.
+
+For internal operations, tables must stay:
+
+- readable;
+- filterable;
+- debuggable;
+- safe with permissions;
+- usable after refresh;
+- friendly to browser memory.
+
+## Template structure
+
+A good list page usually has:
+
+```text
+templates/<app>/<model>_list.html
+templates/<app>/partials/<model>_table.html
+templates/<app>/partials/<model>_rows.html
+templates/<app>/partials/<model>_empty.html
+```
+
+Use partials for repeated page sections, but do not make a generic table engine too early.
+
+Different tables may have different columns. That is normal.
+
+Extract common pieces only when they are truly shared:
+
+- table wrapper;
+- empty state;
+- pagination controls;
+- loading indicator;
+- bulk action toolbar;
+- row action button style.
+
+Keep business columns explicit in the app template.
+
+## HTMX table refresh
+
+Good for:
+
+- search;
+- filters;
+- sorting;
+- pagination;
+- local list refresh after create/edit/delete;
+- row archive/restore.
+
+Pattern:
+
+```html
+<form
+  hx-get="{% url 'app:list' %}"
+  hx-target="#table-region"
+  hx-trigger="change, keyup delay:300ms from:input[name='q']"
+>
+  <!-- filters -->
+</form>
+
+<div id="table-region">
+  {% include "app/partials/table.html" %}
+</div>
+```
+
+In the view:
+
+```python
+def list_view(request):
+    context = build_context(request)
+    if getattr(request, "htmx", False):
+        return render(request, "app/partials/table.html", context)
+    return render(request, "app/list.html", context)
+```
+
+## Fixed-height lazy rows
+
+Use this when the user wants the table to stay fixed size and load more rows while scrolling.
+
+Recommended behavior:
+
+- table wrapper has fixed height and `overflow-y-auto`;
+- first request loads the first chunk;
+- a sentinel row at the bottom triggers the next chunk;
+- server returns only more rows and the next sentinel;
+- filters/search reset the region;
+- ordering is stable.
+
+Example shape:
+
+```html
+<div id="table-scroll" class="max-h-[70vh] overflow-y-auto">
+  <table class="table table-zebra w-full">
+    <thead class="sticky top-0 z-10 bg-base-100">
+      <!-- headings -->
+    </thead>
+    <tbody id="rows">
+      {% include "app/partials/rows.html" %}
+    </tbody>
+  </table>
+</div>
+```
+
+Sentinel idea:
+
+```html
+<tr
+  hx-get="{% url 'app:list_rows' %}?page={{ next_page }}{{ current_querystring }}"
+  hx-trigger="revealed"
+  hx-swap="outerHTML"
+>
+  <td colspan="99">Loading more...</td>
+</tr>
+```
+
+The server should include a next sentinel only while more results exist.
+
+## When not to use infinite scroll
+
+Avoid it when users need:
+
+- exact page numbers;
+- bookmarking a result page;
+- easy browser back/forward behavior;
+- exporting exact filtered result sets;
+- comparing items across many pages;
+- very large result sets that would stay in the browser for a long session.
+
+For those cases, use normal pagination with HTMX partial refresh.
+
+## Alpine usage in tables
+
+Good Alpine uses:
+
+- selected row visual state;
+- bulk action toolbar visibility;
+- filter drawer open/close;
+- column help/tooltips;
+- local loading indicator;
+- mobile details expansion.
+
+Do not use Alpine for:
+
+- ownership checks;
+- permissions;
+- deciding which rows the user may see;
+- saving selected records to the database without a POST;
+- replacing Django form validation.
+
+## Codex prompt for table work
+
+```text
+Work only on this table/list page.
+
+Target app:
+- apps/<app>
+
+Target page:
+- <template path>
+
+Goal:
+[describe: HTMX filter refresh / fixed-height lazy rows / selected row UI]
+
+Rules:
+- Keep Django as source of truth.
+- Use HTMX only for server-rendered partial updates.
+- Use Alpine only for local UI state.
+- Preserve full-page fallback where practical.
+- Preserve permissions and filters.
+- Do not touch unrelated apps.
+- Return a minimal diff.
+```
+````
 
 ## `frontend.md`
 

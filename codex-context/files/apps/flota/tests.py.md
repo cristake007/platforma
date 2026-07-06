@@ -2,7 +2,7 @@
 
 ## `apps/flota/tests.py`
 
-Size: 13.4 KB
+Size: 14.1 KB
 
 Redacted secret-like assignments: 2
 
@@ -248,6 +248,17 @@ class FlotaAppTests(TestCase):
         self.assertContains(response, 'id="fleet-panel"')
         self.assertContains(response, "Dacia Duster")
         self.assertNotContains(response, "<html")
+
+    def test_fleet_filter_partial_renders_loading_and_sync_hooks(self):
+        response = self.client.get(reverse("flota:index"), HTTP_HX_REQUEST="true")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'hx-sync="this:replace"')
+        self.assertContains(response, 'hx-disabled-elt="find input, find select, find button"')
+        self.assertContains(response, 'hx-indicator="#fleet-table-loading"', count=2)
+        self.assertNotContains(response, "fleet-filter-indicator")
+        self.assertContains(response, 'id="fleet-table-loading"')
+        self.assertContains(response, "data-fleet-loading-region", count=2)
+        self.assertContains(response, 'aria-busy="false"', count=2)
 
     def test_htmx_vehicle_archive_refreshes_detail_panel(self):
         response = self.client.post(

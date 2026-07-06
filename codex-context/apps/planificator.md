@@ -4353,7 +4353,7 @@ class WordConverterViewTests(TestCase):
 
 ## `apps/planificator/tests_xml_export.py`
 
-Size: 8.2 KB
+Size: 8.4 KB
 
 Redacted secret-like assignments: 1
 
@@ -4458,7 +4458,10 @@ class XmlExportViewTests(TestCase):
         self.assertContains(response, "Convertor XML")
         self.assertContains(response, reverse("planificator:xml_export"))
         self.assertContains(response, 'name="start_post_id"')
-        self.assertContains(response, 'class="active font-semibold"')
+        self.assertContains(response, reverse("planificator:xml_export"))
+        self.assertContains(response, reverse("planificator:xml_formatter"))
+        self.assertContains(response, 'class="transition-none active font-semibold"')
+        self.assertContains(response, 'aria-current="page"')
 
     def test_export_uses_submitted_start_id_and_legacy_xml_download_contract(self):
         AppSetting.objects.create(

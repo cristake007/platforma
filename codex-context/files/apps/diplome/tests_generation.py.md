@@ -418,6 +418,6 @@ class DiplomaGenerationTests(TestCase):
 
         self.assertContains(
             response,
-            f'href="{reverse("diplome:generation_index")}" class="active font-semibold" aria-current="page"',
+            f'href="{reverse("diplome:generation_index")}" class="transition-none active font-semibold" aria-current="page"',
         )
 ```

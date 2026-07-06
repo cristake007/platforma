@@ -1,13 +1,13 @@
 # Platforma TUVTK Codex context
 
-Generated: 2026-07-06T15:53:46+00:00
+Generated: 2026-07-06T19:46:11+00:00
 Project root: `C:\Users\Cristi Popa\Desktop\tuvtk`
 Context directory: `C:\Users\Cristi Popa\Desktop\tuvtk\codex-context`
-Included files: 224
-Skipped files: 34
-Pruned directories: 32
-Total included bytes: 1414507 (1381.4 KB)
-Files with redacted assignments: 12
+Included files: 238
+Skipped files: 32
+Pruned directories: 33
+Total included bytes: 1463464 (1429.2 KB)
+Files with redacted assignments: 13
 Tests included: yes
 Django migrations: excluded by default
 
@@ -20,18 +20,20 @@ Use `codex-file-map.txt` to locate a file, then open the real repository source 
 - `.agents/`: 1 file(s)
 - `.dockerignore/`: 1 file(s)
 - `.gitattributes/`: 1 file(s)
+- `.github/`: 1 file(s)
 - `.gitignore/`: 1 file(s)
 - `.tuvtk/`: 1 file(s)
 - `activate_venv.bat/`: 1 file(s)
 - `AGENTS.md/`: 1 file(s)
-- `apps/`: 153 file(s)
+- `apps/`: 163 file(s)
 - `bin/`: 1 file(s)
-- `codex-prompt-demos/`: 1 file(s)
+- `codex-prompt-demos/`: 3 file(s)
 - `compose.dev.yaml/`: 1 file(s)
 - `compose.yaml/`: 1 file(s)
 - `core/`: 15 file(s)
 - `docker/`: 2 file(s)
 - `Dockerfile/`: 1 file(s)
+- `docs/`: 1 file(s)
 - `frontend.md/`: 1 file(s)
 - `generate_codex_context.bat/`: 1 file(s)
 - `generate_codex_context.ps1/`: 1 file(s)
@@ -96,8 +98,6 @@ None.
 - `.tuvtk/logs/tailwind.log`: unrecognized text file type
 - `.tuvtk/logs/web.log`: unrecognized text file type
 - `.tuvtk/node-modules.sha256`: unrecognized text file type
-- `.tuvtk/pids/tailwind.pid`: unrecognized text file type
-- `.tuvtk/pids/web.pid`: unrecognized text file type
 - `.tuvtk/requirements.sha256`: unrecognized text file type
 - `apps/flota/docs/flota-ui-concept.png`: binary, archive, database, certificate, or media extension
 - `codex-context-index.md`: generated context root output
@@ -125,6 +125,7 @@ None.
 - `apps/media_library/migrations/`: Django migrations excluded by default
 - `apps/planificator/__pycache__/`: excluded directory
 - `apps/planificator/management/__pycache__/`: excluded directory
+- `apps/planificator/management/commands/__pycache__/`: excluded directory
 - `apps/planificator/migrations/`: Django migrations excluded by default
 - `apps/tasks/__pycache__/`: excluded directory
 - `apps/tasks/migrations/`: Django migrations excluded by default

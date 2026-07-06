@@ -2,11 +2,18 @@
 
 ## `apps/tasks/templates/tasks/task_form.html`
 
-Size: 1.1 KB
+Size: 588 B
 
 ```html
 {% extends "layouts/base.html" %}
-{% block title %}{% if task %}Editează {{ task.title }}{% else %}Task nou{% endif %} | Task-uri{% endblock %}
-{% block content %}<section class="mx-auto max-w-2xl space-y-5"><div><p class="text-xs text-muted"><a href="{% url 'tasks:board_kanban' board.pk %}" class="hover:text-primary">{{ board.name }}</a> / Task</p><h1 class="ops-title mt-1 text-2xl font-bold">{% if task %}Editează task-ul{% else %}Task nou{% endif %}</h1></div><form method="post" class="space-y-5 border border-base-300 bg-base-100 p-5">{% csrf_token %}<div class="grid gap-x-4 sm:grid-cols-2">{% include "tasks/includes/form_fields.html" %}</div><div class="flex flex-wrap justify-between gap-2"><div>{% if task %}<button type="submit" formaction="{% url 'tasks:task_archive' task.pk %}" name="archived" value="1" class="btn btn-outline btn-error btn-sm">Arhivează</button>{% endif %}</div><div class="flex gap-2"><a href="{% url 'tasks:board_kanban' board.pk %}" class="btn btn-ghost btn-sm">Anulează</a><button class="btn btn-primary btn-sm">Salvează</button></div></div></form></section>{% endblock %}
-
+{% block title %}{% if task %}Editeaz&#259; {{ task.title }}{% else %}Task nou{% endif %} | Task-uri{% endblock %}
+{% block content %}
+<section class="mx-auto max-w-2xl space-y-5">
+    <div>
+        <p class="text-xs text-muted"><a href="{% url 'tasks:board_kanban' board.pk %}" class="hover:text-primary">{{ board.name }}</a> / Task</p>
+        <h1 class="ops-title mt-1 text-2xl font-bold">{% if task %}Editeaz&#259; task-ul{% else %}Task nou{% endif %}</h1>
+    </div>
+    {% include "tasks/includes/task_form_panel.html" %}
+</section>
+{% endblock %}
 ```
