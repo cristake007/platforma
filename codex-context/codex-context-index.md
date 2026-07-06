@@ -1,12 +1,12 @@
 # Platforma TUVTK Codex context
 
-Generated: 2026-07-06T19:46:11+00:00
+Generated: 2026-07-06T20:10:50+00:00
 Project root: `C:\Users\Cristi Popa\Desktop\tuvtk`
 Context directory: `C:\Users\Cristi Popa\Desktop\tuvtk\codex-context`
 Included files: 238
 Skipped files: 32
 Pruned directories: 33
-Total included bytes: 1463464 (1429.2 KB)
+Total included bytes: 1465433 (1431.1 KB)
 Files with redacted assignments: 13
 Tests included: yes
 Django migrations: excluded by default
@@ -71,7 +71,7 @@ Use `codex-file-map.txt` to locate a file, then open the real repository source 
 
 ## Large files skipped
 
-None.
+- `.tuvtk/logs/postgres.log`: larger than 80 KB
 
 ## Other skipped files
 
@@ -94,7 +94,6 @@ None.
 - `.env`: secret-like filename/path
 - `.env.example`: unrecognized text file type
 - `.pylintrc`: unrecognized text file type
-- `.tuvtk/logs/postgres.log`: unrecognized text file type
 - `.tuvtk/logs/tailwind.log`: unrecognized text file type
 - `.tuvtk/logs/web.log`: unrecognized text file type
 - `.tuvtk/node-modules.sha256`: unrecognized text file type

@@ -107,7 +107,7 @@ class StageForm(forms.ModelForm):
     class Meta:
         model = TaskStage
         fields = ("name", "tone", "is_terminal")
-        labels = {"name": "Nume", "tone": "Ton semantic", "is_terminal": "Etapă terminală"}
+        labels = {"name": "Nume", "tone": "Ton semantic", "is_terminal": "Etapă finală"}
         widgets = {
             "name": forms.TextInput(attrs={"class": INPUT_CLASS}),
             "tone": forms.Select(attrs={"class": SELECT_CLASS}),

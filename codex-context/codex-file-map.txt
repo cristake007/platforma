@@ -145,7 +145,7 @@ apps/tasks/__init__.py	1	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/
 apps/tasks/admin.py	927	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/apps/tasks/admin.py.md
 apps/tasks/AGENTS.md	1253	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/apps/tasks/AGENTS.md.md
 apps/tasks/apps.py	148	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/apps/tasks/apps.py.md
-apps/tasks/forms.py	6342	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/apps/tasks/forms.py.md
+apps/tasks/forms.py	6339	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/apps/tasks/forms.py.md
 apps/tasks/IMPLEMENTATION_PLAN.md	6724	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/apps/tasks/IMPLEMENTATION_PLAN.md.md
 apps/tasks/models.py	6222	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/apps/tasks/models.py.md
 apps/tasks/selectors.py	2520	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/apps/tasks/selectors.py.md
@@ -158,7 +158,7 @@ apps/tasks/templates/tasks/board_list.html	2642	C:/Users/Cristi Popa/Desktop/tuv
 apps/tasks/templates/tasks/board_settings.html	203	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/apps/tasks/templates/tasks/board_settings.html.md
 apps/tasks/templates/tasks/hub.html	4933	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/apps/tasks/templates/tasks/hub.html.md
 apps/tasks/templates/tasks/includes/board_form_panel.html	513	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/apps/tasks/templates/tasks/includes/board_form_panel.html.md
-apps/tasks/templates/tasks/includes/board_settings_content.html	11012	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/apps/tasks/templates/tasks/includes/board_settings_content.html.md
+apps/tasks/templates/tasks/includes/board_settings_content.html	12984	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/apps/tasks/templates/tasks/includes/board_settings_content.html.md
 apps/tasks/templates/tasks/includes/board_task_list.html	3557	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/apps/tasks/templates/tasks/includes/board_task_list.html.md
 apps/tasks/templates/tasks/includes/form_fields.html	775	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/apps/tasks/templates/tasks/includes/form_fields.html.md
 apps/tasks/templates/tasks/includes/hub_task_list.html	4932	C:/Users/Cristi Popa/Desktop/tuvtk/codex-context/files/apps/tasks/templates/tasks/includes/hub_task_list.html.md
