@@ -2,7 +2,7 @@
 
 ## `core/templates/layouts/base.html`
 
-Size: 6.7 KB
+Size: 7.9 KB
 
 ```html
 {% load static tailwind_tags optional_browser_reload %}
@@ -107,6 +107,32 @@ Size: 6.7 KB
             {% include "includes/sidebar.html" %}
         </div>
     </div>
+    <script src="{% static 'js/vendor/htmx.min.js' %}" defer></script>
+    <script>
+        (() => {
+            const safeMethods = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
+            const csrfToken = () => {
+                const fieldToken = document.querySelector('[name="csrfmiddlewaretoken"]')?.value;
+                if (fieldToken) return fieldToken;
+
+                const cookie = document.cookie
+                    .split(";")
+                    .map((value) => value.trim())
+                    .find((value) => value.startsWith("csrftoken="));
+                return cookie ? decodeURIComponent(cookie.slice("csrftoken=".length)) : "";
+            };
+
+            document.body.addEventListener("htmx:configRequest", (event) => {
+                if (!event.detail?.headers) return;
+                const method = String(event.detail.verb || event.detail.requestConfig?.verb || "GET").toUpperCase();
+                if (safeMethods.has(method)) return;
+
+                const token = csrfToken();
+                if (token) event.detail.headers["X-CSRFToken"] = token;
+            });
+        })();
+    </script>
+    <script src="{% static 'js/vendor/alpine.min.js' %}" defer></script>
     <script src="{% static 'js/sidebar.js' %}" defer></script>
     {% block page_scripts %}{% endblock %}
     {% optional_browser_reload_script %}

@@ -1,12 +1,12 @@
 # Platforma TUVTK Codex context
 
-Generated: 2026-07-06T13:37:02+00:00
+Generated: 2026-07-06T14:34:40+00:00
 Project root: `C:\Users\Cristi Popa\Desktop\tuvtk`
 Context directory: `C:\Users\Cristi Popa\Desktop\tuvtk\codex-context`
-Included files: 220
-Skipped files: 35
-Pruned directories: 31
-Total included bytes: 1388631 (1356.1 KB)
+Included files: 224
+Skipped files: 37
+Pruned directories: 32
+Total included bytes: 1437376 (1403.7 KB)
 Files with redacted assignments: 12
 Tests included: yes
 Django migrations: excluded by default
@@ -24,7 +24,7 @@ Use `codex-file-map.txt` to locate a file, then open the real repository source 
 - `.tuvtk/`: 1 file(s)
 - `activate_venv.bat/`: 1 file(s)
 - `AGENTS.md/`: 1 file(s)
-- `apps/`: 150 file(s)
+- `apps/`: 153 file(s)
 - `bin/`: 1 file(s)
 - `CODEX_RESUME_PHASES.md/`: 1 file(s)
 - `compose.dev.yaml/`: 1 file(s)
@@ -36,6 +36,7 @@ Use `codex-file-map.txt` to locate a file, then open the real repository source 
 - `generate_codex_context.bat/`: 1 file(s)
 - `generate_codex_context.ps1/`: 1 file(s)
 - `generate_codex_context.sh/`: 1 file(s)
+- `HTMX_ALPINE_IMPLEMENTATION_PLAN.md/`: 1 file(s)
 - `install.cmd/`: 1 file(s)
 - `install.ps1/`: 1 file(s)
 - `install.sh/`: 1 file(s)
@@ -95,6 +96,8 @@ None.
 - `.tuvtk/logs/tailwind.log`: unrecognized text file type
 - `.tuvtk/logs/web.log`: unrecognized text file type
 - `.tuvtk/node-modules.sha256`: unrecognized text file type
+- `.tuvtk/pids/tailwind.pid`: unrecognized text file type
+- `.tuvtk/pids/web.pid`: unrecognized text file type
 - `.tuvtk/requirements.sha256`: unrecognized text file type
 - `apps/flota/docs/flota-ui-concept.png`: binary, archive, database, certificate, or media extension
 - `codex-context-index.md`: generated context root output
@@ -140,4 +143,5 @@ None.
 - `scripts/tests/__pycache__/`: excluded directory
 - `theme/__pycache__/`: excluded directory
 - `theme/static/css/dist/`: excluded directory
+- `theme/static/js/vendor/`: generated frontend vendor assets
 - `theme/static_src/node_modules/`: excluded directory

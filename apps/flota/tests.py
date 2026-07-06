@@ -228,6 +228,61 @@ class FlotaAppTests(TestCase):
         response = self.client.get(reverse("flota:index"), {"deadline": "overdue"})
         self.assertNotContains(response, "Dacia Duster")
 
+    def test_htmx_list_filters_render_fleet_panel_only(self):
+        response = self.client.get(
+            reverse("flota:index"),
+            {"q": "Dacia"},
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "flota/includes/fleet_panel.html")
+        self.assertContains(response, 'id="fleet-panel"')
+        self.assertContains(response, "Dacia Duster")
+        self.assertNotContains(response, "<html")
+
+    def test_htmx_vehicle_archive_refreshes_detail_panel(self):
+        response = self.client.post(
+            reverse("flota:vehicle_archive", args=[self.vehicle.pk]),
+            HTTP_HX_REQUEST="true",
+        )
+        self.vehicle.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "flota/includes/vehicle_detail_panel.html")
+        self.assertTrue(self.vehicle.is_archived)
+        self.assertContains(response, 'id="vehicle-detail-panel"')
+        self.assertContains(response, "Restaurează")
+        self.assertNotContains(response, "<html")
+
+    def test_htmx_vehicle_restore_refreshes_detail_panel(self):
+        set_vehicle_archived(actor=self.staff, vehicle=self.vehicle, archived=True)
+        response = self.client.post(
+            reverse("flota:vehicle_restore", args=[self.vehicle.pk]),
+            HTTP_HX_REQUEST="true",
+        )
+        self.vehicle.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "flota/includes/vehicle_detail_panel.html")
+        self.assertFalse(self.vehicle.is_archived)
+        self.assertContains(response, "Arhivează")
+        self.assertNotContains(response, "<html")
+
+    def test_htmx_maintenance_type_archive_refreshes_list_panel(self):
+        custom = create_maintenance_type(
+            actor=self.staff,
+            data={"name": "Rovinietă", "code": "rovinieta", "display_order": 50, "is_active": True},
+        )
+        response = self.client.post(
+            reverse("flota:maintenance_type_archive", args=[custom.pk]),
+            HTTP_HX_REQUEST="true",
+        )
+        custom.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "flota/includes/maintenance_type_panel.html")
+        self.assertFalse(custom.is_active)
+        self.assertContains(response, 'id="maintenance-type-panel"')
+        self.assertContains(response, "Arhivat")
+        self.assertNotContains(response, "<html")
+
     def test_maintenance_history_renders_on_detail(self):
         create_maintenance_record(
             actor=self.staff,

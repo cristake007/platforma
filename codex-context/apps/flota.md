@@ -922,7 +922,7 @@ def archive_maintenance_type(*, actor, maintenance_type: MaintenanceType) -> Mai
 
 ## `apps/flota/static/flota/flota.js`
 
-Size: 1.7 KB
+Size: 2.2 KB
 
 ```javascript
 (() => {
@@ -943,9 +943,21 @@ Size: 1.7 KB
         badge.classList.add(tone === "neutral" ? "badge-ghost" : `badge-${tone}`);
     }
 
-    function refreshDeadlines() {
+    function deadlineBadges(root) {
+        const container = root || document;
+        const badges = [];
+        if (container.matches?.("[data-deadline][data-due-date]")) {
+            badges.push(container);
+        }
+        container.querySelectorAll?.("[data-deadline][data-due-date]").forEach((badge) => {
+            badges.push(badge);
+        });
+        return badges;
+    }
+
+    function refreshDeadlines(root) {
         const today = startOfToday();
-        document.querySelectorAll("[data-deadline][data-due-date]").forEach((badge) => {
+        deadlineBadges(root).forEach((badge) => {
             const parts = badge.dataset.dueDate.split("-").map(Number);
             if (parts.length !== 3 || parts.some(Number.isNaN)) return;
             const due = new Date(parts[0], parts[1] - 1, parts[2]);
@@ -970,6 +982,9 @@ Size: 1.7 KB
     document.addEventListener("visibilitychange", () => {
         if (!document.hidden) refreshDeadlines();
     });
+    document.body.addEventListener("htmx:afterSwap", (event) => {
+        refreshDeadlines(event.detail?.target || document);
+    });
 })();
 ```
 
@@ -989,73 +1004,12 @@ Size: 409 B
 
 ```
 
-## `apps/flota/templates/flota/includes/form_fields.html`
+## `apps/flota/templates/flota/includes/fleet_panel.html`
 
-Size: 831 B
-
-```html
-{% if form.non_field_errors %}
-    <div class="alert alert-error py-2 text-sm sm:col-span-2" role="alert">{{ form.non_field_errors|join:", " }}</div>
-{% endif %}
-{% for field in form %}
-    <fieldset class="fieldset min-w-0 {% if field.name == 'notes' or field.name == 'emblem' %}sm:col-span-2{% endif %}">
-        <label class="fieldset-legend" for="{{ field.id_for_label }}">
-            {{ field.label }}{% if field.field.required %}<span class="text-error" aria-hidden="true"> *</span>{% endif %}
-        </label>
-        {{ field }}
-        {% if field.help_text %}<p class="label whitespace-normal text-xs text-muted">{{ field.help_text }}</p>{% endif %}
-        {% if field.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ field.errors|join:", " }}</p>{% endif %}
-    </fieldset>
-{% endfor %}
-
-```
-
-## `apps/flota/templates/flota/includes/messages.html`
-
-Size: 338 B
+Size: 10.1 KB
 
 ```html
-{% if messages %}
-<div class="space-y-2" aria-live="polite">
-    {% for message in messages %}
-        <div class="alert py-2 text-sm {% if message.tags == 'error' %}alert-error{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %}">
-            {{ message }}
-        </div>
-    {% endfor %}
-</div>
-{% endif %}
-
-```
-
-## `apps/flota/templates/flota/index.html`
-
-Size: 9.6 KB
-
-```html
-{% extends "layouts/base.html" %}
-{% load static %}
-
-{% block title %}Flota | Platforma TUVTK{% endblock %}
-
-{% block content %}
-<section class="space-y-5">
-    {% include "flota/includes/messages.html" %}
-
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-            <h1 class="ops-title text-2xl font-bold sm:text-[2rem]">Flota</h1>
-            <p class="mt-1 text-sm text-muted">Administrarea vehiculelor și a termenelor de mentenanță.</p>
-        </div>
-        {% if request.user.is_staff %}
-        <div class="flex flex-wrap gap-2">
-            <a href="{% url 'flota:maintenance_type_list' %}" class="btn btn-outline btn-primary btn-sm">Tipuri mentenanță</a>
-            <a href="{% url 'flota:vehicle_create' %}" class="btn btn-primary btn-sm">
-                <i class="bi bi-plus-lg" aria-hidden="true"></i> Adaugă vehicul
-            </a>
-        </div>
-        {% endif %}
-    </div>
-
+<div id="fleet-panel" class="space-y-5">
     <div class="grid grid-cols-2 border border-base-300 bg-base-100 lg:grid-cols-4" aria-label="Rezumat flotă">
         <div class="border-b border-r border-base-300 px-5 py-4 lg:border-b-0">
             <p class="text-xs font-medium text-muted">Total vehicule</p>
@@ -1075,10 +1029,21 @@ Size: 9.6 KB
         </div>
     </div>
 
-    <form method="get" class="grid grid-cols-2 gap-3 border-b border-base-300 pb-4 lg:grid-cols-7">
+    <form
+        id="fleet-filters"
+        method="get"
+        action="{% url 'flota:index' %}"
+        class="grid grid-cols-2 gap-3 border-b border-base-300 pb-4 lg:grid-cols-7"
+        hx-get="{% url 'flota:index' %}"
+        hx-target="#fleet-panel"
+        hx-swap="outerHTML show:top"
+        hx-push-url="true"
+        hx-indicator="#fleet-filter-indicator"
+        hx-trigger="submit, change delay:250ms, keyup changed delay:450ms from:input[name='q']"
+    >
         <label class="fieldset col-span-2 lg:col-span-2">
             <span class="fieldset-legend">Caută</span>
-            <input name="q" value="{{ filters.q|default:'' }}" class="input input-bordered input-sm w-full" placeholder="Vehicul, VIN, nr. înmatriculare…">
+            <input name="q" value="{{ filters.q|default:'' }}" class="input input-bordered input-sm w-full" placeholder="Vehicul, VIN, nr. înmatriculare...">
         </label>
         <label class="fieldset">
             <span class="fieldset-legend">Status</span>
@@ -1116,12 +1081,21 @@ Size: 9.6 KB
         </label>
         {% endif %}
         <div class="col-span-2 flex items-end gap-2 lg:col-span-1">
-            <button class="btn btn-primary btn-sm flex-1">Filtrează</button>
-            <a href="{% url 'flota:index' %}" class="btn btn-ghost btn-sm">Resetează</a>
+            <button class="btn btn-primary btn-sm flex-1" type="submit">Filtrează</button>
+            <a
+                href="{% url 'flota:index' %}"
+                class="btn btn-ghost btn-sm"
+                hx-get="{% url 'flota:index' %}"
+                hx-target="#fleet-panel"
+                hx-swap="outerHTML show:top"
+                hx-push-url="true"
+                hx-indicator="#fleet-filter-indicator"
+            >Resetează</a>
+            <span id="fleet-filter-indicator" class="htmx-indicator loading loading-spinner loading-sm text-primary" aria-hidden="true"></span>
         </div>
     </form>
 
-    <div class="overflow-x-auto border border-base-300 bg-base-100">
+    <div class="overflow-x-auto border border-base-300 bg-base-100" aria-live="polite">
         <table class="table table-xs min-w-[1000px]">
             <thead>
                 <tr>
@@ -1168,10 +1142,10 @@ Size: 9.6 KB
                     {% endfor %}
                     <td>
                         <div class="flex justify-end gap-1">
-                            <a href="{% url 'flota:vehicle_detail' vehicle.pk %}" class="btn btn-ghost btn-square btn-xs" aria-label="Deschide {{ vehicle }}" title="Deschide">
+                            <a href="{% url 'flota:vehicle_detail' vehicle.pk %}" class="btn btn-outline btn-primary btn-square btn-xs" aria-label="Deschide {{ vehicle }}" title="Deschide">
                                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12Z"/><circle cx="12" cy="12" r="2.25"/></svg>
                             </a>
-                            {% if request.user.is_staff %}<a href="{% url 'flota:vehicle_edit' vehicle.pk %}" class="btn btn-ghost btn-square btn-xs" aria-label="Editează {{ vehicle }}" title="Editează">
+                            {% if request.user.is_staff %}<a href="{% url 'flota:vehicle_edit' vehicle.pk %}" class="btn btn-outline btn-primary btn-square btn-xs" aria-label="Editează {{ vehicle }}" title="Editează">
                                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m14.7 5.3 4 4M4 20l4.35-.85L19.4 8.1a1.9 1.9 0 0 0 0-2.7l-.8-.8a1.9 1.9 0 0 0-2.7 0L4.85 15.65 4 20Z"/></svg>
                             </a>{% endif %}
                         </div>
@@ -1188,11 +1162,322 @@ Size: 9.6 KB
     <div class="flex items-center justify-between text-sm text-muted">
         <span>Pagina {{ page.number }} din {{ page.paginator.num_pages }}</span>
         <div class="join">
-            {% if page.has_previous %}<a class="btn btn-sm join-item" href="?{% if query_without_page %}{{ query_without_page }}&{% endif %}page={{ page.previous_page_number }}" aria-label="Pagina precedentă">‹</a>{% endif %}
-            {% if page.has_next %}<a class="btn btn-sm join-item" href="?{% if query_without_page %}{{ query_without_page }}&{% endif %}page={{ page.next_page_number }}" aria-label="Pagina următoare">›</a>{% endif %}
+            {% if page.has_previous %}
+            <a
+                class="btn btn-sm join-item"
+                href="?{% if query_without_page %}{{ query_without_page }}&{% endif %}page={{ page.previous_page_number }}"
+                hx-get="?{% if query_without_page %}{{ query_without_page }}&{% endif %}page={{ page.previous_page_number }}"
+                hx-target="#fleet-panel"
+                hx-swap="outerHTML show:top"
+                hx-push-url="true"
+                aria-label="Pagina precedentă"
+            >&lsaquo;</a>
+            {% endif %}
+            {% if page.has_next %}
+            <a
+                class="btn btn-sm join-item"
+                href="?{% if query_without_page %}{{ query_without_page }}&{% endif %}page={{ page.next_page_number }}"
+                hx-get="?{% if query_without_page %}{{ query_without_page }}&{% endif %}page={{ page.next_page_number }}"
+                hx-target="#fleet-panel"
+                hx-swap="outerHTML show:top"
+                hx-push-url="true"
+                aria-label="Pagina următoare"
+            >&rsaquo;</a>
+            {% endif %}
         </div>
     </div>
     {% endif %}
+</div>
+```
+
+## `apps/flota/templates/flota/includes/form_fields.html`
+
+Size: 831 B
+
+```html
+{% if form.non_field_errors %}
+    <div class="alert alert-error py-2 text-sm sm:col-span-2" role="alert">{{ form.non_field_errors|join:", " }}</div>
+{% endif %}
+{% for field in form %}
+    <fieldset class="fieldset min-w-0 {% if field.name == 'notes' or field.name == 'emblem' %}sm:col-span-2{% endif %}">
+        <label class="fieldset-legend" for="{{ field.id_for_label }}">
+            {{ field.label }}{% if field.field.required %}<span class="text-error" aria-hidden="true"> *</span>{% endif %}
+        </label>
+        {{ field }}
+        {% if field.help_text %}<p class="label whitespace-normal text-xs text-muted">{{ field.help_text }}</p>{% endif %}
+        {% if field.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ field.errors|join:", " }}</p>{% endif %}
+    </fieldset>
+{% endfor %}
+
+```
+
+## `apps/flota/templates/flota/includes/maintenance_type_panel.html`
+
+Size: 4.1 KB
+
+```html
+<div id="maintenance-type-panel" class="space-y-5">
+    {% include "flota/includes/messages.html" %}
+    <div class="overflow-x-auto border border-base-300 bg-base-100" aria-live="polite">
+        <table class="table table-xs min-w-[680px]">
+            <thead><tr><th>Denumire</th><th>Cod</th><th>Ordine</th><th>Tip</th><th>Status</th><th class="text-right">Acțiuni</th></tr></thead>
+            <tbody>
+            {% for item in maintenance_types %}
+                <tr>
+                    <td class="font-semibold">{{ item.name }}</td>
+                    <td><code class="text-xs">{{ item.code }}</code></td>
+                    <td>{{ item.display_order }}</td>
+                    <td>{% if item.is_system %}Sistem{% else %}Personalizat{% endif %}</td>
+                    <td><span class="badge badge-sm {% if item.is_active %}badge-success badge-outline{% else %}badge-ghost{% endif %}">{% if item.is_active %}Activ{% else %}Arhivat{% endif %}</span></td>
+                    <td>
+                        <div class="flex justify-end gap-1">
+                            <a href="{% url 'flota:maintenance_type_edit' item.pk %}" class="btn btn-outline btn-primary btn-square btn-xs" aria-label="Editează {{ item.name }}" title="Editează">
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m14.7 5.3 4 4M4 20l4.35-.85L19.4 8.1a1.9 1.9 0 0 0 0-2.7l-.8-.8a1.9 1.9 0 0 0-2.7 0L4.85 15.65 4 20Z"/></svg>
+                            </a>
+                            {% if not item.is_system and item.is_active %}
+                            <form
+                                method="post"
+                                action="{% url 'flota:maintenance_type_archive' item.pk %}"
+                                class="flex gap-1"
+                                hx-post="{% url 'flota:maintenance_type_archive' item.pk %}"
+                                hx-target="#maintenance-type-panel"
+                                hx-swap="outerHTML show:top"
+                                x-data="{ confirming: false }"
+                                @submit="if (!confirming) { $event.preventDefault(); confirming = true; }"
+                                @keydown.escape.window="confirming = false"
+                            >
+                                {% csrf_token %}
+                                <button class="btn btn-outline btn-error btn-square btn-xs" type="submit" aria-label="Arhivează {{ item.name }}" title="Arhivează" :title="confirming ? 'Confirmă' : 'Arhivează'">
+                                    <svg class="h-4 w-4" x-show="!confirming" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 7.5h15M9 7.5V5.25A1.25 1.25 0 0 1 10.25 4h3.5A1.25 1.25 0 0 1 15 5.25V7.5m-8.5 0 1 12.25A1.5 1.5 0 0 0 9 21h6a1.5 1.5 0 0 0 1.5-1.25l1-12.25"/></svg>
+                                    <svg class="h-4 w-4" style="display: none;" x-show="confirming" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7"/></svg>
+                                </button>
+                                <button class="btn btn-ghost btn-square btn-xs" type="button" style="display: none;" x-show="confirming" @click="confirming = false" aria-label="Anulează arhivarea" title="Anulează">
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6 6 18"/></svg>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+            {% empty %}<tr><td colspan="6" class="py-10 text-center text-muted">Nu există tipuri de mentenanță.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+```
+
+## `apps/flota/templates/flota/includes/messages.html`
+
+Size: 338 B
+
+```html
+{% if messages %}
+<div class="space-y-2" aria-live="polite">
+    {% for message in messages %}
+        <div class="alert py-2 text-sm {% if message.tags == 'error' %}alert-error{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %}">
+            {{ message }}
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+```
+
+## `apps/flota/templates/flota/includes/vehicle_detail_panel.html`
+
+Size: 11.4 KB
+
+```html
+<section id="vehicle-detail-panel" class="space-y-5">
+    {% include "flota/includes/messages.html" %}
+    <nav class="text-xs text-muted" aria-label="Breadcrumb">
+        <a href="{% url 'flota:index' %}" class="hover:text-primary">Flota</a> / {{ vehicle.registration_display }}
+    </nav>
+
+    <header class="flex flex-col gap-4 border border-base-300 bg-base-100 p-4 lg:flex-row lg:items-center">
+        <span class="flex h-16 w-16 shrink-0 items-center justify-center border border-base-300 bg-base-100">
+            {% if vehicle.emblem %}
+                <img src="{{ vehicle.emblem.url }}" alt="Emblema {{ vehicle.brand }}" class="h-12 w-12 object-contain">
+            {% else %}
+                <span class="text-xl font-bold text-primary" aria-hidden="true">{{ vehicle.brand|slice:":1"|upper }}</span>
+            {% endif %}
+        </span>
+        <div class="min-w-0">
+            <h1 class="ops-title text-2xl font-bold">{{ vehicle.brand }} {{ vehicle.model }}</h1>
+            <div class="mt-1 flex flex-wrap items-center gap-2 text-sm">
+                <span class="font-semibold text-base-content">{{ vehicle.registration_display }}</span>
+                <span class="badge badge-sm {% if vehicle.is_archived %}badge-ghost{% elif vehicle.status == 'active' %}badge-success badge-outline{% else %}badge-warning badge-outline{% endif %}">
+                    {% if vehicle.is_archived %}Arhivat{% else %}{{ vehicle.get_status_display }}{% endif %}
+                </span>
+            </div>
+        </div>
+        <div class="lg:ml-8 lg:border-l lg:border-base-300 lg:pl-8">
+            <p class="text-xs text-muted">Responsabil</p>
+            <p class="mt-1 text-sm font-medium text-base-content">
+                {% if current_assignment %}{{ current_assignment.assignee.get_full_name|default:current_assignment.assignee.username }}{% else %}Neatribuit{% endif %}
+            </p>
+        </div>
+        {% if request.user.is_staff %}
+        <div class="flex flex-wrap gap-2 lg:ml-auto">
+            <a href="{% url 'flota:vehicle_edit' vehicle.pk %}" class="btn btn-primary btn-sm">Editează</a>
+            {% if vehicle.is_archived %}
+            <form
+                method="post"
+                action="{% url 'flota:vehicle_restore' vehicle.pk %}"
+                class="flex flex-wrap gap-2"
+                hx-post="{% url 'flota:vehicle_restore' vehicle.pk %}"
+                hx-target="#vehicle-detail-panel"
+                hx-swap="outerHTML show:top"
+                x-data="{ confirming: false }"
+                @submit="if (!confirming) { $event.preventDefault(); confirming = true; }"
+                @keydown.escape.window="confirming = false"
+            >
+                {% csrf_token %}
+                <button class="btn btn-outline btn-success btn-sm" type="submit" x-text="confirming ? 'Confirmă' : 'Restaurează'">Restaurează</button>
+                <button class="btn btn-ghost btn-sm" type="button" style="display: none;" x-show="confirming" @click="confirming = false">Anulează</button>
+            </form>
+            {% else %}
+            <form
+                method="post"
+                action="{% url 'flota:vehicle_archive' vehicle.pk %}"
+                class="flex flex-wrap gap-2"
+                hx-post="{% url 'flota:vehicle_archive' vehicle.pk %}"
+                hx-target="#vehicle-detail-panel"
+                hx-swap="outerHTML show:top"
+                x-data="{ confirming: false }"
+                @submit="if (!confirming) { $event.preventDefault(); confirming = true; }"
+                @keydown.escape.window="confirming = false"
+            >
+                {% csrf_token %}
+                <button class="btn btn-outline btn-error btn-sm" type="submit" x-text="confirming ? 'Confirmă' : 'Arhivează'">Arhivează</button>
+                <button class="btn btn-ghost btn-sm" type="button" style="display: none;" x-show="confirming" @click="confirming = false">Anulează</button>
+            </form>
+            {% endif %}
+        </div>
+        {% endif %}
+    </header>
+
+    <div class="grid gap-5 xl:grid-cols-[minmax(280px,0.8fr)_minmax(0,2fr)]">
+        <div class="space-y-5">
+            <section class="border border-base-300 bg-base-100">
+                <h2 class="border-b border-base-300 px-4 py-3 text-sm font-semibold text-base-content">Date vehicul</h2>
+                <dl class="divide-y divide-base-300 text-sm">
+                    <div class="grid grid-cols-2 gap-3 px-4 py-3"><dt class="text-muted">VIN</dt><dd class="text-right font-medium">{{ vehicle.vin|default:"—" }}</dd></div>
+                    <div class="grid grid-cols-2 gap-3 px-4 py-3"><dt class="text-muted">An fabricație</dt><dd class="text-right font-medium">{{ vehicle.manufacture_year|default:"—" }}</dd></div>
+                    <div class="grid grid-cols-2 gap-3 px-4 py-3"><dt class="text-muted">Kilometraj</dt><dd class="text-right font-medium">{{ vehicle.current_mileage }} km</dd></div>
+                    <div class="grid grid-cols-2 gap-3 px-4 py-3"><dt class="text-muted">Status</dt><dd class="text-right font-medium">{{ vehicle.get_status_display }}</dd></div>
+                    <div class="grid grid-cols-2 gap-3 px-4 py-3"><dt class="text-muted">Responsabil</dt><dd class="text-right font-medium">{% if current_assignment %}{{ current_assignment.assignee.get_full_name|default:current_assignment.assignee.username }}{% else %}Neatribuit{% endif %}</dd></div>
+                </dl>
+            </section>
+
+            <section class="border border-base-300 bg-base-100">
+                <div class="flex items-center justify-between border-b border-base-300 px-4 py-3">
+                    <h2 class="text-sm font-semibold text-base-content">Termene mentenanță</h2>
+                    {% if request.user.is_staff and not vehicle.is_archived %}<a href="{% url 'flota:maintenance_create' vehicle.pk %}" class="btn btn-primary btn-xs">Înregistrează</a>{% endif %}
+                </div>
+                <div class="divide-y divide-base-300">
+                    {% for row in deadline_rows %}
+                    <div class="space-y-2 px-4 py-3">
+                        <div class="flex items-center justify-between gap-3">
+                            <h3 class="text-sm font-semibold text-base-content">{{ row.type.name }}</h3>
+                            {% include "flota/includes/deadline_badge.html" with state=row.state due_on=row.record.next_due_on %}
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 text-xs">
+                            <div><span class="block text-muted">Ultima efectuare</span><span class="font-medium">{% if row.record %}{{ row.record.completed_on|date:"d.m.Y" }}{% else %}—{% endif %}</span></div>
+                            <div><span class="block text-muted">Următorul termen</span><span class="font-medium">{% if row.record %}{{ row.record.next_due_on|date:"d.m.Y" }}{% else %}—{% endif %}</span></div>
+                        </div>
+                        {% if request.user.is_staff and not vehicle.is_archived %}<a href="{% url 'flota:maintenance_create' vehicle.pk %}?type={{ row.type.pk }}" class="text-xs font-medium text-primary hover:underline">Înregistrează {{ row.type.name|lower }}</a>{% endif %}
+                    </div>
+                    {% empty %}<p class="px-4 py-8 text-center text-sm text-muted">Nu există tipuri de mentenanță active.</p>{% endfor %}
+                </div>
+            </section>
+        </div>
+
+        <div class="space-y-5">
+            <section class="border border-base-300 bg-base-100">
+                <div class="flex items-center justify-between border-b border-base-300 px-4 py-3">
+                    <h2 class="text-sm font-semibold text-base-content">Istoric servicii</h2>
+                    {% if request.user.is_staff and not vehicle.is_archived %}<a href="{% url 'flota:maintenance_create' vehicle.pk %}" class="btn btn-primary btn-xs">Înregistrare nouă</a>{% endif %}
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="table table-sm min-w-[760px]">
+                        <thead><tr><th>Tip</th><th>Efectuat la</th><th>Următorul termen</th><th>Kilometraj</th><th>Furnizor</th><th>Cost</th><th class="text-right">Acțiuni</th></tr></thead>
+                        <tbody>
+                        {% for record in maintenance_records %}
+                            <tr>
+                                <td class="font-medium">{{ record.maintenance_type.name }}</td>
+                                <td class="whitespace-nowrap">{{ record.completed_on|date:"d.m.Y" }}</td>
+                                <td class="whitespace-nowrap">{{ record.next_due_on|date:"d.m.Y" }}</td>
+                                <td class="whitespace-nowrap">{% if record.mileage is not None %}{{ record.mileage }} km{% else %}—{% endif %}</td>
+                                <td>{{ record.provider|default:"—" }}</td>
+                                <td class="whitespace-nowrap">{% if record.cost is not None %}{{ record.cost }} lei{% else %}—{% endif %}</td>
+                                <td class="text-right">
+                                    {% if request.user.is_staff %}
+                                    <a href="{% url 'flota:maintenance_edit' record.pk %}" class="btn btn-outline btn-primary btn-square btn-xs" aria-label="Editează {{ record.maintenance_type.name }}" title="Editează">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m14.7 5.3 4 4M4 20l4.35-.85L19.4 8.1a1.9 1.9 0 0 0 0-2.7l-.8-.8a1.9 1.9 0 0 0-2.7 0L4.85 15.65 4 20Z"/></svg>
+                                    </a>
+                                    {% else %}—{% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}<tr><td colspan="7" class="py-10 text-center text-muted">Nu există intervenții înregistrate.</td></tr>{% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="border border-base-300 bg-base-100">
+                <h2 class="border-b border-base-300 px-4 py-3 text-sm font-semibold text-base-content">Istoric atribuiri</h2>
+                <div class="overflow-x-auto">
+                    <table class="table table-sm min-w-[560px]">
+                        <thead><tr><th>De la</th><th>Până la</th><th>Responsabil</th><th>Atribuit de</th></tr></thead>
+                        <tbody>
+                        {% for assignment in assignment_history %}
+                            <tr>
+                                <td class="whitespace-nowrap">{{ assignment.starts_at|date:"d.m.Y H:i" }}</td>
+                                <td class="whitespace-nowrap">{% if assignment.ends_at %}{{ assignment.ends_at|date:"d.m.Y H:i" }}{% else %}Prezent{% endif %}</td>
+                                <td>{{ assignment.assignee.get_full_name|default:assignment.assignee.username }}</td>
+                                <td>{{ assignment.assigned_by.get_full_name|default:assignment.assigned_by.username }}</td>
+                            </tr>
+                        {% empty %}<tr><td colspan="4" class="py-8 text-center text-muted">Vehiculul nu a fost atribuit.</td></tr>{% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </div>
+</section>
+```
+
+## `apps/flota/templates/flota/index.html`
+
+Size: 1.1 KB
+
+```html
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}Flota | Platforma TUVTK{% endblock %}
+
+{% block content %}
+<section class="space-y-5">
+    {% include "flota/includes/messages.html" %}
+
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+            <h1 class="ops-title text-2xl font-bold sm:text-[2rem]">Flota</h1>
+            <p class="mt-1 text-sm text-muted">Administrarea vehiculelor și a termenelor de mentenanță.</p>
+        </div>
+        {% if request.user.is_staff %}
+        <div class="flex flex-wrap gap-2">
+            <a href="{% url 'flota:maintenance_type_list' %}" class="btn btn-outline btn-primary btn-sm">Tipuri mentenanță</a>
+            <a href="{% url 'flota:vehicle_create' %}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-lg" aria-hidden="true"></i> Adaugă vehicul
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    {% include "flota/includes/fleet_panel.html" %}
 </section>
 {% endblock %}
 
@@ -1258,7 +1543,7 @@ Size: 1013 B
 
 ## `apps/flota/templates/flota/maintenance_type_list.html`
 
-Size: 2.2 KB
+Size: 803 B
 
 ```html
 {% extends "layouts/base.html" %}
@@ -1267,7 +1552,6 @@ Size: 2.2 KB
 
 {% block content %}
 <section class="space-y-5">
-    {% include "flota/includes/messages.html" %}
     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
             <p class="text-xs text-muted"><a href="{% url 'flota:index' %}" class="hover:text-primary">Flota</a> / Configurare</p>
@@ -1276,31 +1560,15 @@ Size: 2.2 KB
         </div>
         <a href="{% url 'flota:maintenance_type_create' %}" class="btn btn-primary btn-sm">Tip nou</a>
     </div>
-    <div class="overflow-x-auto border border-base-300 bg-base-100">
-        <table class="table table-sm min-w-[680px]">
-            <thead><tr><th>Denumire</th><th>Cod</th><th>Ordine</th><th>Tip</th><th>Status</th><th class="text-right">Acțiuni</th></tr></thead>
-            <tbody>
-            {% for item in maintenance_types %}
-                <tr>
-                    <td class="font-semibold">{{ item.name }}</td>
-                    <td><code class="text-xs">{{ item.code }}</code></td>
-                    <td>{{ item.display_order }}</td>
-                    <td>{% if item.is_system %}Sistem{% else %}Personalizat{% endif %}</td>
-                    <td><span class="badge badge-sm {% if item.is_active %}badge-success badge-outline{% else %}badge-ghost{% endif %}">{% if item.is_active %}Activ{% else %}Arhivat{% endif %}</span></td>
-                    <td><div class="flex justify-end gap-1"><a href="{% url 'flota:maintenance_type_edit' item.pk %}" class="btn btn-ghost btn-xs">Editează</a>{% if not item.is_system and item.is_active %}<form method="post" action="{% url 'flota:maintenance_type_archive' item.pk %}">{% csrf_token %}<button class="btn btn-ghost btn-xs text-error">Arhivează</button></form>{% endif %}</div></td>
-                </tr>
-            {% empty %}<tr><td colspan="6" class="py-10 text-center text-muted">Nu există tipuri de mentenanță.</td></tr>{% endfor %}
-            </tbody>
-        </table>
-    </div>
+
+    {% include "flota/includes/maintenance_type_panel.html" %}
 </section>
 {% endblock %}
-
 ```
 
 ## `apps/flota/templates/flota/vehicle_detail.html`
 
-Size: 9.6 KB
+Size: 324 B
 
 ```html
 {% extends "layouts/base.html" %}
@@ -1309,130 +1577,7 @@ Size: 9.6 KB
 {% block title %}{{ vehicle.brand }} {{ vehicle.model }} | Flota{% endblock %}
 
 {% block content %}
-<section class="space-y-5">
-    {% include "flota/includes/messages.html" %}
-    <nav class="text-xs text-muted" aria-label="Breadcrumb">
-        <a href="{% url 'flota:index' %}" class="hover:text-primary">Flota</a> / {{ vehicle.registration_display }}
-    </nav>
-
-    <header class="flex flex-col gap-4 border border-base-300 bg-base-100 p-4 lg:flex-row lg:items-center">
-        <span class="flex h-16 w-16 shrink-0 items-center justify-center border border-base-300 bg-base-100">
-            {% if vehicle.emblem %}
-                <img src="{{ vehicle.emblem.url }}" alt="Emblema {{ vehicle.brand }}" class="h-12 w-12 object-contain">
-            {% else %}
-                <span class="text-xl font-bold text-primary" aria-hidden="true">{{ vehicle.brand|slice:":1"|upper }}</span>
-            {% endif %}
-        </span>
-        <div class="min-w-0">
-            <h1 class="ops-title text-2xl font-bold">{{ vehicle.brand }} {{ vehicle.model }}</h1>
-            <div class="mt-1 flex flex-wrap items-center gap-2 text-sm">
-                <span class="font-semibold text-base-content">{{ vehicle.registration_display }}</span>
-                <span class="badge badge-sm {% if vehicle.is_archived %}badge-ghost{% elif vehicle.status == 'active' %}badge-success badge-outline{% else %}badge-warning badge-outline{% endif %}">
-                    {% if vehicle.is_archived %}Arhivat{% else %}{{ vehicle.get_status_display }}{% endif %}
-                </span>
-            </div>
-        </div>
-        <div class="lg:ml-8 lg:border-l lg:border-base-300 lg:pl-8">
-            <p class="text-xs text-muted">Responsabil</p>
-            <p class="mt-1 text-sm font-medium text-base-content">
-                {% if current_assignment %}{{ current_assignment.assignee.get_full_name|default:current_assignment.assignee.username }}{% else %}Neatribuit{% endif %}
-            </p>
-        </div>
-        {% if request.user.is_staff %}
-        <div class="flex flex-wrap gap-2 lg:ml-auto">
-            <a href="{% url 'flota:vehicle_edit' vehicle.pk %}" class="btn btn-primary btn-sm">Editează</a>
-            {% if vehicle.is_archived %}
-            <form method="post" action="{% url 'flota:vehicle_restore' vehicle.pk %}">{% csrf_token %}<button class="btn btn-outline btn-success btn-sm">Restaurează</button></form>
-            {% else %}
-            <form method="post" action="{% url 'flota:vehicle_archive' vehicle.pk %}">{% csrf_token %}<button class="btn btn-outline btn-error btn-sm">Arhivează</button></form>
-            {% endif %}
-        </div>
-        {% endif %}
-    </header>
-
-    <div class="grid gap-5 xl:grid-cols-[minmax(280px,0.8fr)_minmax(0,2fr)]">
-        <div class="space-y-5">
-            <section class="border border-base-300 bg-base-100">
-                <h2 class="border-b border-base-300 px-4 py-3 text-sm font-semibold text-base-content">Date vehicul</h2>
-                <dl class="divide-y divide-base-300 text-sm">
-                    <div class="grid grid-cols-2 gap-3 px-4 py-3"><dt class="text-muted">VIN</dt><dd class="text-right font-medium">{{ vehicle.vin|default:"—" }}</dd></div>
-                    <div class="grid grid-cols-2 gap-3 px-4 py-3"><dt class="text-muted">An fabricație</dt><dd class="text-right font-medium">{{ vehicle.manufacture_year|default:"—" }}</dd></div>
-                    <div class="grid grid-cols-2 gap-3 px-4 py-3"><dt class="text-muted">Kilometraj</dt><dd class="text-right font-medium">{{ vehicle.current_mileage }} km</dd></div>
-                    <div class="grid grid-cols-2 gap-3 px-4 py-3"><dt class="text-muted">Status</dt><dd class="text-right font-medium">{{ vehicle.get_status_display }}</dd></div>
-                    <div class="grid grid-cols-2 gap-3 px-4 py-3"><dt class="text-muted">Responsabil</dt><dd class="text-right font-medium">{% if current_assignment %}{{ current_assignment.assignee.get_full_name|default:current_assignment.assignee.username }}{% else %}Neatribuit{% endif %}</dd></div>
-                </dl>
-            </section>
-
-            <section class="border border-base-300 bg-base-100">
-                <div class="flex items-center justify-between border-b border-base-300 px-4 py-3">
-                    <h2 class="text-sm font-semibold text-base-content">Termene mentenanță</h2>
-                    {% if request.user.is_staff and not vehicle.is_archived %}<a href="{% url 'flota:maintenance_create' vehicle.pk %}" class="btn btn-primary btn-xs">Înregistrează</a>{% endif %}
-                </div>
-                <div class="divide-y divide-base-300">
-                    {% for row in deadline_rows %}
-                    <div class="space-y-2 px-4 py-3">
-                        <div class="flex items-center justify-between gap-3">
-                            <h3 class="text-sm font-semibold text-base-content">{{ row.type.name }}</h3>
-                            {% include "flota/includes/deadline_badge.html" with state=row.state due_on=row.record.next_due_on %}
-                        </div>
-                        <div class="grid grid-cols-2 gap-3 text-xs">
-                            <div><span class="block text-muted">Ultima efectuare</span><span class="font-medium">{% if row.record %}{{ row.record.completed_on|date:"d.m.Y" }}{% else %}—{% endif %}</span></div>
-                            <div><span class="block text-muted">Următorul termen</span><span class="font-medium">{% if row.record %}{{ row.record.next_due_on|date:"d.m.Y" }}{% else %}—{% endif %}</span></div>
-                        </div>
-                        {% if request.user.is_staff and not vehicle.is_archived %}<a href="{% url 'flota:maintenance_create' vehicle.pk %}?type={{ row.type.pk }}" class="text-xs font-medium text-primary hover:underline">Înregistrează {{ row.type.name|lower }}</a>{% endif %}
-                    </div>
-                    {% empty %}<p class="px-4 py-8 text-center text-sm text-muted">Nu există tipuri de mentenanță active.</p>{% endfor %}
-                </div>
-            </section>
-        </div>
-
-        <div class="space-y-5">
-            <section class="border border-base-300 bg-base-100">
-                <div class="flex items-center justify-between border-b border-base-300 px-4 py-3">
-                    <h2 class="text-sm font-semibold text-base-content">Istoric servicii</h2>
-                    {% if request.user.is_staff and not vehicle.is_archived %}<a href="{% url 'flota:maintenance_create' vehicle.pk %}" class="btn btn-primary btn-xs">Înregistrare nouă</a>{% endif %}
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="table table-sm min-w-[760px]">
-                        <thead><tr><th>Tip</th><th>Efectuat la</th><th>Următorul termen</th><th>Kilometraj</th><th>Furnizor</th><th>Cost</th><th class="text-right">Acțiuni</th></tr></thead>
-                        <tbody>
-                        {% for record in maintenance_records %}
-                            <tr>
-                                <td class="font-medium">{{ record.maintenance_type.name }}</td>
-                                <td class="whitespace-nowrap">{{ record.completed_on|date:"d.m.Y" }}</td>
-                                <td class="whitespace-nowrap">{{ record.next_due_on|date:"d.m.Y" }}</td>
-                                <td class="whitespace-nowrap">{% if record.mileage is not None %}{{ record.mileage }} km{% else %}—{% endif %}</td>
-                                <td>{{ record.provider|default:"—" }}</td>
-                                <td class="whitespace-nowrap">{% if record.cost is not None %}{{ record.cost }} lei{% else %}—{% endif %}</td>
-                                <td class="text-right">{% if request.user.is_staff %}<a href="{% url 'flota:maintenance_edit' record.pk %}" class="btn btn-ghost btn-xs">Editează</a>{% else %}—{% endif %}</td>
-                            </tr>
-                        {% empty %}<tr><td colspan="7" class="py-10 text-center text-muted">Nu există intervenții înregistrate.</td></tr>{% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <section class="border border-base-300 bg-base-100">
-                <h2 class="border-b border-base-300 px-4 py-3 text-sm font-semibold text-base-content">Istoric atribuiri</h2>
-                <div class="overflow-x-auto">
-                    <table class="table table-sm min-w-[560px]">
-                        <thead><tr><th>De la</th><th>Până la</th><th>Responsabil</th><th>Atribuit de</th></tr></thead>
-                        <tbody>
-                        {% for assignment in assignment_history %}
-                            <tr>
-                                <td class="whitespace-nowrap">{{ assignment.starts_at|date:"d.m.Y H:i" }}</td>
-                                <td class="whitespace-nowrap">{% if assignment.ends_at %}{{ assignment.ends_at|date:"d.m.Y H:i" }}{% else %}Prezent{% endif %}</td>
-                                <td>{{ assignment.assignee.get_full_name|default:assignment.assignee.username }}</td>
-                                <td>{{ assignment.assigned_by.get_full_name|default:assignment.assigned_by.username }}</td>
-                            </tr>
-                        {% empty %}<tr><td colspan="4" class="py-8 text-center text-muted">Vehiculul nu a fost atribuit.</td></tr>{% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-        </div>
-    </div>
-</section>
+{% include "flota/includes/vehicle_detail_panel.html" %}
 {% endblock %}
 
 {% block page_scripts %}<script src="{% static 'flota/flota.js' %}" defer></script>{% endblock %}
@@ -1469,7 +1614,7 @@ Size: 1.1 KB
 
 ## `apps/flota/tests.py`
 
-Size: 10.9 KB
+Size: 13.4 KB
 
 Redacted secret-like assignments: 2
 
@@ -1704,6 +1849,61 @@ class FlotaAppTests(TestCase):
         response = self.client.get(reverse("flota:index"), {"deadline": "overdue"})
         self.assertNotContains(response, "Dacia Duster")
 
+    def test_htmx_list_filters_render_fleet_panel_only(self):
+        response = self.client.get(
+            reverse("flota:index"),
+            {"q": "Dacia"},
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "flota/includes/fleet_panel.html")
+        self.assertContains(response, 'id="fleet-panel"')
+        self.assertContains(response, "Dacia Duster")
+        self.assertNotContains(response, "<html")
+
+    def test_htmx_vehicle_archive_refreshes_detail_panel(self):
+        response = self.client.post(
+            reverse("flota:vehicle_archive", args=[self.vehicle.pk]),
+            HTTP_HX_REQUEST="true",
+        )
+        self.vehicle.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "flota/includes/vehicle_detail_panel.html")
+        self.assertTrue(self.vehicle.is_archived)
+        self.assertContains(response, 'id="vehicle-detail-panel"')
+        self.assertContains(response, "Restaurează")
+        self.assertNotContains(response, "<html")
+
+    def test_htmx_vehicle_restore_refreshes_detail_panel(self):
+        set_vehicle_archived(actor=self.staff, vehicle=self.vehicle, archived=True)
+        response = self.client.post(
+            reverse("flota:vehicle_restore", args=[self.vehicle.pk]),
+            HTTP_HX_REQUEST="true",
+        )
+        self.vehicle.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "flota/includes/vehicle_detail_panel.html")
+        self.assertFalse(self.vehicle.is_archived)
+        self.assertContains(response, "Arhivează")
+        self.assertNotContains(response, "<html")
+
+    def test_htmx_maintenance_type_archive_refreshes_list_panel(self):
+        custom = create_maintenance_type(
+            actor=self.staff,
+            data={"name": "Rovinietă", "code": "rovinieta", "display_order": 50, "is_active": True},
+        )
+        response = self.client.post(
+            reverse("flota:maintenance_type_archive", args=[custom.pk]),
+            HTTP_HX_REQUEST="true",
+        )
+        custom.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "flota/includes/maintenance_type_panel.html")
+        self.assertFalse(custom.is_active)
+        self.assertContains(response, 'id="maintenance-type-panel"')
+        self.assertContains(response, "Arhivat")
+        self.assertNotContains(response, "<html")
+
     def test_maintenance_history_renders_on_detail(self):
         create_maintenance_record(
             actor=self.staff,
@@ -1840,7 +2040,7 @@ def validate_maintenance_dates(completed_on, next_due_on) -> None:
 
 ## `apps/flota/views.py`
 
-Size: 12.0 KB
+Size: 13.1 KB
 
 ```python
 from urllib.parse import urlencode
@@ -1900,54 +2100,66 @@ def _apply_validation_error(form, error):
             form.add_error(None, message)
 
 
+def _is_htmx(request):
+    return request.headers.get("HX-Request") == "true"
+
+
+def _fleet_index_context(request):
+    archived_only = request.user.is_staff and request.GET.get("archived") == "1"
+    base_queryset = visible_vehicles(user=request.user, include_archived=archived_only)
+    filtered = filter_vehicles(base_queryset, request.GET)
+    paginator = Paginator(filtered, 20)
+    page = paginator.get_page(request.GET.get("page"))
+    page.object_list = decorate_vehicle_rows(page.object_list)
+    query = request.GET.copy()
+    query.pop("page", None)
+    summary_queryset = Vehicle.objects.all() if request.user.is_staff else visible_vehicles(user=request.user)
+    return {
+        "page": page,
+        "summary": fleet_summary(queryset=summary_queryset),
+        "filters": request.GET,
+        "status_choices": Vehicle.Status.choices,
+        "users": active_users() if request.user.is_staff else [],
+        "archived_only": archived_only,
+        "query_without_page": urlencode(query, doseq=True),
+    }
+
+
+def _vehicle_detail_context(vehicle):
+    return {
+        "vehicle": vehicle,
+        "current_assignment": _current_assignment(vehicle),
+        "deadline_rows": vehicle_deadline_rows(vehicle),
+        "maintenance_records": vehicle.maintenance_records.select_related(
+            "maintenance_type", "created_by"
+        ),
+        "assignment_history": vehicle.assignments.select_related(
+            "assignee", "assigned_by", "ended_by"
+        ),
+    }
+
+
+def _maintenance_type_context():
+    return {"maintenance_types": MaintenanceType.objects.all()}
+
+
 class FleetIndexView(LoginRequiredMixin, View):
     template_name = "flota/index.html"
+    partial_template_name = "flota/includes/fleet_panel.html"
 
     def get(self, request):
-        archived_only = request.user.is_staff and request.GET.get("archived") == "1"
-        base_queryset = visible_vehicles(user=request.user, include_archived=archived_only)
-        filtered = filter_vehicles(base_queryset, request.GET)
-        paginator = Paginator(filtered, 20)
-        page = paginator.get_page(request.GET.get("page"))
-        page.object_list = decorate_vehicle_rows(page.object_list)
-        query = request.GET.copy()
-        query.pop("page", None)
-        summary_queryset = Vehicle.objects.all() if request.user.is_staff else visible_vehicles(user=request.user)
-        return render(
-            request,
-            self.template_name,
-            {
-                "page": page,
-                "summary": fleet_summary(queryset=summary_queryset),
-                "filters": request.GET,
-                "status_choices": Vehicle.Status.choices,
-                "users": active_users() if request.user.is_staff else [],
-                "archived_only": archived_only,
-                "query_without_page": urlencode(query, doseq=True),
-            },
-        )
+        template_name = self.partial_template_name if _is_htmx(request) else self.template_name
+        return render(request, template_name, _fleet_index_context(request))
 
 
 class VehicleDetailView(LoginRequiredMixin, View):
     template_name = "flota/vehicle_detail.html"
+    partial_template_name = "flota/includes/vehicle_detail_panel.html"
 
     def get(self, request, vehicle_id):
         vehicle = get_visible_vehicle(user=request.user, vehicle_id=vehicle_id)
-        return render(
-            request,
-            self.template_name,
-            {
-                "vehicle": vehicle,
-                "current_assignment": _current_assignment(vehicle),
-                "deadline_rows": vehicle_deadline_rows(vehicle),
-                "maintenance_records": vehicle.maintenance_records.select_related(
-                    "maintenance_type", "created_by"
-                ),
-                "assignment_history": vehicle.assignments.select_related(
-                    "assignee", "assigned_by", "ended_by"
-                ),
-            },
-        )
+        template_name = self.partial_template_name if _is_htmx(request) else self.template_name
+        return render(request, template_name, _vehicle_detail_context(vehicle))
 
 
 class VehicleCreateView(StaffRequiredMixin, View):
@@ -2002,16 +2214,28 @@ class VehicleEditView(StaffRequiredMixin, View):
 class VehicleArchiveView(StaffRequiredMixin, View):
     def post(self, request, vehicle_id):
         vehicle = get_staff_vehicle(vehicle_id=vehicle_id)
-        set_vehicle_archived(actor=request.user, vehicle=vehicle, archived=True)
+        vehicle = set_vehicle_archived(actor=request.user, vehicle=vehicle, archived=True)
         messages.success(request, "Vehiculul a fost arhivat, iar atribuirea curentă a fost încheiată.")
+        if _is_htmx(request):
+            return render(
+                request,
+                VehicleDetailView.partial_template_name,
+                _vehicle_detail_context(vehicle),
+            )
         return redirect("flota:vehicle_detail", vehicle_id=vehicle.pk)
 
 
 class VehicleRestoreView(StaffRequiredMixin, View):
     def post(self, request, vehicle_id):
         vehicle = get_staff_vehicle(vehicle_id=vehicle_id)
-        set_vehicle_archived(actor=request.user, vehicle=vehicle, archived=False)
+        vehicle = set_vehicle_archived(actor=request.user, vehicle=vehicle, archived=False)
         messages.success(request, "Vehiculul a fost restaurat și este neatribuit.")
+        if _is_htmx(request):
+            return render(
+                request,
+                VehicleDetailView.partial_template_name,
+                _vehicle_detail_context(vehicle),
+            )
         return redirect("flota:vehicle_detail", vehicle_id=vehicle.pk)
 
 
@@ -2086,9 +2310,11 @@ class MaintenanceEditView(StaffRequiredMixin, View):
 
 class MaintenanceTypeListView(StaffRequiredMixin, View):
     template_name = "flota/maintenance_type_list.html"
+    partial_template_name = "flota/includes/maintenance_type_panel.html"
 
     def get(self, request):
-        return render(request, self.template_name, {"maintenance_types": MaintenanceType.objects.all()})
+        template_name = self.partial_template_name if _is_htmx(request) else self.template_name
+        return render(request, template_name, _maintenance_type_context())
 
 
 class MaintenanceTypeCreateView(StaffRequiredMixin, View):
@@ -2157,6 +2383,11 @@ class MaintenanceTypeArchiveView(StaffRequiredMixin, View):
             messages.error(request, error.messages[0])
         else:
             messages.success(request, "Tipul de mentenanță a fost arhivat.")
+        if _is_htmx(request):
+            return render(
+                request,
+                MaintenanceTypeListView.partial_template_name,
+                _maintenance_type_context(),
+            )
         return redirect("flota:maintenance_type_list")
-
 ```

@@ -2,7 +2,7 @@
 
 ## `scripts/generate_codex_context.py`
 
-Size: 23.5 KB
+Size: 23.7 KB
 
 ```python
 #!/usr/bin/env python3
@@ -46,6 +46,10 @@ EXCLUDED_DIRECTORY_NAMES = {
     ".playwright-mcp",
     "test-results",
     "playwright-report",
+}
+
+EXCLUDED_DIRECTORY_PATHS = {
+    "theme/static/js/vendor",
 }
 
 EXCLUDED_EXTENSIONS = {
@@ -405,6 +409,8 @@ def discover_files(
                 f".{output.name}.previous-"
             ):
                 reason = "generated context staging output"
+            elif relative in EXCLUDED_DIRECTORY_PATHS:
+                reason = "generated frontend vendor assets"
             elif directory_name in EXCLUDED_DIRECTORY_NAMES:
                 reason = "excluded directory"
             elif directory_name == "migrations":

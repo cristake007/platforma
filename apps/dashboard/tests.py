@@ -36,7 +36,7 @@ class DashboardViewTests(TestCase):
         self.assertContains(response, 'data-sidebar-flyout-trigger', count=1)
         self.assertContains(response, 'data-sidebar-flyout-panel', count=1)
         self.assertContains(response, 'aria-haspopup="true"', count=1)
-        self.assertContains(response, 'class="ops-submenu-label"', count=2)
+        self.assertContains(response, 'class="ops-submenu-label"', count=4)
         self.assertNotContains(response, 'ops-flyout-heading')
         self.assertNotContains(response, 'ops-submenu is-drawer-close:hidden')
 
@@ -52,6 +52,22 @@ class DashboardViewTests(TestCase):
         self.assertLess(toggle_position, initializer_position)
         self.assertLess(initializer_position, drawer_content_position)
 
+    def test_shared_htmx_and_alpine_scripts_load_once_from_shell(self):
+        response = self.client.get(reverse('dashboard:index'))
+
+        self.assertContains(response, 'js/vendor/htmx.min.js', count=1)
+        self.assertContains(response, 'htmx:configRequest', count=1)
+        self.assertContains(response, 'X-CSRFToken', count=1)
+        self.assertContains(response, 'js/vendor/alpine.min.js', count=1)
+        content = response.content.decode()
+        htmx_position = content.index('js/vendor/htmx.min.js')
+        csrf_hook_position = content.index('htmx:configRequest')
+        alpine_position = content.index('js/vendor/alpine.min.js')
+        sidebar_position = content.index('js/sidebar.js')
+        self.assertLess(htmx_position, csrf_hook_position)
+        self.assertLess(csrf_hook_position, alpine_position)
+        self.assertLess(alpine_position, sidebar_position)
+
     def test_anonymous_user_is_redirected_to_login(self):
         self.client.logout()
 
@@ -66,4 +82,4 @@ class DashboardViewTests(TestCase):
         response = self.client.get(reverse('dashboard:index'))
 
         self.assertContains(response, f'action="{reverse("logout")}"')
-        self.assertContains(response, 'Test Operator')
+        self.assertContains(response, '<span aria-hidden="true">TO</span>')

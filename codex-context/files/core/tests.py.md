@@ -2,11 +2,14 @@
 
 ## `core/tests.py`
 
-Size: 2.9 KB
+Size: 3.4 KB
 
 ```python
+import json
+
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import resolve, reverse
 
@@ -21,6 +24,14 @@ class ApplicationShellTests(TestCase):
         self.assertContains(response, "card card-border w-full bg-base-100 shadow-xl")
         self.assertContains(response, "h-24 w-24 object-contain sm:h-28 sm:w-28")
         self.assertNotContains(response, "ops-btn")
+
+    def test_frontend_enhancement_dependencies_are_local_and_pinned(self):
+        package_json = settings.BASE_DIR / "theme" / "static_src" / "package.json"
+        package = json.loads(package_json.read_text(encoding="utf-8"))
+
+        self.assertEqual(package["dependencies"]["htmx.org"], "2.0.10")
+        self.assertEqual(package["dependencies"]["alpinejs"], "3.15.12")
+        self.assertIn("build:vendor", package["scripts"])
 
     def test_navigation_marks_current_route(self):
         request = RequestFactory().get('/')

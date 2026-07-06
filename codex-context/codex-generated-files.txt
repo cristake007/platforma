@@ -16,6 +16,7 @@ files/.tuvtk/config.json.md
 files/AGENTS.md.md
 files/CODEX_RESUME_PHASES.md.md
 files/Dockerfile.md
+files/HTMX_ALPINE_IMPLEMENTATION_PLAN.md.md
 files/README.md.md
 files/activate_venv.bat.md
 files/apps/__init__.py.md
@@ -75,8 +76,11 @@ files/apps/flota/selectors.py.md
 files/apps/flota/services.py.md
 files/apps/flota/static/flota/flota.js.md
 files/apps/flota/templates/flota/includes/deadline_badge.html.md
+files/apps/flota/templates/flota/includes/fleet_panel.html.md
 files/apps/flota/templates/flota/includes/form_fields.html.md
+files/apps/flota/templates/flota/includes/maintenance_type_panel.html.md
 files/apps/flota/templates/flota/includes/messages.html.md
+files/apps/flota/templates/flota/includes/vehicle_detail_panel.html.md
 files/apps/flota/templates/flota/index.html.md
 files/apps/flota/templates/flota/maintenance_form.html.md
 files/apps/flota/templates/flota/maintenance_type_form.html.md

@@ -20,4 +20,5 @@ media/
 private_media/
 staticfiles/
 theme/static/css/dist/
+theme/static/js/vendor/
 repomix-output.*

@@ -3550,7 +3550,7 @@ Dockerfile text eol=lf
 
 ## `.gitignore`
 
-Size: 296 B
+Size: 320 B
 
 ```text
 # Editor and local environment
@@ -3575,6 +3575,7 @@ media/
 private_media/
 staticfiles/
 theme/static/css/dist/
+theme/static/js/vendor/
 repomix-output.*
 ```
 
@@ -5621,7 +5622,7 @@ Size: 5.6 KB
 
 ## `core/templates/layouts/base.html`
 
-Size: 6.7 KB
+Size: 7.9 KB
 
 ```html
 {% load static tailwind_tags optional_browser_reload %}
@@ -5726,6 +5727,32 @@ Size: 6.7 KB
             {% include "includes/sidebar.html" %}
         </div>
     </div>
+    <script src="{% static 'js/vendor/htmx.min.js' %}" defer></script>
+    <script>
+        (() => {
+            const safeMethods = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
+            const csrfToken = () => {
+                const fieldToken = document.querySelector('[name="csrfmiddlewaretoken"]')?.value;
+                if (fieldToken) return fieldToken;
+
+                const cookie = document.cookie
+                    .split(";")
+                    .map((value) => value.trim())
+                    .find((value) => value.startsWith("csrftoken="));
+                return cookie ? decodeURIComponent(cookie.slice("csrftoken=".length)) : "";
+            };
+
+            document.body.addEventListener("htmx:configRequest", (event) => {
+                if (!event.detail?.headers) return;
+                const method = String(event.detail.verb || event.detail.requestConfig?.verb || "GET").toUpperCase();
+                if (safeMethods.has(method)) return;
+
+                const token = csrfToken();
+                if (token) event.detail.headers["X-CSRFToken"] = token;
+            });
+        })();
+    </script>
+    <script src="{% static 'js/vendor/alpine.min.js' %}" defer></script>
     <script src="{% static 'js/sidebar.js' %}" defer></script>
     {% block page_scripts %}{% endblock %}
     {% optional_browser_reload_script %}
@@ -5822,11 +5849,14 @@ def optional_browser_reload_script(context):
 
 ## `core/tests.py`
 
-Size: 2.9 KB
+Size: 3.4 KB
 
 ```python
+import json
+
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import resolve, reverse
 
@@ -5841,6 +5871,14 @@ class ApplicationShellTests(TestCase):
         self.assertContains(response, "card card-border w-full bg-base-100 shadow-xl")
         self.assertContains(response, "h-24 w-24 object-contain sm:h-28 sm:w-28")
         self.assertNotContains(response, "ops-btn")
+
+    def test_frontend_enhancement_dependencies_are_local_and_pinned(self):
+        package_json = settings.BASE_DIR / "theme" / "static_src" / "package.json"
+        package = json.loads(package_json.read_text(encoding="utf-8"))
+
+        self.assertEqual(package["dependencies"]["htmx.org"], "2.0.10")
+        self.assertEqual(package["dependencies"]["alpinejs"], "3.15.12")
+        self.assertIn("build:vendor", package["scripts"])
 
     def test_navigation_marks_current_route(self):
         request = RequestFactory().get('/')
@@ -5986,7 +6024,7 @@ exec gunicorn platforma_tuvtk.wsgi:application \
 
 ## `frontend.md`
 
-Size: 921 B
+Size: 1.3 KB
 
 ```markdown
 # Frontend Rules
@@ -5994,6 +6032,9 @@ Size: 921 B
 - Use the `tuvtk` daisyUI theme and its semantic color utilities; literal colors belong only in `theme/static_src/src/styles.css` token definitions and brand assets.
 - Use `--sidebar-*` only for sidebar-specific states that do not map cleanly to daisyUI semantics. The shared `ops-*` class names are styling and JavaScript hooks, not color tokens.
 - Use Tailwind for layout and daisyUI for accessible primitives. Do not add a second framework or SPA.
+- HTMX and Alpine.js are allowed only as progressive enhancement: HTMX for server-rendered partial updates, Alpine for local UI state.
+- Keep Django templates, views, forms, and PostgreSQL as the source of truth; do not move validation, authorization, persistence, or routing into JavaScript.
+- Load shared HTMX and Alpine assets once from the base layout. Apps may add scoped behavior, but must not duplicate global library loading.
 - Keep pages compact, flat, responsive, and keyboard accessible.
 - Application-specific JavaScript and template includes belong to their Django app.
 - Build feature interfaces directly from daisyUI components. Custom `ops-*` classes are reserved for the shared application shell and sidebar.
@@ -6030,6 +6071,382 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 exec python3 "$SCRIPT_DIR/scripts/generate_codex_context.py" "$@"
+```
+
+## `HTMX_ALPINE_IMPLEMENTATION_PLAN.md`
+
+Size: 13.4 KB
+
+```markdown
+# HTMX and Alpine.js Implementation Plan
+
+This plan migrates the project toward HTMX and Alpine.js without turning the
+application into a SPA and without replacing working custom JavaScript in one
+large pass. The order matters: install the shared foundation first, convert
+low-risk CRUD/list pages next, then handle custom interactive workflows after
+their surrounding pages are stable.
+
+The shared foundation and the first Flota conversion pass are complete, so they
+are not repeated as active implementation phases below.
+
+## Ground Rules
+
+- Keep Django templates and PostgreSQL as the source of truth.
+- Use HTMX for server-rendered partial updates, form submissions, table/list
+  refreshes, small polling/refresh needs, and targeted swaps.
+- Use Alpine.js for local-only UI state: toggles, dialogs, filters, disclosure
+  panels, selected-row state, loading flags, and small reactive counters.
+- Keep validation, authorization, ownership checks, and persistence server-side.
+- Preserve native links/forms as fallbacks wherever practical.
+- Keep state-changing requests POST-only with CSRF protection.
+- Do not rewrite heavy custom JavaScript until the workflow is specifically in
+  scope.
+- Add focused tests for partial-response behavior when a view gains HTMX support.
+
+## Completed Baseline
+
+Already implemented:
+
+1. Shared HTMX and Alpine package dependencies, script loading, CSRF request
+   handling, frontend rules, and shell/dashboard script-contract tests.
+2. Flota HTMX partial responses for fleet filters, pagination, vehicle
+   archive/restore, and maintenance-type archive flows.
+3. Flota Alpine confirmation state for archive/restore actions.
+4. Flota deadline badge refresh after HTMX swaps.
+5. Focused Flota tests for partial responses and preserved native behavior.
+
+## Flota Follow-Up Improvements
+
+Goal: improve the completed Flota pass without reworking the whole app.
+
+Files:
+
+1. `apps/flota/views.py`
+2. `apps/flota/templates/flota/includes/fleet_panel.html`
+3. `apps/flota/templates/flota/includes/vehicle_detail_panel.html`
+4. `apps/flota/templates/flota/includes/maintenance_type_panel.html`
+5. `apps/flota/static/flota/flota.js`
+6. `apps/flota/tests.py`
+
+Tasks:
+
+1. Replace the subtle filter spinner with a clearly visible loading state:
+   disabled controls, `aria-busy`, an obvious table-level loading row or overlay,
+   and focused tests for the rendered loading hooks.
+2. Use `hx-sync` on the fleet filter form so rapid typing or select changes
+   replace stale requests instead of queueing outdated table refreshes.
+3. Add active filter chips with one-click removal while preserving the normal
+   query-string fallback.
+4. Consider an Alpine disclosure for the filter panel on narrow screens if the
+   filter grid takes too much vertical space.
+5. Add archive/restore actions from the fleet list only if row-level partials can
+   keep ownership, CSRF, confirmation, and fallback behavior straightforward.
+6. Consider HTMX out-of-band message swaps if a future flow needs global message
+   updates outside the swapped panel.
+7. Add manual browser QA under slow network throttling for filter loading state,
+   archive confirmation, refresh/back navigation, and narrow-screen layout.
+
+Checks:
+
+1. `.\install.ps1 test apps.flota`
+2. `.\install.ps1 check`
+3. Manual browser check with network throttling.
+4. `git diff --check`
+
+## Phase 3: Media Library
+
+Goal: convert the small upload/list/delete workflow before larger consumers use
+it.
+
+Files:
+
+1. `apps/media_library/AGENTS.md`
+2. `apps/media_library/views.py`
+3. `apps/media_library/urls.py`
+4. `apps/media_library/forms.py`
+5. `apps/media_library/templates/media_library/library.html`
+6. New partial templates under `apps/media_library/templates/media_library/includes/`
+   if needed.
+7. `apps/media_library/tests.py`
+
+Tasks:
+
+1. Add HTMX upload handling that returns the refreshed upload form, messages,
+   and asset grid as partial HTML.
+2. Add HTMX delete handling for owned assets.
+3. Use Alpine for local upload filename/preview/loading state only.
+4. Keep JSON API endpoints for existing `diplome` editor integration.
+5. Preserve private asset serving and ownership behavior.
+
+Checks:
+
+1. `.\install.ps1 test apps.media_library`
+2. `.\install.ps1 check`
+3. `git diff --check`
+
+## Phase 4: Tasks Static Pages and Lists
+
+Goal: convert non-Kanban task workflows before touching drag-and-drop behavior.
+
+Files:
+
+1. `apps/tasks/AGENTS.md`
+2. `apps/tasks/views.py`
+3. `apps/tasks/urls.py`
+4. `apps/tasks/forms.py`
+5. `apps/tasks/templates/tasks/includes/messages.html`
+6. `apps/tasks/templates/tasks/includes/form_fields.html`
+7. `apps/tasks/templates/tasks/includes/timer.html`
+8. `apps/tasks/templates/tasks/hub.html`
+9. `apps/tasks/templates/tasks/board_list.html`
+10. `apps/tasks/templates/tasks/board_settings.html`
+11. `apps/tasks/templates/tasks/board_form.html`
+12. `apps/tasks/templates/tasks/task_form.html`
+13. `apps/tasks/static/tasks/tasks.js`
+14. `apps/tasks/tests.py`
+
+Tasks:
+
+1. Add HTMX filtering for board/task lists.
+2. Add HTMX form handling for settings actions where the page can refresh a
+   local section.
+3. Use Alpine for dialogs, confirm state, local form sections, and loading flags.
+4. Keep timers in existing JS unless replacing them is isolated and lower risk.
+5. Preserve server-side permission behavior and native form fallbacks.
+
+Checks:
+
+1. `.\install.ps1 test apps.tasks`
+2. `.\install.ps1 check`
+3. `git diff --check`
+
+## Phase 5: Tasks Kanban
+
+Goal: integrate HTMX around Kanban without breaking drag-and-drop.
+
+Files:
+
+1. `apps/tasks/views.py`
+2. `apps/tasks/templates/tasks/board_kanban.html`
+3. New partial templates under `apps/tasks/templates/tasks/includes/` if needed.
+4. `apps/tasks/static/tasks/tasks.js`
+5. `apps/tasks/tests.py`
+
+Tasks:
+
+1. Keep drag-and-drop movement in custom JS initially.
+2. Convert task creation and archive/restore flows to HTMX partial refreshes.
+3. Evaluate whether board state polling can become `hx-trigger` polling or remain
+   custom JSON polling.
+4. Ensure swapped cards still have required drag/drop attributes and version
+   fields.
+5. Preserve native fallback forms for task movement.
+
+Checks:
+
+1. `.\install.ps1 test apps.tasks`
+2. Manual browser check: drag/drop, create task, archive task, refresh/back.
+3. `git diff --check`
+
+## Phase 6: Diplome Lists, Generation, and Imports
+
+Goal: convert ordinary diploma pages while leaving the editor intact.
+
+Files:
+
+1. `apps/diplome/AGENTS.md`
+2. `apps/diplome/views.py`
+3. `apps/diplome/urls.py`
+4. `apps/diplome/forms.py`
+5. `apps/diplome/templates/diplome/template_list.html`
+6. `apps/diplome/templates/diplome/template_form.html`
+7. `apps/diplome/templates/diplome/history_index.html`
+8. `apps/diplome/templates/diplome/batch_detail.html`
+9. `apps/diplome/templates/diplome/generation_index.html`
+10. `apps/diplome/templates/diplome/generation_preview.html`
+11. `apps/diplome/templates/diplome/participant_list.html`
+12. `apps/diplome/templates/diplome/participant_list_detail.html`
+13. `apps/diplome/templates/diplome/participant_import.html`
+14. `apps/diplome/templates/diplome/participant_import_sheet.html`
+15. `apps/diplome/templates/diplome/participant_import_mapping.html`
+16. `apps/diplome/templates/diplome/participant_import_preview.html`
+17. `apps/diplome/static/diplome/generation.js`
+18. `apps/diplome/static/diplome/participant_import.js`
+19. `apps/diplome/static/diplome/participant_mapping.js`
+20. `apps/diplome/tests.py`
+21. `apps/diplome/tests_generation.py`
+22. `apps/diplome/tests_bulk_generation.py`
+23. `apps/diplome/tests_participants.py`
+
+Tasks:
+
+1. Add HTMX partial refreshes for template list, participant list, history, and
+   batch detail actions.
+2. Use HTMX only where downloads and redirects are not the primary response.
+3. Use Alpine for selection state, local filtering, confirm dialogs, and import
+   form UI.
+4. Keep generation/download validation and output server-owned.
+5. Preserve owner scoping and history snapshot behavior.
+
+Checks:
+
+1. `.\install.ps1 test apps.diplome.tests`
+2. `.\install.ps1 test apps.diplome.tests_participants`
+3. `.\install.ps1 test apps.diplome.tests_generation`
+4. `.\install.ps1 test apps.diplome.tests_bulk_generation`
+5. Use only the focused command matching the edited workflow when possible.
+6. `git diff --check`
+
+## Phase 7: Planificator Generator and History
+
+Goal: convert the schedule generator shell and history before the JSON-heavy
+converter/updater workflows.
+
+Files:
+
+1. `apps/planificator/AGENTS.md`
+2. `apps/planificator/views.py`
+3. `apps/planificator/urls.py`
+4. `apps/planificator/forms.py`
+5. `apps/planificator/templates/planificator/generator_perioade.html`
+6. `apps/planificator/templates/planificator/includes/upload.html`
+7. `apps/planificator/templates/planificator/includes/settings.html`
+8. `apps/planificator/templates/planificator/includes/result_table.html`
+9. `apps/planificator/templates/planificator/includes/actions.html`
+10. `apps/planificator/templates/planificator/includes/messages.html`
+11. `apps/planificator/templates/planificator/istoric.html`
+12. `apps/planificator/static/planificator/generator.js`
+13. `apps/planificator/tests.py`
+14. `apps/planificator/tests_scheduler.py`
+
+Tasks:
+
+1. Add HTMX support around generator form errors, messages, and result sections
+   where it does not interfere with file download/export flows.
+2. Use Alpine for local month selection, holiday rows, upload filename state, and
+   step UI where it reduces custom JavaScript.
+3. Keep result tables horizontally scrollable.
+4. Preserve schedule export response behavior.
+
+Checks:
+
+1. `.\install.ps1 test apps.planificator.tests`
+2. `.\install.ps1 test apps.planificator.tests_scheduler`
+3. `.\install.ps1 check`
+4. `git diff --check`
+
+## Phase 8: Planificator XML and Word Converter Workflows
+
+Goal: migrate JSON/download workflows only after their boundaries are mapped.
+
+Files:
+
+1. `apps/planificator/views.py`
+2. `apps/planificator/templates/planificator/xml_formatter.html`
+3. `apps/planificator/templates/planificator/word_converter.html`
+4. `apps/planificator/static/planificator/xml_formatter.js`
+5. `apps/planificator/static/planificator/word_converter.js`
+6. `apps/planificator/tests_xml_export.py`
+7. `apps/planificator/tests_word_converter.py`
+
+Tasks:
+
+1. Keep direct file download responses outside HTMX swaps unless using an
+   intentional download pattern.
+2. Convert preview/error sections to HTMX only if the endpoint can return HTML
+   partials without weakening the JSON contract used by existing code.
+3. Use Alpine for file labels, preview selection, and loading state.
+4. Preserve untrusted file validation and neutralization behavior.
+
+Checks:
+
+1. `.\install.ps1 test apps.planificator.tests_xml_export`
+2. `.\install.ps1 test apps.planificator.tests_word_converter`
+3. `git diff --check`
+
+## Phase 9: Planificator Course Updater
+
+Goal: handle the highest-risk Planificator workflow after the simpler workflows.
+
+Files:
+
+1. `apps/planificator/views.py`
+2. `apps/planificator/templates/planificator/actualizeaza_cursuri.html`
+3. `apps/planificator/static/planificator/course_updater.js`
+4. `apps/planificator/tests_course_updater.py`
+
+Tasks:
+
+1. Preserve SSRF defenses, redirect handling, and secret non-persistence.
+2. Keep JSON endpoints if they remain the clearest contract for row-by-row
+   updates.
+3. Use HTMX for isolated row/status replacement only when the response shape is
+   simpler than the current JSON flow.
+4. Use Alpine for connection state, input state, progress indicators, and local
+   row UI.
+
+Checks:
+
+1. `.\install.ps1 test apps.planificator.tests_course_updater`
+2. Manual browser check: connect, fetch dates, update row, disconnect.
+3. `git diff --check`
+
+## Phase 10: Diplome Template Preview and Editor
+
+Goal: review the editor last. This is not a first-pass HTMX conversion target.
+
+Files:
+
+1. `apps/diplome/templates/diplome/template_preview.html`
+2. `apps/diplome/templates/diplome/template_editor.html`
+3. `apps/diplome/static/diplome/template_preview.js`
+4. `apps/diplome/static/diplome/template_renderer.js`
+5. `apps/diplome/static/diplome/template_editor.js`
+6. `apps/diplome/tests.py`
+
+Tasks:
+
+1. Keep `template_renderer.js` compatible with preview, editor, and PDF-related
+   assumptions.
+2. Do not replace canvas/layout editing state with HTMX.
+3. Consider Alpine only for isolated chrome state if it does not conflict with
+   editor selection, history, keyboard, pointer, media picker, or save behavior.
+4. Consider HTMX only for surrounding shell actions, not the editor layout model.
+5. Keep JSON layout validation canonical in server validators.
+
+Checks:
+
+1. `.\install.ps1 test apps.diplome.tests`
+2. Manual browser check: create template, edit, media picker, save, preview,
+   discard, back/refresh behavior.
+3. `git diff --check`
+
+## Phase 11: Cleanup and Context Refresh
+
+Goal: remove dead code and update generated context after the staged migration.
+
+Files:
+
+1. Any app static JS file made obsolete by earlier phases.
+2. Any new partial templates created during the migration.
+3. `theme/static_src/src/styles.css` if new template/static paths require
+   Tailwind `@source` entries.
+4. `codex-context/` generated files after context regeneration.
+
+Tasks:
+
+1. Remove unused custom JavaScript only after the replacement behavior is tested.
+2. Confirm no app-local colors or duplicate UI tokens were introduced.
+3. Confirm all HTMX partials preserve authorization, CSRF, and fallback behavior.
+4. Regenerate context from the repository root.
+
+Checks:
+
+1. `.\install.ps1 check`
+2. Focused app tests for every app touched in the cleanup.
+3. `.\install.ps1 npm run build`
+4. `.\install.ps1 context`
+5. `git diff --check`
 ```
 
 ## `install.cmd`
@@ -6669,7 +7086,7 @@ exit $LASTEXITCODE
 
 ## `scripts/generate_codex_context.py`
 
-Size: 23.5 KB
+Size: 23.7 KB
 
 ```python
 #!/usr/bin/env python3
@@ -6713,6 +7130,10 @@ EXCLUDED_DIRECTORY_NAMES = {
     ".playwright-mcp",
     "test-results",
     "playwright-report",
+}
+
+EXCLUDED_DIRECTORY_PATHS = {
+    "theme/static/js/vendor",
 }
 
 EXCLUDED_EXTENSIONS = {
@@ -7072,6 +7493,8 @@ def discover_files(
                 f".{output.name}.previous-"
             ):
                 reason = "generated context staging output"
+            elif relative in EXCLUDED_DIRECTORY_PATHS:
+                reason = "generated frontend vendor assets"
             elif directory_name in EXCLUDED_DIRECTORY_NAMES:
                 reason = "excluded directory"
             elif directory_name == "migrations":
@@ -9057,7 +9480,7 @@ node_modules
 
 ## `theme/static_src/package-lock.json`
 
-Size: 53.5 KB
+Size: 73.8 KB
 
 ```json
 {
@@ -9070,6 +9493,10 @@ Size: 53.5 KB
       "name": "theme",
       "version": "4.5.0",
       "license": "MIT",
+      "dependencies": {
+        "alpinejs": "3.15.12",
+        "htmx.org": "2.0.10"
+      },
       "devDependencies": {
         "@tailwindcss/postcss": "^4.3.0",
         "cross-env": "^10.1.0",
@@ -9077,6 +9504,7 @@ Size: 53.5 KB
         "postcss": "^8.5.15",
         "postcss-cli": "^11.0.1",
         "rimraf": "^6.1.3",
+        "shx": "0.4.0",
         "tailwindcss": "^4.3.0"
       }
     },
@@ -9148,6 +9576,44 @@ Size: 53.5 KB
       "dependencies": {
         "@jridgewell/resolve-uri": "^3.1.0",
         "@jridgewell/sourcemap-codec": "^1.4.14"
+      }
+    },
+    "node_modules/@nodelib/fs.scandir": {
+      "version": "2.1.5",
+      "resolved": "https://registry.npmjs.org/@nodelib/fs.scandir/-/fs.scandir-2.1.5.tgz",
+      "integrity": "sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@nodelib/fs.stat": "2.0.5",
+        "run-parallel": "^1.1.9"
+      },
+      "engines": {
+        "node": ">= 8"
+      }
+    },
+    "node_modules/@nodelib/fs.stat": {
+      "version": "2.0.5",
+      "resolved": "https://registry.npmjs.org/@nodelib/fs.stat/-/fs.stat-2.0.5.tgz",
+      "integrity": "sha512-RkhPPp2zrqDAQA/2jNhnztcPAlv64XdhIp7a7454A5ovI7Bukxgt7MX7udwAu3zg1DcpPU0rz3VV1SeaqvY4+A==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">= 8"
+      }
+    },
+    "node_modules/@nodelib/fs.walk": {
+      "version": "1.2.8",
+      "resolved": "https://registry.npmjs.org/@nodelib/fs.walk/-/fs.walk-1.2.8.tgz",
+      "integrity": "sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@nodelib/fs.scandir": "2.1.5",
+        "fastq": "^1.6.0"
+      },
+      "engines": {
+        "node": ">= 8"
       }
     },
     "node_modules/@tailwindcss/node": {
@@ -9373,6 +9839,72 @@ Size: 53.5 KB
         "node": ">=14.0.0"
       }
     },
+    "node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@emnapi/core": {
+      "version": "1.11.1",
+      "dev": true,
+      "inBundle": true,
+      "license": "MIT",
+      "optional": true,
+      "dependencies": {
+        "@emnapi/wasi-threads": "1.2.2",
+        "tslib": "^2.4.0"
+      }
+    },
+    "node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@emnapi/runtime": {
+      "version": "1.11.1",
+      "dev": true,
+      "inBundle": true,
+      "license": "MIT",
+      "optional": true,
+      "dependencies": {
+        "tslib": "^2.4.0"
+      }
+    },
+    "node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@emnapi/wasi-threads": {
+      "version": "1.2.2",
+      "dev": true,
+      "inBundle": true,
+      "license": "MIT",
+      "optional": true,
+      "dependencies": {
+        "tslib": "^2.4.0"
+      }
+    },
+    "node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@napi-rs/wasm-runtime": {
+      "version": "1.1.4",
+      "dev": true,
+      "inBundle": true,
+      "license": "MIT",
+      "optional": true,
+      "dependencies": {
+        "@tybys/wasm-util": "^0.10.1"
+      },
+      "funding": {
+        "type": "github",
+        "url": "https://github.com/sponsors/Brooooooklyn"
+      },
+      "peerDependencies": {
+        "@emnapi/core": "^1.7.1",
+        "@emnapi/runtime": "^1.7.1"
+      }
+    },
+    "node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@tybys/wasm-util": {
+      "version": "0.10.2",
+      "dev": true,
+      "inBundle": true,
+      "license": "MIT",
+      "optional": true,
+      "dependencies": {
+        "tslib": "^2.4.0"
+      }
+    },
+    "node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/tslib": {
+      "version": "2.8.1",
+      "dev": true,
+      "inBundle": true,
+      "license": "0BSD",
+      "optional": true
+    },
     "node_modules/@tailwindcss/oxide-win32-arm64-msvc": {
       "version": "4.3.2",
       "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-win32-arm64-msvc/-/oxide-win32-arm64-msvc-4.3.2.tgz",
@@ -9419,6 +9951,30 @@ Size: 53.5 KB
         "@tailwindcss/oxide": "4.3.2",
         "postcss": "^8.5.15",
         "tailwindcss": "4.3.2"
+      }
+    },
+    "node_modules/@vue/reactivity": {
+      "version": "3.1.5",
+      "resolved": "https://registry.npmjs.org/@vue/reactivity/-/reactivity-3.1.5.tgz",
+      "integrity": "sha512-1tdfLmNjWG6t/CsPldh+foumYFo3cpyCHgBYQ34ylaMsJ+SNHQ1kApMIa8jN+i593zQuaw3AdWH0nJTARzCFhg==",
+      "license": "MIT",
+      "dependencies": {
+        "@vue/shared": "3.1.5"
+      }
+    },
+    "node_modules/@vue/shared": {
+      "version": "3.1.5",
+      "resolved": "https://registry.npmjs.org/@vue/shared/-/shared-3.1.5.tgz",
+      "integrity": "sha512-oJ4F3TnvpXaQwZJNF3ZK+kLPHKarDmJjJ6jyzVNDKH9md1dptjC7lWR//jrGuLdek/U6iltWxqAnYOu8gCiOvA==",
+      "license": "MIT"
+    },
+    "node_modules/alpinejs": {
+      "version": "3.15.12",
+      "resolved": "https://registry.npmjs.org/alpinejs/-/alpinejs-3.15.12.tgz",
+      "integrity": "sha512-nJvPAQVNPdZZ0NrExJ/kzQco3ijR8LwvCOadQecllESiqT4NyZ/57sN9V2XyvhlBGAbmlKYgeWZvYdKq99ij/Q==",
+      "license": "MIT",
+      "dependencies": {
+        "@vue/reactivity": "~3.1.1"
       }
     },
     "node_modules/ansi-regex": {
@@ -9640,6 +10196,16 @@ Size: 53.5 KB
       "dev": true,
       "license": "MIT"
     },
+    "node_modules/end-of-stream": {
+      "version": "1.4.5",
+      "resolved": "https://registry.npmjs.org/end-of-stream/-/end-of-stream-1.4.5.tgz",
+      "integrity": "sha512-ooEGc6HP26xXq/N+GCGOT0JKCLDGrq2bQUZrQ7gyrJiZANJ/8YDTxTpQBXGMn+WbIQXNVpyWymm7KYVICQnyOg==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "once": "^1.4.0"
+      }
+    },
     "node_modules/enhanced-resolve": {
       "version": "5.21.6",
       "resolved": "https://registry.npmjs.org/enhanced-resolve/-/enhanced-resolve-5.21.6.tgz",
@@ -9654,6 +10220,16 @@ Size: 53.5 KB
         "node": ">=10.13.0"
       }
     },
+    "node_modules/es-errors": {
+      "version": "1.3.0",
+      "resolved": "https://registry.npmjs.org/es-errors/-/es-errors-1.3.0.tgz",
+      "integrity": "sha512-Zf5H2Kxt2xjTvbJvP2ZWLEICxA6j+hAmMzIlypy4xcBg1vKVnx89Wy0GbS+kf5cwCVFFzdCFh2XSCFNULS6csw==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">= 0.4"
+      }
+    },
     "node_modules/escalade": {
       "version": "3.2.0",
       "resolved": "https://registry.npmjs.org/escalade/-/escalade-3.2.0.tgz",
@@ -9662,6 +10238,115 @@ Size: 53.5 KB
       "license": "MIT",
       "engines": {
         "node": ">=6"
+      }
+    },
+    "node_modules/execa": {
+      "version": "1.0.0",
+      "resolved": "https://registry.npmjs.org/execa/-/execa-1.0.0.tgz",
+      "integrity": "sha512-adbxcyWV46qiHyvSp50TKt05tB4tK3HcmF7/nxfAdhnox83seTDbwnaqKO4sXRy7roHAIFqJP/Rw/AuEbX61LA==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "cross-spawn": "^6.0.0",
+        "get-stream": "^4.0.0",
+        "is-stream": "^1.1.0",
+        "npm-run-path": "^2.0.0",
+        "p-finally": "^1.0.0",
+        "signal-exit": "^3.0.0",
+        "strip-eof": "^1.0.0"
+      },
+      "engines": {
+        "node": ">=6"
+      }
+    },
+    "node_modules/execa/node_modules/cross-spawn": {
+      "version": "6.0.6",
+      "resolved": "https://registry.npmjs.org/cross-spawn/-/cross-spawn-6.0.6.tgz",
+      "integrity": "sha512-VqCUuhcd1iB+dsv8gxPttb5iZh/D0iubSP21g36KXdEuf6I5JiioesUVjpCdHV9MZRUfVFlvwtIUyPfxo5trtw==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "nice-try": "^1.0.4",
+        "path-key": "^2.0.1",
+        "semver": "^5.5.0",
+        "shebang-command": "^1.2.0",
+        "which": "^1.2.9"
+      },
+      "engines": {
+        "node": ">=4.8"
+      }
+    },
+    "node_modules/execa/node_modules/path-key": {
+      "version": "2.0.1",
+      "resolved": "https://registry.npmjs.org/path-key/-/path-key-2.0.1.tgz",
+      "integrity": "sha512-fEHGKCSmUSDPv4uoj8AlD+joPlq3peND+HRYyxFz4KPw4z926S/b8rIuFs2FYJg3BwsxJf6A9/3eIdLaYC+9Dw==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=4"
+      }
+    },
+    "node_modules/execa/node_modules/shebang-command": {
+      "version": "1.2.0",
+      "resolved": "https://registry.npmjs.org/shebang-command/-/shebang-command-1.2.0.tgz",
+      "integrity": "sha512-EV3L1+UQWGor21OmnvojK36mhg+TyIKDh3iFBKBohr5xeXIhNBcx8oWdgkTEEQ+BEFFYdLRuqMfd5L84N1V5Vg==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "shebang-regex": "^1.0.0"
+      },
+      "engines": {
+        "node": ">=0.10.0"
+      }
+    },
+    "node_modules/execa/node_modules/shebang-regex": {
+      "version": "1.0.0",
+      "resolved": "https://registry.npmjs.org/shebang-regex/-/shebang-regex-1.0.0.tgz",
+      "integrity": "sha512-wpoSFAxys6b2a2wHZ1XpDSgD7N9iVjg29Ph9uV/uaP9Ex/KXlkTZTeddxDPSYQpgvzKLGJke2UU0AzoGCjNIvQ==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=0.10.0"
+      }
+    },
+    "node_modules/execa/node_modules/which": {
+      "version": "1.3.1",
+      "resolved": "https://registry.npmjs.org/which/-/which-1.3.1.tgz",
+      "integrity": "sha512-HxJdYWq1MTIQbJ3nw0cqssHoTNU267KlrDuGZ1WYlxDStUtKUhOaJmh112/TZmHxxUfuJqPXSOm7tDyas0OSIQ==",
+      "dev": true,
+      "license": "ISC",
+      "dependencies": {
+        "isexe": "^2.0.0"
+      },
+      "bin": {
+        "which": "bin/which"
+      }
+    },
+    "node_modules/fast-glob": {
+      "version": "3.3.3",
+      "resolved": "https://registry.npmjs.org/fast-glob/-/fast-glob-3.3.3.tgz",
+      "integrity": "sha512-7MptL8U0cqcFdzIzwOTHoilX9x5BrNqye7Z/LuC7kCMRio1EMSyqRK3BEAUD7sXRq4iT4AzTVuZdhgQ2TCvYLg==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@nodelib/fs.stat": "^2.0.2",
+        "@nodelib/fs.walk": "^1.2.3",
+        "glob-parent": "^5.1.2",
+        "merge2": "^1.3.0",
+        "micromatch": "^4.0.8"
+      },
+      "engines": {
+        "node": ">=8.6.0"
+      }
+    },
+    "node_modules/fastq": {
+      "version": "1.20.1",
+      "resolved": "https://registry.npmjs.org/fastq/-/fastq-1.20.1.tgz",
+      "integrity": "sha512-GGToxJ/w1x32s/D2EKND7kTil4n8OVk/9mycTc4VDza13lOvpUZTGX3mFSCtV9ksdGBVzvsyAVLM6mHFThxXxw==",
+      "dev": true,
+      "license": "ISC",
+      "dependencies": {
+        "reusify": "^1.0.4"
       }
     },
     "node_modules/fill-range": {
@@ -9707,6 +10392,16 @@ Size: 53.5 KB
         "node": "^8.16.0 || ^10.6.0 || >=11.0.0"
       }
     },
+    "node_modules/function-bind": {
+      "version": "1.1.2",
+      "resolved": "https://registry.npmjs.org/function-bind/-/function-bind-1.1.2.tgz",
+      "integrity": "sha512-7XHNxH7qX9xG5mIwxkhumTox/MIRNcOgDrxWsMt2pAr23WHp6MrRlN7FBSFpCpr+oVO0F744iUgR82nJMfG2SA==",
+      "dev": true,
+      "license": "MIT",
+      "funding": {
+        "url": "https://github.com/sponsors/ljharb"
+      }
+    },
     "node_modules/get-caller-file": {
       "version": "2.0.5",
       "resolved": "https://registry.npmjs.org/get-caller-file/-/get-caller-file-2.0.5.tgz",
@@ -9715,6 +10410,19 @@ Size: 53.5 KB
       "license": "ISC",
       "engines": {
         "node": "6.* || 8.* || >= 10.*"
+      }
+    },
+    "node_modules/get-stream": {
+      "version": "4.1.0",
+      "resolved": "https://registry.npmjs.org/get-stream/-/get-stream-4.1.0.tgz",
+      "integrity": "sha512-GMat4EJ5161kIy2HevLlr4luNjBgvmj413KaQA7jt4V8B4RDsfpHk7WQ9GVqfYyyx8OS/L66Kox+rJRNklLK7w==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "pump": "^3.0.0"
+      },
+      "engines": {
+        "node": ">=6"
       }
     },
     "node_modules/glob": {
@@ -9755,6 +10463,35 @@ Size: 53.5 KB
       "dev": true,
       "license": "ISC"
     },
+    "node_modules/hasown": {
+      "version": "2.0.4",
+      "resolved": "https://registry.npmjs.org/hasown/-/hasown-2.0.4.tgz",
+      "integrity": "sha512-T2UbfbBEF32wiepXIsMlTW9+dDYC6wMh/t/vYA4tuOMKqWz/n3vr1NFSxQiyP+zk2mXsoMA/i/7qV6LKut1t1A==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "function-bind": "^1.1.2"
+      },
+      "engines": {
+        "node": ">= 0.4"
+      }
+    },
+    "node_modules/htmx.org": {
+      "version": "2.0.10",
+      "resolved": "https://registry.npmjs.org/htmx.org/-/htmx.org-2.0.10.tgz",
+      "integrity": "sha512-kdeJe7ZVwaS6QMz/ebBIVtZdpwen6L0OQ5GOhPV9MKBb196TCZeZu4yA7ZIQsaLKv7EpXz+So7KSXNuHXhj7Cw==",
+      "license": "0BSD"
+    },
+    "node_modules/interpret": {
+      "version": "1.4.0",
+      "resolved": "https://registry.npmjs.org/interpret/-/interpret-1.4.0.tgz",
+      "integrity": "sha512-agE4QfB2Lkp9uICn7BAqoscw4SZP9kTE2hxiFI3jBPmXJfdqiahTbUuKGsMoN2GtqL9AxhYioAcVvgsb1HvRbA==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">= 0.10"
+      }
+    },
     "node_modules/is-binary-path": {
       "version": "2.1.0",
       "resolved": "https://registry.npmjs.org/is-binary-path/-/is-binary-path-2.1.0.tgz",
@@ -9766,6 +10503,22 @@ Size: 53.5 KB
       },
       "engines": {
         "node": ">=8"
+      }
+    },
+    "node_modules/is-core-module": {
+      "version": "2.16.2",
+      "resolved": "https://registry.npmjs.org/is-core-module/-/is-core-module-2.16.2.tgz",
+      "integrity": "sha512-evOr8xfXKxE6qSR0hSXL2r3sd7ALj8+7jQEUvPYcm5sgZFdJ+AYzT6yNmJenvIYQBgIGwfwz08sL8zoL7yq2BA==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "hasown": "^2.0.3"
+      },
+      "engines": {
+        "node": ">= 0.4"
+      },
+      "funding": {
+        "url": "https://github.com/sponsors/ljharb"
       }
     },
     "node_modules/is-extglob": {
@@ -9809,6 +10562,16 @@ Size: 53.5 KB
       "license": "MIT",
       "engines": {
         "node": ">=0.12.0"
+      }
+    },
+    "node_modules/is-stream": {
+      "version": "1.1.0",
+      "resolved": "https://registry.npmjs.org/is-stream/-/is-stream-1.1.0.tgz",
+      "integrity": "sha512-uQPm8kcs47jx38atAcWTVxyltQYoPT68y9aWYdV6yWXSyW8mzSat0TL6CiWdZeCdF3KrAvpVtnHbTv4RN+rqdQ==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=0.10.0"
       }
     },
     "node_modules/isexe": {
@@ -10135,6 +10898,30 @@ Size: 53.5 KB
         "@jridgewell/sourcemap-codec": "^1.5.5"
       }
     },
+    "node_modules/merge2": {
+      "version": "1.4.1",
+      "resolved": "https://registry.npmjs.org/merge2/-/merge2-1.4.1.tgz",
+      "integrity": "sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">= 8"
+      }
+    },
+    "node_modules/micromatch": {
+      "version": "4.0.8",
+      "resolved": "https://registry.npmjs.org/micromatch/-/micromatch-4.0.8.tgz",
+      "integrity": "sha512-PXwfBhYu0hBCPw8Dn0E+WDYb7af3dSLVWKi3HGv84IdF4TyFoC0ysxFd0Goxw7nSv4T/PzEJQxsYsEiFCKo2BA==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "braces": "^3.0.3",
+        "picomatch": "^2.3.1"
+      },
+      "engines": {
+        "node": ">=8.6"
+      }
+    },
     "node_modules/minimatch": {
       "version": "10.2.5",
       "resolved": "https://registry.npmjs.org/minimatch/-/minimatch-10.2.5.tgz",
@@ -10149,6 +10936,16 @@ Size: 53.5 KB
       },
       "funding": {
         "url": "https://github.com/sponsors/isaacs"
+      }
+    },
+    "node_modules/minimist": {
+      "version": "1.2.8",
+      "resolved": "https://registry.npmjs.org/minimist/-/minimist-1.2.8.tgz",
+      "integrity": "sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==",
+      "dev": true,
+      "license": "MIT",
+      "funding": {
+        "url": "https://github.com/sponsors/ljharb"
       }
     },
     "node_modules/minipass": {
@@ -10180,6 +10977,13 @@ Size: 53.5 KB
         "node": "^10 || ^12 || ^13.7 || ^14 || >=15.0.1"
       }
     },
+    "node_modules/nice-try": {
+      "version": "1.0.5",
+      "resolved": "https://registry.npmjs.org/nice-try/-/nice-try-1.0.5.tgz",
+      "integrity": "sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==",
+      "dev": true,
+      "license": "MIT"
+    },
     "node_modules/normalize-path": {
       "version": "3.0.0",
       "resolved": "https://registry.npmjs.org/normalize-path/-/normalize-path-3.0.0.tgz",
@@ -10188,6 +10992,49 @@ Size: 53.5 KB
       "license": "MIT",
       "engines": {
         "node": ">=0.10.0"
+      }
+    },
+    "node_modules/npm-run-path": {
+      "version": "2.0.2",
+      "resolved": "https://registry.npmjs.org/npm-run-path/-/npm-run-path-2.0.2.tgz",
+      "integrity": "sha512-lJxZYlT4DW/bRUtFh1MQIWqmLwQfAxnqWG4HhEdjMlkrJYnJn0Jrr2u3mgxqaWsdiBc76TYkTG/mhrnYTuzfHw==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "path-key": "^2.0.0"
+      },
+      "engines": {
+        "node": ">=4"
+      }
+    },
+    "node_modules/npm-run-path/node_modules/path-key": {
+      "version": "2.0.1",
+      "resolved": "https://registry.npmjs.org/path-key/-/path-key-2.0.1.tgz",
+      "integrity": "sha512-fEHGKCSmUSDPv4uoj8AlD+joPlq3peND+HRYyxFz4KPw4z926S/b8rIuFs2FYJg3BwsxJf6A9/3eIdLaYC+9Dw==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=4"
+      }
+    },
+    "node_modules/once": {
+      "version": "1.4.0",
+      "resolved": "https://registry.npmjs.org/once/-/once-1.4.0.tgz",
+      "integrity": "sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w==",
+      "dev": true,
+      "license": "ISC",
+      "dependencies": {
+        "wrappy": "1"
+      }
+    },
+    "node_modules/p-finally": {
+      "version": "1.0.0",
+      "resolved": "https://registry.npmjs.org/p-finally/-/p-finally-1.0.0.tgz",
+      "integrity": "sha512-LICb2p9CB7FS+0eR1oqWnHhp0FljGLZCWBE9aix0Uye9W8LTQPwMTYVGWQWIw9RdQiDg4+epXQODwIYJtSJaow==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=4"
       }
     },
     "node_modules/package-json-from-dist": {
@@ -10206,6 +11053,13 @@ Size: 53.5 KB
       "engines": {
         "node": ">=8"
       }
+    },
+    "node_modules/path-parse": {
+      "version": "1.0.7",
+      "resolved": "https://registry.npmjs.org/path-parse/-/path-parse-1.0.7.tgz",
+      "integrity": "sha512-LDJzPVEEEPR+y48z93A0Ed0yXb8pAByGWo/k5YYdYgpY2/2EsOsksJrq7lOHxryrVOn1ejG6oAp8ahvOIQD8sw==",
+      "dev": true,
+      "license": "MIT"
     },
     "node_modules/path-scurry": {
       "version": "2.0.2",
@@ -10389,6 +11243,38 @@ Size: 53.5 KB
         "node": ">= 0.8"
       }
     },
+    "node_modules/pump": {
+      "version": "3.0.4",
+      "resolved": "https://registry.npmjs.org/pump/-/pump-3.0.4.tgz",
+      "integrity": "sha512-VS7sjc6KR7e1ukRFhQSY5LM2uBWAUPiOPa/A3mkKmiMwSmRFUITt0xuj+/lesgnCv+dPIEYlkzrcyXgquIHMcA==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "end-of-stream": "^1.1.0",
+        "once": "^1.3.1"
+      }
+    },
+    "node_modules/queue-microtask": {
+      "version": "1.2.3",
+      "resolved": "https://registry.npmjs.org/queue-microtask/-/queue-microtask-1.2.3.tgz",
+      "integrity": "sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==",
+      "dev": true,
+      "funding": [
+        {
+          "type": "github",
+          "url": "https://github.com/sponsors/feross"
+        },
+        {
+          "type": "patreon",
+          "url": "https://www.patreon.com/feross"
+        },
+        {
+          "type": "consulting",
+          "url": "https://feross.org/support"
+        }
+      ],
+      "license": "MIT"
+    },
     "node_modules/read-cache": {
       "version": "1.0.0",
       "resolved": "https://registry.npmjs.org/read-cache/-/read-cache-1.0.0.tgz",
@@ -10412,6 +11298,18 @@ Size: 53.5 KB
         "node": ">=8.10.0"
       }
     },
+    "node_modules/rechoir": {
+      "version": "0.6.2",
+      "resolved": "https://registry.npmjs.org/rechoir/-/rechoir-0.6.2.tgz",
+      "integrity": "sha512-HFM8rkZ+i3zrV+4LQjwQ0W+ez98pApMGM3HUrN04j3CqzPOzl9nmP15Y8YXNm8QHGv/eacOVEjqhmWpkRV0NAw==",
+      "dev": true,
+      "dependencies": {
+        "resolve": "^1.1.6"
+      },
+      "engines": {
+        "node": ">= 0.10"
+      }
+    },
     "node_modules/require-directory": {
       "version": "2.1.1",
       "resolved": "https://registry.npmjs.org/require-directory/-/require-directory-2.1.1.tgz",
@@ -10419,6 +11317,39 @@ Size: 53.5 KB
       "dev": true,
       "license": "MIT",
       "engines": {
+        "node": ">=0.10.0"
+      }
+    },
+    "node_modules/resolve": {
+      "version": "1.22.12",
+      "resolved": "https://registry.npmjs.org/resolve/-/resolve-1.22.12.tgz",
+      "integrity": "sha512-TyeJ1zif53BPfHootBGwPRYT1RUt6oGWsaQr8UyZW/eAm9bKoijtvruSDEmZHm92CwS9nj7/fWttqPCgzep8CA==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "es-errors": "^1.3.0",
+        "is-core-module": "^2.16.1",
+        "path-parse": "^1.0.7",
+        "supports-preserve-symlinks-flag": "^1.0.0"
+      },
+      "bin": {
+        "resolve": "bin/resolve"
+      },
+      "engines": {
+        "node": ">= 0.4"
+      },
+      "funding": {
+        "url": "https://github.com/sponsors/ljharb"
+      }
+    },
+    "node_modules/reusify": {
+      "version": "1.1.0",
+      "resolved": "https://registry.npmjs.org/reusify/-/reusify-1.1.0.tgz",
+      "integrity": "sha512-g6QUff04oZpHs0eG5p83rFLhHeV00ug/Yf9nZM6fLeUrPguBTkTQOdpAWWspMh55TZfVQDPaN3NQJfbVRAxdIw==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "iojs": ">=1.0.0",
         "node": ">=0.10.0"
       }
     },
@@ -10440,6 +11371,40 @@ Size: 53.5 KB
       },
       "funding": {
         "url": "https://github.com/sponsors/isaacs"
+      }
+    },
+    "node_modules/run-parallel": {
+      "version": "1.2.0",
+      "resolved": "https://registry.npmjs.org/run-parallel/-/run-parallel-1.2.0.tgz",
+      "integrity": "sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==",
+      "dev": true,
+      "funding": [
+        {
+          "type": "github",
+          "url": "https://github.com/sponsors/feross"
+        },
+        {
+          "type": "patreon",
+          "url": "https://www.patreon.com/feross"
+        },
+        {
+          "type": "consulting",
+          "url": "https://feross.org/support"
+        }
+      ],
+      "license": "MIT",
+      "dependencies": {
+        "queue-microtask": "^1.2.2"
+      }
+    },
+    "node_modules/semver": {
+      "version": "5.7.2",
+      "resolved": "https://registry.npmjs.org/semver/-/semver-5.7.2.tgz",
+      "integrity": "sha512-cBznnQ9KjJqU67B52RMC65CMarK2600WFnbkcaiwWq3xy/5haFJlshgnpjovMVJ+Hff49d8GEn0b87C5pDQ10g==",
+      "dev": true,
+      "license": "ISC",
+      "bin": {
+        "semver": "bin/semver"
       }
     },
     "node_modules/shebang-command": {
@@ -10464,6 +11429,49 @@ Size: 53.5 KB
       "engines": {
         "node": ">=8"
       }
+    },
+    "node_modules/shelljs": {
+      "version": "0.9.2",
+      "resolved": "https://registry.npmjs.org/shelljs/-/shelljs-0.9.2.tgz",
+      "integrity": "sha512-S3I64fEiKgTZzKCC46zT/Ib9meqofLrQVbpSswtjFfAVDW+AZ54WTnAM/3/yENoxz/V1Cy6u3kiiEbQ4DNphvw==",
+      "dev": true,
+      "license": "BSD-3-Clause",
+      "dependencies": {
+        "execa": "^1.0.0",
+        "fast-glob": "^3.3.2",
+        "interpret": "^1.0.0",
+        "rechoir": "^0.6.2"
+      },
+      "bin": {
+        "shjs": "bin/shjs"
+      },
+      "engines": {
+        "node": ">=18"
+      }
+    },
+    "node_modules/shx": {
+      "version": "0.4.0",
+      "resolved": "https://registry.npmjs.org/shx/-/shx-0.4.0.tgz",
+      "integrity": "sha512-Z0KixSIlGPpijKgcH6oCMCbltPImvaKy0sGH8AkLRXw1KyzpKtaCTizP2xen+hNDqVF4xxgvA0KXSb9o4Q6hnA==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "minimist": "^1.2.8",
+        "shelljs": "^0.9.2"
+      },
+      "bin": {
+        "shx": "lib/cli.js"
+      },
+      "engines": {
+        "node": ">=18"
+      }
+    },
+    "node_modules/signal-exit": {
+      "version": "3.0.7",
+      "resolved": "https://registry.npmjs.org/signal-exit/-/signal-exit-3.0.7.tgz",
+      "integrity": "sha512-wnD2ZE+l+SPC/uoS0vXeE9L1+0wuaMqKlfz9AMUo38JsyLSBWSFcHR1Rri62LZc12vLr1gb3jl7iwQhgwpAbGQ==",
+      "dev": true,
+      "license": "ISC"
     },
     "node_modules/slash": {
       "version": "5.1.0",
@@ -10514,6 +11522,29 @@ Size: 53.5 KB
       },
       "engines": {
         "node": ">=8"
+      }
+    },
+    "node_modules/strip-eof": {
+      "version": "1.0.0",
+      "resolved": "https://registry.npmjs.org/strip-eof/-/strip-eof-1.0.0.tgz",
+      "integrity": "sha512-7FCwGGmx8mD5xQd3RPUvnSpUXHM3BWuzjtpD4TXsfcZ9EL4azvVVUscFYwD9nx8Kh+uCBC00XBtAykoMHwTh8Q==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=0.10.0"
+      }
+    },
+    "node_modules/supports-preserve-symlinks-flag": {
+      "version": "1.0.0",
+      "resolved": "https://registry.npmjs.org/supports-preserve-symlinks-flag/-/supports-preserve-symlinks-flag-1.0.0.tgz",
+      "integrity": "sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">= 0.4"
+      },
+      "funding": {
+        "url": "https://github.com/sponsors/ljharb"
       }
     },
     "node_modules/tailwindcss": {
@@ -10649,6 +11680,13 @@ Size: 53.5 KB
         "url": "https://github.com/chalk/wrap-ansi?sponsor=1"
       }
     },
+    "node_modules/wrappy": {
+      "version": "1.0.2",
+      "resolved": "https://registry.npmjs.org/wrappy/-/wrappy-1.0.2.tgz",
+      "integrity": "sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==",
+      "dev": true,
+      "license": "ISC"
+    },
     "node_modules/y18n": {
       "version": "5.0.8",
       "resolved": "https://registry.npmjs.org/y18n/-/y18n-5.0.8.tgz",
@@ -10710,7 +11748,7 @@ Size: 53.5 KB
 
 ## `theme/static_src/package.json`
 
-Size: 781 B
+Size: 1.1 KB
 
 ```json
 {
@@ -10719,9 +11757,10 @@ Size: 781 B
   "description": "",
   "scripts": {
     "start": "npm run dev",
-    "build": "npm run build:clean && npm run build:tailwind",
+    "build": "npm run build:clean && npm run build:tailwind && npm run build:vendor",
     "build:clean": "rimraf ../static/css/dist",
     "build:tailwind": "cross-env NODE_ENV=production postcss ./src/styles.css -o ../static/css/dist/styles.css --minify",
+    "build:vendor": "shx mkdir -p ../static/js/vendor && shx cp node_modules/htmx.org/dist/htmx.min.js ../static/js/vendor/htmx.min.js && shx cp node_modules/alpinejs/dist/cdn.min.js ../static/js/vendor/alpine.min.js",
     "dev": "cross-env NODE_ENV=development CHOKIDAR_USEPOLLING=1 CHOKIDAR_INTERVAL=300 postcss ./src/styles.css -o ../static/css/dist/styles.css --watch"
   },
   "keywords": [],
@@ -10729,12 +11768,17 @@ Size: 781 B
   "license": "MIT",
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.0",
-    "daisyui": "^5.5.23",
     "cross-env": "^10.1.0",
+    "daisyui": "^5.5.23",
     "postcss": "^8.5.15",
     "postcss-cli": "^11.0.1",
     "rimraf": "^6.1.3",
+    "shx": "0.4.0",
     "tailwindcss": "^4.3.0"
+  },
+  "dependencies": {
+    "alpinejs": "3.15.12",
+    "htmx.org": "2.0.10"
   }
 }
 ```

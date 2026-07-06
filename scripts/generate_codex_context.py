@@ -41,6 +41,10 @@ EXCLUDED_DIRECTORY_NAMES = {
     "playwright-report",
 }
 
+EXCLUDED_DIRECTORY_PATHS = {
+    "theme/static/js/vendor",
+}
+
 EXCLUDED_EXTENSIONS = {
     ".png",
     ".jpg",
@@ -398,6 +402,8 @@ def discover_files(
                 f".{output.name}.previous-"
             ):
                 reason = "generated context staging output"
+            elif relative in EXCLUDED_DIRECTORY_PATHS:
+                reason = "generated frontend vendor assets"
             elif directory_name in EXCLUDED_DIRECTORY_NAMES:
                 reason = "excluded directory"
             elif directory_name == "migrations":

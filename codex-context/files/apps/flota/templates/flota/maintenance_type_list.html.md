@@ -2,7 +2,7 @@
 
 ## `apps/flota/templates/flota/maintenance_type_list.html`
 
-Size: 2.2 KB
+Size: 803 B
 
 ```html
 {% extends "layouts/base.html" %}
@@ -11,7 +11,6 @@ Size: 2.2 KB
 
 {% block content %}
 <section class="space-y-5">
-    {% include "flota/includes/messages.html" %}
     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
             <p class="text-xs text-muted"><a href="{% url 'flota:index' %}" class="hover:text-primary">Flota</a> / Configurare</p>
@@ -20,24 +19,8 @@ Size: 2.2 KB
         </div>
         <a href="{% url 'flota:maintenance_type_create' %}" class="btn btn-primary btn-sm">Tip nou</a>
     </div>
-    <div class="overflow-x-auto border border-base-300 bg-base-100">
-        <table class="table table-sm min-w-[680px]">
-            <thead><tr><th>Denumire</th><th>Cod</th><th>Ordine</th><th>Tip</th><th>Status</th><th class="text-right">Acțiuni</th></tr></thead>
-            <tbody>
-            {% for item in maintenance_types %}
-                <tr>
-                    <td class="font-semibold">{{ item.name }}</td>
-                    <td><code class="text-xs">{{ item.code }}</code></td>
-                    <td>{{ item.display_order }}</td>
-                    <td>{% if item.is_system %}Sistem{% else %}Personalizat{% endif %}</td>
-                    <td><span class="badge badge-sm {% if item.is_active %}badge-success badge-outline{% else %}badge-ghost{% endif %}">{% if item.is_active %}Activ{% else %}Arhivat{% endif %}</span></td>
-                    <td><div class="flex justify-end gap-1"><a href="{% url 'flota:maintenance_type_edit' item.pk %}" class="btn btn-ghost btn-xs">Editează</a>{% if not item.is_system and item.is_active %}<form method="post" action="{% url 'flota:maintenance_type_archive' item.pk %}">{% csrf_token %}<button class="btn btn-ghost btn-xs text-error">Arhivează</button></form>{% endif %}</div></td>
-                </tr>
-            {% empty %}<tr><td colspan="6" class="py-10 text-center text-muted">Nu există tipuri de mentenanță.</td></tr>{% endfor %}
-            </tbody>
-        </table>
-    </div>
+
+    {% include "flota/includes/maintenance_type_panel.html" %}
 </section>
 {% endblock %}
-
 ```

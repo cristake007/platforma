@@ -16,9 +16,21 @@
         badge.classList.add(tone === "neutral" ? "badge-ghost" : `badge-${tone}`);
     }
 
-    function refreshDeadlines() {
+    function deadlineBadges(root) {
+        const container = root || document;
+        const badges = [];
+        if (container.matches?.("[data-deadline][data-due-date]")) {
+            badges.push(container);
+        }
+        container.querySelectorAll?.("[data-deadline][data-due-date]").forEach((badge) => {
+            badges.push(badge);
+        });
+        return badges;
+    }
+
+    function refreshDeadlines(root) {
         const today = startOfToday();
-        document.querySelectorAll("[data-deadline][data-due-date]").forEach((badge) => {
+        deadlineBadges(root).forEach((badge) => {
             const parts = badge.dataset.dueDate.split("-").map(Number);
             if (parts.length !== 3 || parts.some(Number.isNaN)) return;
             const due = new Date(parts[0], parts[1] - 1, parts[2]);
@@ -42,5 +54,8 @@
     refreshDeadlines();
     document.addEventListener("visibilitychange", () => {
         if (!document.hidden) refreshDeadlines();
+    });
+    document.body.addEventListener("htmx:afterSwap", (event) => {
+        refreshDeadlines(event.detail?.target || document);
     });
 })();
