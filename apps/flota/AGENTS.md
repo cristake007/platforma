@@ -4,7 +4,7 @@
 
 This app owns fleet vehicles, current and historical user assignments, maintenance types, maintenance records, due-state calculations, and the fleet list/detail workflows.
 
-## Read before editing
+## Read Before Editing
 
 - Root `AGENTS.md`.
 - `coding-standards.md`.
@@ -13,6 +13,23 @@ This app owns fleet vehicles, current and historical user assignments, maintenan
 - Only the files for the selected workflow.
 
 Use `codex-context/apps/flota.md` only when a path is unknown.
+
+## Minimal Routing
+
+- Fleet list, filters, and pagination:
+  `selectors.py`, `views.py`, exact fleet table/panel templates, `static/flota/flota.js` if needed, then focused tests.
+- Vehicle create, edit, archive, restore, or detail:
+  `forms.py`, `services.py`, `selectors.py`, `views.py`, exact vehicle templates/includes, then focused tests.
+- Assignment changes:
+  `forms.py`, `validators.py`, `services.py`, `selectors.py`, assignment/detail templates, then focused tests.
+- Maintenance record changes:
+  `forms.py`, `validators.py`, `services.py`, `selectors.py`, maintenance templates/includes, then focused tests.
+- Maintenance-type management:
+  `forms.py`, `validators.py`, `services.py`, `views.py`, management templates/includes, then focused tests.
+- Due-state or deadline label behavior:
+  `selectors.py`, `services.py`, `static/flota/flota.js`, affected templates, then focused tests.
+- Model change:
+  `models.py`, affected validators/services/selectors/tests, then only the relevant migration.
 
 ## Architecture
 
@@ -30,7 +47,7 @@ Use `codex-context/apps/flota.md` only when a path is unknown.
 - Archive vehicles and custom maintenance types instead of exposing destructive deletion.
 - System maintenance types cannot be archived.
 
-## Domain contracts
+## Domain Contracts
 
 - A vehicle has at most one open assignment.
 - Assignment changes must go through transactional services so history remains complete.
@@ -41,7 +58,7 @@ Use `codex-context/apps/flota.md` only when a path is unknown.
 - Due states are: valid beyond 30 days, due soon within 30 days, due today, overdue, or not recorded.
 - Vehicle emblems are optional JPEG, PNG, or WebP uploads of at most 2 MB.
 
-## Reuse and UI standards
+## Reuse and UI Standards
 
 - Reuse existing vehicle, maintenance, assignment, table, message, and action patterns.
 - Extend `layouts/base.html` and use shared semantic daisyUI/Tailwind tokens.
@@ -53,7 +70,7 @@ Use `codex-context/apps/flota.md` only when a path is unknown.
 - Preserve visible keyboard focus.
 - Use sharp bordered operational panels instead of decorative rounded cards.
 
-## Focused checks
+## Focused Checks
 
 ```powershell
 python manage.py test apps.flota
