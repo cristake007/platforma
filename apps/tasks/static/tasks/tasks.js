@@ -71,18 +71,33 @@
         const count = column.querySelectorAll(":scope [data-stage-cards] > [data-task-card]").length;
         const target = column.querySelector("[data-stage-count]");
         if (target) target.textContent = String(count);
+        const emptyState = column.querySelector("[data-stage-empty]");
+        if (emptyState) emptyState.classList.toggle("hidden", count > 0);
     });
 
     const setDropState = (container, active) => {
         container.classList.toggle("outline", active);
         container.classList.toggle("outline-2", active);
         container.classList.toggle("outline-primary", active);
-        container.classList.toggle("bg-base-100", active);
+        container.classList.toggle("outline-offset-2", active);
+        container.classList.toggle("border-primary", active);
+        container.classList.toggle("bg-primary/10", active);
+    };
+
+    const setDragContext = (active) => {
+        const board = document.querySelector("[data-kanban-board]");
+        if (board) board.toggleAttribute("data-kanban-dragging", active);
+        document.querySelectorAll("[data-stage-drop-zone]").forEach((container) => {
+            container.classList.toggle("border-dashed", active);
+            container.classList.toggle("border-base-300", active);
+            container.classList.toggle("bg-base-100", active);
+            container.classList.toggle("opacity-90", active);
+        });
     };
 
     const markMoved = (card) => {
-        card.classList.add("ring-2", "ring-success");
-        window.setTimeout(() => card.classList.remove("ring-2", "ring-success"), 900);
+        card.classList.add("ring-2", "ring-success", "bg-success/10");
+        window.setTimeout(() => card.classList.remove("ring-2", "ring-success", "bg-success/10"), 900);
     };
 
     const setDragDisabled = (disabled) => {
@@ -106,11 +121,13 @@
             card.addEventListener("dragstart", () => {
                 if (requestInFlight) return;
                 draggedCard = card;
-                card.classList.add("opacity-50", "ring-2", "ring-primary");
+                setDragContext(true);
+                card.classList.add("opacity-70", "ring-2", "ring-primary", "cursor-grabbing");
             });
             card.addEventListener("dragend", () => {
-                card.classList.remove("opacity-50", "ring-2", "ring-primary");
+                card.classList.remove("opacity-70", "ring-2", "ring-primary", "cursor-grabbing");
                 document.querySelectorAll("[data-stage-cards]").forEach((container) => setDropState(container, false));
+                setDragContext(false);
                 draggedCard = null;
             });
         });
