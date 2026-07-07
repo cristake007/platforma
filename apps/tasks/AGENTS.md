@@ -2,17 +2,27 @@
 
 ## Scope
 
-This app owns collaborative boards, memberships, stages, task persistence, task-list and Kanban views, deadline timers, and the reusable cross-app task-creation contract.
+- Owns collaborative boards, memberships, stages, records, list views, Kanban views, timers, and reusable cross-app creation.
 
-## Read before editing
+## Read Before Editing
 
 - Root `AGENTS.md`.
 - `coding-standards.md`.
 - `frontend.md` for UI/template work.
 - This file.
-- Only the files for the selected workflow.
+- Only files for the selected workflow.
 
 Use `codex-context/apps/tasks.md` only when a path is unknown.
+
+## Minimal Routing
+
+- Board list/settings: `urls.py`, `views.py`, exact board templates/includes, focused tests.
+- Create/edit/archive/restore: `forms.py`, `services.py`, `views.py`, exact form/dialog partials, focused tests.
+- Kanban move/order: `selectors.py`, `services.py`, `views.py`, `static/tasks/tasks.js`, exact Kanban partials, focused tests.
+- Membership/ownership: `forms.py`, `validators.py`, `services.py`, `selectors.py`, settings partials, focused tests.
+- Stage management: `forms.py`, `validators.py`, `services.py`, `views.py`, settings/Kanban partials, focused tests.
+- Timer/polling: `selectors.py`, `views.py`, `static/tasks/tasks.js`, timer/card partials, focused tests.
+- Model change: `models.py`, affected validators/services/selectors/tests, relevant migration only.
 
 ## Architecture
 
@@ -20,28 +30,22 @@ Use `codex-context/apps/tasks.md` only when a path is unknown.
 - Keep reusable invariants in `validators.py`.
 - Keep writes in `services.py`.
 - Keep permission-filtered reads in `selectors.py`.
-- All pages and endpoints require authentication.
-- Ordinary members see tasks they created or received.
-- Board owners and staff see all tasks on the relevant board.
-- Creators and staff edit/archive tasks.
-- Creators, assignees, and staff may move tasks.
-- PostgreSQL is authoritative.
-- JavaScript enhances timers, polling, dialogs, and drag-and-drop only.
-- Use POST with CSRF for every state change.
-- Return 404 for inaccessible boards and tasks.
+- Require authentication on pages and endpoints.
+- Keep PostgreSQL authoritative.
+- Keep JavaScript limited to timers, polling, dialogs, and drag/drop enhancement.
+- Use POST with CSRF for state changes.
 
-## Reuse and UI standards
+## Reuse and UI Standards
 
-- Reuse existing board, task, stage, member, message, and action patterns.
+- Reuse existing board, record, stage, member, message, and action patterns.
 - Extend `layouts/base.html` and use shared semantic theme tokens.
-- Keep task lists horizontally usable on narrow screens.
-- Preserve native form fallback for task stage changes.
+- Keep lists horizontally usable on narrow screens.
+- Preserve native form fallbacks for stage changes.
 - Board settings must use compact structured rows, not decorative rounded cards.
-- Kanban stage dragging and ordering must show obvious active, drop, moved, disabled, and destructive states.
-- Destructive stage/task actions should use consistent bin/trash icon treatment with accessible labels.
-- Do not hide replacement or destructive behavior behind vague controls.
+- Kanban dragging and ordering must show obvious active, drop, moved, disabled, and destructive states.
+- Destructive actions should use consistent bin/trash icon treatment with accessible labels.
 
-## Focused checks
+## Focused Checks
 
 ```powershell
 python manage.py test apps.tasks
