@@ -1,0 +1,6 @@
+codex-context/**
+codex-context-index.md
+codex-file-map.txt
+codex-prompt-demos/**
+HTMX_ALPINE_IMPLEMENTATION_PLAN.md
+apps/**/IMPLEMENTATION_PLAN.md
