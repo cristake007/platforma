@@ -2,7 +2,7 @@
 
 ## `apps/planificator/templates/planificator/includes/actions.html`
 
-Size: 998 B
+Size: 1.2 KB
 
 ```html
 <div class="card-actions items-center justify-between gap-3 border-t border-base-300 bg-base-200 p-4">
@@ -11,7 +11,10 @@ Size: 998 B
         <span id="ops-holiday-count">{{ holiday_count }}</span> zile nelucrătoare · variație
         <span id="ops-randomness-summary">{{ form.randomness.value }}</span>/10
     </p>
-    <button type="submit" id="ops-preview-submit" class="btn btn-outline btn-primary btn-sm">Generează programul</button>
+    <div class="flex items-center gap-3">
+        <span id="ops-generator-loading" class="htmx-indicator loading loading-spinner loading-sm text-primary" aria-hidden="true"></span>
+        <button type="submit" id="ops-preview-submit" class="btn btn-outline btn-primary btn-sm">Generează programul</button>
+    </div>
 </div>
 
 {% if generation_error %}

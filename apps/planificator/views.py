@@ -9,6 +9,7 @@ from zipfile import BadZipFile
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.http import Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect
+from django.template.response import TemplateResponse
 from django.utils import timezone
 from django.views import View
 from django.views.generic import ListView, TemplateView
@@ -78,6 +79,20 @@ def _json_error(message: str, *, status: int = 400) -> JsonResponse:
     return JsonResponse({"success": False, "error": message}, status=status)
 
 
+def _is_htmx(request: HttpRequest) -> bool:
+    return request.headers.get("HX-Request") == "true"
+
+
+def _template_response(
+    request: HttpRequest,
+    template_name: str,
+    context: dict,
+    *,
+    status: int = 200,
+) -> TemplateResponse:
+    return TemplateResponse(request, template_name, context, status=status)
+
+
 def _json_request_data(request: HttpRequest) -> dict:
     if request.content_type != "application/json":
         raise ClientInputError("Cererea trebuie trimisă ca JSON.")
@@ -124,12 +139,41 @@ def generator_context(form: ScheduleGeneratorForm, **extra) -> dict:
     return context
 
 
+def generation_result_context(user, generation, *, form: ScheduleGeneratorForm | None = None, **extra) -> dict:
+    context = generator_context(
+        form or build_generator_form(user, source_generation_id=generation.pk),
+        generation=generation,
+        schedule=generation.schedule,
+        preview_rows=build_preview_rows(generation.schedule, generation.selected_months),
+        source_preview_rows=build_source_preview(generation.schedule),
+        source_course_count=generation.source_course_count,
+        source_file_digest=generation.source_file_digest[:12],
+        uploaded_file_name=generation.source_file_name,
+        selected_months=generation.selected_months,
+        selected_month_count=len(generation.selected_months),
+        selected_month_headers=selected_month_headers(generation.selected_months),
+        export_form=ScheduleExportForm(initial={"generation_id": generation.pk}),
+    )
+    context.update(extra)
+    return context
+
+
 class PeriodGeneratorView(PlanificatorPermissionMixin, TemplateView):
     template_name = "planificator/generator_perioade.html"
+    partial_template_name = "planificator/includes/generator_workflow.html"
 
     def get_context_data(self, **kwargs):
         form = kwargs.pop("form", None) or build_generator_form(self.request.user)
         return generator_context(form, **super().get_context_data(**kwargs))
+
+    def render_generator_response(self, context: dict, *, status: int = 200) -> HttpResponse:
+        if _is_htmx(self.request):
+            return _template_response(
+                self.request,
+                self.partial_template_name,
+                context,
+            )
+        return self.render_to_response(context, status=status)
 
     def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         form = ScheduleGeneratorForm(request.POST, request.FILES)
@@ -142,7 +186,10 @@ class PeriodGeneratorView(PlanificatorPermissionMixin, TemplateView):
                     "body": "Corectează câmpurile marcate și încearcă din nou.",
                 }],
             )
-            return self.render_to_response(context, status=getattr(form, "upload_error_status", 400))
+            return self.render_generator_response(
+                context,
+                status=getattr(form, "upload_error_status", 400),
+            )
 
         try:
             workflow = create_schedule_generation(
@@ -166,14 +213,25 @@ class PeriodGeneratorView(PlanificatorPermissionMixin, TemplateView):
                         "body": "Ajustează lunile sau zilele nelucrătoare și încearcă din nou.",
                     }],
                 )
-                return self.render_to_response(context, status=400)
+                return self.render_generator_response(context, status=400)
+            if _is_htmx(request):
+                context = generation_result_context(
+                    request.user,
+                    workflow.generation,
+                    page_messages=[{
+                        "level": "success",
+                        "title": "Program generat",
+                        "body": "Rezultatul este disponibil mai jos și poate fi descărcat ca XLSX.",
+                    }],
+                )
+                return self.render_generator_response(context)
             return redirect(
                 "planificator:generator_perioade_result",
                 generation_id=workflow.generation.pk,
             )
         except GenerationSourceUnavailable as exc:
             form.add_error("input_file", exc.message)
-            return self.render_to_response(
+            return self.render_generator_response(
                 generator_context(
                     form,
                     page_messages=[{
@@ -195,10 +253,10 @@ class PeriodGeneratorView(PlanificatorPermissionMixin, TemplateView):
                     "body": exc.message,
                 }],
             )
-            return self.render_to_response(context, status=exc.status)
+            return self.render_generator_response(context, status=exc.status)
         except ClientInputError as exc:
             form.add_error(None, exc.message)
-            return self.render_to_response(
+            return self.render_generator_response(
                 generator_context(
                     form,
                     page_messages=[{
@@ -214,7 +272,7 @@ class PeriodGeneratorView(PlanificatorPermissionMixin, TemplateView):
         except Exception:
             logger.exception("Unexpected schedule generation failure", extra={"user_id": request.user.pk})
             form.add_error(None, "Fișierul nu a putut fi procesat.")
-            return self.render_to_response(
+            return self.render_generator_response(
                 generator_context(
                     form,
                     page_messages=[{
@@ -229,6 +287,7 @@ class PeriodGeneratorView(PlanificatorPermissionMixin, TemplateView):
 
 class ScheduleResultView(PlanificatorPermissionMixin, TemplateView):
     template_name = "planificator/generator_perioade.html"
+    partial_template_name = "planificator/includes/generator_workflow.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -236,24 +295,18 @@ class ScheduleResultView(PlanificatorPermissionMixin, TemplateView):
             generation_id=self.kwargs["generation_id"],
             user=self.request.user,
         )
-        form = build_generator_form(self.request.user, source_generation_id=generation.pk)
-        context.update(
-            generator_context(
-                form,
-                generation=generation,
-                schedule=generation.schedule,
-                preview_rows=build_preview_rows(generation.schedule, generation.selected_months),
-                source_preview_rows=build_source_preview(generation.schedule),
-                source_course_count=generation.source_course_count,
-                source_file_digest=generation.source_file_digest[:12],
-                uploaded_file_name=generation.source_file_name,
-                selected_months=generation.selected_months,
-                selected_month_count=len(generation.selected_months),
-                selected_month_headers=selected_month_headers(generation.selected_months),
-                export_form=ScheduleExportForm(initial={"generation_id": generation.pk}),
-            )
-        )
+        context.update(generation_result_context(self.request.user, generation))
         return context
+
+    def render_to_response(self, context, **response_kwargs):
+        if _is_htmx(self.request):
+            return _template_response(
+                self.request,
+                self.partial_template_name,
+                context,
+                status=response_kwargs.get("status", 200),
+            )
+        return super().render_to_response(context, **response_kwargs)
 
 
 class ScheduleHistoryDetailView(ScheduleResultView):
@@ -762,11 +815,22 @@ class WordMatchGenerateView(WordMatcherPermissionMixin, View):
 
 class ScheduleHistoryView(PlanificatorPermissionMixin, ListView):
     template_name = "planificator/istoric.html"
+    partial_template_name = "planificator/includes/history_list.html"
     context_object_name = "generations"
     paginate_by = 20
 
     def get_queryset(self):
         return list_owned_generations(user=self.request.user)
+
+    def render_to_response(self, context, **response_kwargs):
+        if _is_htmx(self.request):
+            return _template_response(
+                self.request,
+                self.partial_template_name,
+                context,
+                status=response_kwargs.get("status", 200),
+            )
+        return super().render_to_response(context, **response_kwargs)
 
 
 class ScheduleSampleCsvView(PlanificatorPermissionMixin, View):

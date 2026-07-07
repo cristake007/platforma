@@ -142,6 +142,8 @@ files/apps/planificator/static/planificator/xml_formatter.js.md
 files/apps/planificator/templates/planificator/actualizeaza_cursuri.html.md
 files/apps/planificator/templates/planificator/generator_perioade.html.md
 files/apps/planificator/templates/planificator/includes/actions.html.md
+files/apps/planificator/templates/planificator/includes/generator_workflow.html.md
+files/apps/planificator/templates/planificator/includes/history_list.html.md
 files/apps/planificator/templates/planificator/includes/messages.html.md
 files/apps/planificator/templates/planificator/includes/result_table.html.md
 files/apps/planificator/templates/planificator/includes/settings.html.md

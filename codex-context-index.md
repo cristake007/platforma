@@ -1,12 +1,12 @@
 # Platforma TUVTK Codex context
 
-Generated: 2026-07-07T08:34:36+00:00
+Generated: 2026-07-07T08:56:13+00:00
 Project root: `C:\Users\Cristi Popa\Desktop\tuvtk`
 Context directory: `C:\Users\Cristi Popa\Desktop\tuvtk\codex-context`
-Included files: 255
+Included files: 257
 Skipped files: 34
 Pruned directories: 34
-Total included bytes: 1524150 (1488.4 KB)
+Total included bytes: 1532301 (1496.4 KB)
 Files with redacted assignments: 13
 Tests included: yes
 Django migrations: excluded by default
@@ -25,7 +25,7 @@ Use `codex-file-map.txt` to locate a file, then open the real repository source 
 - `.tuvtk/`: 1 file(s)
 - `activate_venv.bat/`: 1 file(s)
 - `AGENTS.md/`: 1 file(s)
-- `apps/`: 176 file(s)
+- `apps/`: 178 file(s)
 - `bin/`: 1 file(s)
 - `codex-prompt-demos/`: 3 file(s)
 - `coding-standards.md/`: 1 file(s)
@@ -72,8 +72,7 @@ Use `codex-file-map.txt` to locate a file, then open the real repository source 
 
 ## Large files skipped
 
-- `.tuvtk/logs/postgres.log`: larger than 80 KB
-- `.tuvtk/logs/web.log`: larger than 80 KB
+None.
 
 ## Other skipped files
 
@@ -96,7 +95,9 @@ Use `codex-file-map.txt` to locate a file, then open the real repository source 
 - `.env`: secret-like filename/path
 - `.env.example`: unrecognized text file type
 - `.pylintrc`: unrecognized text file type
+- `.tuvtk/logs/postgres.log`: unrecognized text file type
 - `.tuvtk/logs/tailwind.log`: unrecognized text file type
+- `.tuvtk/logs/web.log`: unrecognized text file type
 - `.tuvtk/node-modules.sha256`: unrecognized text file type
 - `.tuvtk/pids/tailwind.pid`: unrecognized text file type
 - `.tuvtk/pids/web.pid`: unrecognized text file type

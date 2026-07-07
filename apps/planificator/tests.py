@@ -170,6 +170,38 @@ class PlanificatorViewTests(TestCase):
         )
         self.assertTrue(generation.source_file_data)
 
+    def test_htmx_generator_validation_error_returns_workflow_partial(self):
+        response = self.client.post(
+            reverse("planificator:generator_perioade"),
+            {"year": 2026, "months": ["1"], "randomness": 5, "holidays": ""},
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "planificator/includes/generator_workflow.html")
+        self.assertContains(response, 'id="generator-workflow"')
+        self.assertContains(response, "Formularul este incomplet")
+        self.assertContains(response, "CSV sau XLSX")
+        self.assertNotContains(response, "<html")
+
+    def test_htmx_generator_success_returns_result_workflow_partial(self):
+        response = self.client.post(
+            reverse("planificator:generator_perioade"),
+            {"input_file": csv_upload(), "year": 2026, "months": ["1", "2"], "randomness": 5, "holidays": ""},
+            HTTP_HX_REQUEST="true",
+        )
+        generation = ScheduleGeneration.objects.get()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "planificator/includes/generator_workflow.html")
+        self.assertContains(response, 'id="generator-workflow"')
+        self.assertContains(response, 'id="generator-result" class="card generator-step-card overflow-hidden')
+        self.assertContains(response, "ops-schedule-table", count=1)
+        self.assertContains(response, 'id="export-form"')
+        self.assertContains(response, f'value="{generation.pk}"')
+        self.assertContains(response, "Program generat")
+        self.assertNotContains(response, "<html")
+
     def test_result_can_regenerate_with_saved_upload_after_year_change(self):
         initial_response = self.client.post(
             reverse("planificator:generator_perioade"),
@@ -258,6 +290,21 @@ class PlanificatorViewTests(TestCase):
         self.assertContains(response, reverse("planificator:istoric_detail", kwargs={"generation_id": owned.pk}))
         self.assertContains(response, "Descarcă XLSX")
 
+    def test_htmx_history_returns_list_partial(self):
+        owned = generation_for(self.user)
+        owned.source_file_name = "owned.csv"
+        owned.save(update_fields=["source_file_name"])
+
+        response = self.client.get(reverse("planificator:istoric"), HTTP_HX_REQUEST="true")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "planificator/includes/history_list.html")
+        self.assertContains(response, 'id="history-list"')
+        self.assertContains(response, "owned.csv")
+        self.assertContains(response, 'hx-get="?page=1"')
+        self.assertContains(response, reverse("planificator:generator_perioade_export"))
+        self.assertNotContains(response, "<html")
+
     def test_history_displays_generation_time_in_bucharest(self):
         generation = generation_for(self.user)
         ScheduleGeneration.objects.filter(pk=generation.pk).update(
@@ -314,6 +361,22 @@ class PlanificatorViewTests(TestCase):
             response["Content-Type"],
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
+        self.assertIn("Program", load_workbook(io.BytesIO(response.content)).sheetnames)
+
+    def test_export_download_is_unchanged_for_htmx_header(self):
+        generation = generation_for(self.user)
+        response = self.client.post(
+            reverse("planificator:generator_perioade_export"),
+            {"generation_id": generation.pk},
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response["Content-Type"],
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        self.assertIn('filename="program_cursuri_2026.xlsx"', response["Content-Disposition"])
         self.assertIn("Program", load_workbook(io.BytesIO(response.content)).sheetnames)
 
     def test_other_users_and_expired_generations_are_not_exportable(self):

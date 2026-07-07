@@ -1690,201 +1690,213 @@ Size: 16.4 KB
 
 ## `apps/planificator/static/planificator/generator.js`
 
-Size: 8.9 KB
+Size: 10.1 KB
 
 ```javascript
 (() => {
-    const slider = document.getElementById("id_randomness");
-    const yearInput = document.getElementById("id_year");
-    const monthInputs = Array.from(document.querySelectorAll('input[name="months"]'));
-    const fileInput = document.getElementById("id_input_file");
-    const uploadDropzone = document.getElementById("ops-upload-dropzone");
-    const holidayStore = document.getElementById("id_holidays");
-    const holidayInput = document.getElementById("ops-holiday-date");
-    const holidayList = document.getElementById("ops-holiday-list");
-    const holidayLive = document.getElementById("ops-holiday-live");
-    const workflow = document.getElementById("generator-workflow");
-    const generatorForm = document.getElementById("generator-form");
-    const sourceGenerationInput = document.getElementById("id_source_generation_id");
-    const uploadPrompt = document.getElementById("ops-upload-prompt");
-    const uploadState = document.getElementById("ops-upload-state");
-    const uploadStatus = document.getElementById("ops-upload-status");
-    const replaceUpload = document.getElementById("ops-replace-upload");
-    const clearUpload = document.getElementById("ops-clear-upload");
-    const clearProcessedUpload = document.getElementById("ops-clear-processed-upload");
-    const uploadWarning = document.getElementById("ops-upload-warning");
-    const uploadWarningText = document.getElementById("ops-upload-warning-text");
+    const initGeneratorWorkflow = (root = document) => {
+        const workflow = root.querySelector?.("#generator-workflow") || document.getElementById("generator-workflow");
+        if (!workflow || workflow.dataset.generatorInitialized === "true") return;
+        workflow.dataset.generatorInitialized = "true";
 
-    const setText = (id, value) => {
-        const element = document.getElementById(id);
-        if (element) element.textContent = String(value);
-    };
-    const holidayItems = () => holidayStore ? holidayStore.value.split(/[\n,]+/).map((item) => item.trim()).filter(Boolean) : [];
-    const writeHolidays = (items) => {
-        if (holidayStore) holidayStore.value = items.join("\n");
-        setText("ops-holiday-count", items.length);
-    };
-    const setWorkflowStep = (currentStep) => {
-        document.querySelectorAll("[data-generator-step]").forEach((step) => {
-            const stepNumber = Number(step.dataset.generatorStep);
-            step.classList.toggle("step-primary", stepNumber < currentStep);
-            step.classList.toggle("step-secondary", stepNumber === currentStep);
-        });
-        document.querySelectorAll("[data-generator-card]").forEach((card) => {
-            const stepNumber = Number(card.dataset.generatorCard);
-            card.classList.toggle("generator-card-complete", stepNumber < currentStep);
-        });
-        if (workflow) workflow.dataset.currentStep = String(currentStep);
-    };
-    const showUploadWarning = (message) => {
-        if (uploadWarningText) uploadWarningText.textContent = message;
-        uploadWarning?.classList.remove("hidden");
-    };
-    const hideUploadWarning = () => uploadWarning?.classList.add("hidden");
-    const markSettingsDirty = () => {
-        if (Number(workflow?.dataset.currentStep || 1) > 2) setWorkflowStep(2);
-    };
-    const selectedHoliday = () => {
-        if (!holidayInput?.value) {
-            holidayInput?.classList.add("input-error");
-            return "";
-        }
-        holidayInput.classList.remove("input-error");
-        const [year, month, day] = holidayInput.value.split("-");
-        return `${day}.${month}.${year}`;
-    };
-    const renderHolidays = () => {
-        if (!holidayList) return;
-        holidayList.replaceChildren();
-        holidayItems().forEach((item, index) => {
-            const chip = document.createElement("span");
-            chip.className = "join";
-            const text = document.createElement("span");
-            text.textContent = item;
-            text.className = "btn btn-outline btn-primary btn-xs join-item pointer-events-none font-normal";
-            const remove = document.createElement("button");
-            remove.type = "button";
-            remove.textContent = "×";
-            remove.className = "btn btn-outline btn-primary btn-square btn-xs join-item";
-            remove.setAttribute("aria-label", `Șterge data ${item}`);
-            remove.addEventListener("click", () => {
-                const next = holidayItems().filter((_, itemIndex) => itemIndex !== index);
-                writeHolidays(next);
-                renderHolidays();
-                markSettingsDirty();
-                if (holidayLive) holidayLive.textContent = `Data ${item} a fost ștearsă.`;
+        const slider = workflow.querySelector("#id_randomness");
+        const yearInput = workflow.querySelector("#id_year");
+        const monthInputs = Array.from(workflow.querySelectorAll('input[name="months"]'));
+        const fileInput = workflow.querySelector("#id_input_file");
+        const uploadDropzone = workflow.querySelector("#ops-upload-dropzone");
+        const holidayStore = workflow.querySelector("#id_holidays");
+        const holidayInput = workflow.querySelector("#ops-holiday-date");
+        const holidayList = workflow.querySelector("#ops-holiday-list");
+        const holidayLive = workflow.querySelector("#ops-holiday-live");
+        const generatorForm = workflow.querySelector("#generator-form");
+        const sourceGenerationInput = workflow.querySelector("#id_source_generation_id");
+        const uploadPrompt = workflow.querySelector("#ops-upload-prompt");
+        const uploadState = workflow.querySelector("#ops-upload-state");
+        const uploadStatus = workflow.querySelector("#ops-upload-status");
+        const replaceUpload = workflow.querySelector("#ops-replace-upload");
+        const clearUpload = workflow.querySelector("#ops-clear-upload");
+        const clearProcessedUpload = workflow.querySelector("#ops-clear-processed-upload");
+        const uploadWarning = workflow.querySelector("#ops-upload-warning");
+        const uploadWarningText = workflow.querySelector("#ops-upload-warning-text");
+
+        const setText = (id, value) => {
+            const element = workflow.querySelector(`#${id}`);
+            if (element) element.textContent = String(value);
+        };
+        const holidayItems = () => holidayStore ? holidayStore.value.split(/[\n,]+/).map((item) => item.trim()).filter(Boolean) : [];
+        const writeHolidays = (items) => {
+            if (holidayStore) holidayStore.value = items.join("\n");
+            setText("ops-holiday-count", items.length);
+        };
+        const setWorkflowStep = (currentStep) => {
+            workflow.querySelectorAll("[data-generator-step]").forEach((step) => {
+                const stepNumber = Number(step.dataset.generatorStep);
+                step.classList.toggle("step-primary", stepNumber < currentStep);
+                step.classList.toggle("step-secondary", stepNumber === currentStep);
             });
-            chip.append(text, remove);
-            holidayList.append(chip);
-        });
-        setText("ops-holiday-count", holidayItems().length);
-    };
-    const syncMonths = () => {
-        const selected = monthInputs.filter((input) => input.checked).length;
-        setText("ops-month-count", selected);
-        setText("ops-month-count-summary", selected);
-        const submit = document.getElementById("ops-preview-submit");
-        if (submit) submit.disabled = selected === 0;
-        const toggle = document.getElementById("ops-toggle-months");
-        if (toggle) toggle.textContent = selected === monthInputs.length ? "Deselectează toate" : "Selectează toate";
-    };
-    const syncSlider = () => {
-        if (!slider) return;
-        setText("ops-randomness-value", slider.value);
-        setText("ops-randomness-summary", slider.value);
-    };
+            workflow.querySelectorAll("[data-generator-card]").forEach((card) => {
+                const stepNumber = Number(card.dataset.generatorCard);
+                card.classList.toggle("generator-card-complete", stepNumber < currentStep);
+            });
+            workflow.dataset.currentStep = String(currentStep);
+        };
+        const showUploadWarning = (message) => {
+            if (uploadWarningText) uploadWarningText.textContent = message;
+            uploadWarning?.classList.remove("hidden");
+        };
+        const hideUploadWarning = () => uploadWarning?.classList.add("hidden");
+        const markSettingsDirty = () => {
+            if (Number(workflow.dataset.currentStep || 1) > 2) setWorkflowStep(2);
+        };
+        const selectedHoliday = () => {
+            if (!holidayInput?.value) {
+                holidayInput?.classList.add("input-error");
+                return "";
+            }
+            holidayInput.classList.remove("input-error");
+            const [year, month, day] = holidayInput.value.split("-");
+            return `${day}.${month}.${year}`;
+        };
+        const renderHolidays = () => {
+            if (!holidayList) return;
+            holidayList.replaceChildren();
+            holidayItems().forEach((item, index) => {
+                const chip = document.createElement("span");
+                chip.className = "join";
+                const text = document.createElement("span");
+                text.textContent = item;
+                text.className = "btn btn-outline btn-primary btn-xs join-item pointer-events-none font-normal";
+                const remove = document.createElement("button");
+                remove.type = "button";
+                remove.textContent = "×";
+                remove.className = "btn btn-outline btn-primary btn-square btn-xs join-item";
+                remove.setAttribute("aria-label", `Șterge data ${item}`);
+                remove.addEventListener("click", () => {
+                    const next = holidayItems().filter((_, itemIndex) => itemIndex !== index);
+                    writeHolidays(next);
+                    renderHolidays();
+                    markSettingsDirty();
+                    if (holidayLive) holidayLive.textContent = `Data ${item} a fost ștearsă.`;
+                });
+                chip.append(text, remove);
+                holidayList.append(chip);
+            });
+            setText("ops-holiday-count", holidayItems().length);
+        };
+        const syncMonths = () => {
+            const selected = monthInputs.filter((input) => input.checked).length;
+            setText("ops-month-count", selected);
+            setText("ops-month-count-summary", selected);
+            const submit = workflow.querySelector("#ops-preview-submit");
+            if (submit) submit.disabled = selected === 0;
+            const toggle = workflow.querySelector("#ops-toggle-months");
+            if (toggle) toggle.textContent = selected === monthInputs.length ? "Deselectează toate" : "Selectează toate";
+        };
+        const syncSlider = () => {
+            if (!slider) return;
+            setText("ops-randomness-value", slider.value);
+            setText("ops-randomness-summary", slider.value);
+        };
 
-    slider?.addEventListener("input", () => {
-        syncSlider();
-        markSettingsDirty();
-    });
-    yearInput?.addEventListener("change", () => {
-        setText("ops-year-display", yearInput.value);
-        markSettingsDirty();
-    });
-    monthInputs.forEach((input) => input.addEventListener("change", () => {
-        syncMonths();
-        markSettingsDirty();
-    }));
-    document.getElementById("ops-toggle-months")?.addEventListener("click", () => {
-        const selectAll = monthInputs.some((input) => !input.checked);
-        monthInputs.forEach((input) => { input.checked = selectAll; });
-        syncMonths();
-        markSettingsDirty();
-    });
-    document.getElementById("ops-add-holiday")?.addEventListener("click", () => {
-        const formatted = selectedHoliday();
-        if (!formatted) {
-            holidayInput?.focus();
-            if (holidayLive) holidayLive.textContent = "Data selectată nu este validă.";
-            return;
-        }
-        const items = holidayItems();
-        if (!items.includes(formatted)) items.push(formatted);
-        writeHolidays(items);
-        renderHolidays();
-        markSettingsDirty();
-        if (holidayLive) holidayLive.textContent = `Data ${formatted} a fost adăugată.`;
-    });
-    fileInput?.addEventListener("change", () => {
-        const file = fileInput.files?.[0];
-        if (!file) return;
-        if (sourceGenerationInput) sourceGenerationInput.value = "";
-        hideUploadWarning();
-        uploadDropzone?.classList.remove("border-secondary", "border-dashed", "bg-base-200");
-        uploadPrompt?.classList.add("hidden");
-        uploadState?.classList.remove("hidden");
-        replaceUpload?.classList.add("hidden");
-        clearProcessedUpload?.classList.add("hidden");
-        clearUpload?.classList.remove("hidden");
-        setText("ops-upload-file-name", file.name);
-        if (uploadStatus) uploadStatus.textContent = "Pregătit pentru validare";
-        setWorkflowStep(2);
-    });
-    generatorForm?.addEventListener("submit", (event) => {
-        const hasNewUpload = Boolean(fileInput?.files?.length);
-        const hasProcessedUpload = Boolean(sourceGenerationInput?.value.trim());
-        if (hasNewUpload || hasProcessedUpload) {
+        slider?.addEventListener("input", () => {
+            syncSlider();
+            markSettingsDirty();
+        });
+        yearInput?.addEventListener("change", () => {
+            setText("ops-year-display", yearInput.value);
+            markSettingsDirty();
+        });
+        monthInputs.forEach((input) => input.addEventListener("change", () => {
+            syncMonths();
+            markSettingsDirty();
+        }));
+        workflow.querySelector("#ops-toggle-months")?.addEventListener("click", () => {
+            const selectAll = monthInputs.some((input) => !input.checked);
+            monthInputs.forEach((input) => { input.checked = selectAll; });
+            syncMonths();
+            markSettingsDirty();
+        });
+        workflow.querySelector("#ops-add-holiday")?.addEventListener("click", () => {
+            const formatted = selectedHoliday();
+            if (!formatted) {
+                holidayInput?.focus();
+                if (holidayLive) holidayLive.textContent = "Data selectată nu este validă.";
+                return;
+            }
+            const items = holidayItems();
+            if (!items.includes(formatted)) items.push(formatted);
+            writeHolidays(items);
+            renderHolidays();
+            markSettingsDirty();
+            if (holidayLive) holidayLive.textContent = `Data ${formatted} a fost adăugată.`;
+        });
+        fileInput?.addEventListener("change", () => {
+            const file = fileInput.files?.[0];
+            if (!file) return;
+            if (sourceGenerationInput) sourceGenerationInput.value = "";
             hideUploadWarning();
-            return;
-        }
-        event.preventDefault();
-        showUploadWarning("Selectează un fișier CSV sau XLSX pentru a continua.");
-        setWorkflowStep(1);
-        uploadWarning?.scrollIntoView({ behavior: "smooth", block: "center" });
-        fileInput?.focus({ preventScroll: true });
-    });
-    ["dragenter", "dragover"].forEach((eventName) => {
-        uploadDropzone?.addEventListener(eventName, (event) => {
-            event.preventDefault();
-            uploadDropzone.classList.add("border-secondary", "bg-base-200");
+            uploadDropzone?.classList.remove("border-secondary", "border-dashed", "bg-base-200");
+            uploadPrompt?.classList.add("hidden");
+            uploadState?.classList.remove("hidden");
+            replaceUpload?.classList.add("hidden");
+            clearProcessedUpload?.classList.add("hidden");
+            clearUpload?.classList.remove("hidden");
+            setText("ops-upload-file-name", file.name);
+            if (uploadStatus) uploadStatus.textContent = "Pregătit pentru validare";
+            setWorkflowStep(2);
         });
-    });
-    ["dragleave", "drop"].forEach((eventName) => {
-        uploadDropzone?.addEventListener(eventName, (event) => {
+        generatorForm?.addEventListener("submit", (event) => {
+            const hasNewUpload = Boolean(fileInput?.files?.length);
+            const hasProcessedUpload = Boolean(sourceGenerationInput?.value.trim());
+            if (hasNewUpload || hasProcessedUpload) {
+                hideUploadWarning();
+                return;
+            }
             event.preventDefault();
-            uploadDropzone.classList.remove("border-secondary", "bg-base-200");
+            showUploadWarning("Selectează un fișier CSV sau XLSX pentru a continua.");
+            setWorkflowStep(1);
+            uploadWarning?.scrollIntoView({ behavior: "smooth", block: "center" });
+            fileInput?.focus({ preventScroll: true });
         });
-    });
-    uploadDropzone?.addEventListener("drop", (event) => {
-        const files = event.dataTransfer?.files;
-        if (!fileInput || !files?.length) return;
-        fileInput.files = files;
-        fileInput.dispatchEvent(new Event("change", { bubbles: true }));
-    });
-    clearUpload?.addEventListener("click", () => {
-        if (fileInput) fileInput.value = "";
-        uploadState?.classList.add("hidden");
-        uploadPrompt?.classList.remove("hidden");
-        uploadDropzone?.classList.add("border-dashed");
-        hideUploadWarning();
-        setWorkflowStep(1);
-    });
+        ["dragenter", "dragover"].forEach((eventName) => {
+            uploadDropzone?.addEventListener(eventName, (event) => {
+                event.preventDefault();
+                uploadDropzone.classList.add("border-secondary", "bg-base-200");
+            });
+        });
+        ["dragleave", "drop"].forEach((eventName) => {
+            uploadDropzone?.addEventListener(eventName, (event) => {
+                event.preventDefault();
+                uploadDropzone.classList.remove("border-secondary", "bg-base-200");
+            });
+        });
+        uploadDropzone?.addEventListener("drop", (event) => {
+            const files = event.dataTransfer?.files;
+            if (!fileInput || !files?.length) return;
+            fileInput.files = files;
+            fileInput.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+        clearUpload?.addEventListener("click", () => {
+            if (fileInput) fileInput.value = "";
+            uploadState?.classList.add("hidden");
+            uploadPrompt?.classList.remove("hidden");
+            uploadDropzone?.classList.add("border-dashed");
+            hideUploadWarning();
+            setWorkflowStep(1);
+        });
 
-    setWorkflowStep(Number(workflow?.dataset.currentStep || 1));
-    syncSlider();
-    syncMonths();
-    renderHolidays();
+        setWorkflowStep(Number(workflow.dataset.currentStep || 1));
+        syncSlider();
+        syncMonths();
+        renderHolidays();
+    };
+
+    document.addEventListener("DOMContentLoaded", () => initGeneratorWorkflow());
+    document.body.addEventListener("htmx:afterSwap", (event) => {
+        if (event.detail?.target?.id === "generator-workflow") {
+            initGeneratorWorkflow(event.detail.target);
+        }
+    });
 })();
 ```
 
@@ -2498,7 +2510,7 @@ Size: 9.0 KB
 
 ## `apps/planificator/templates/planificator/generator_perioade.html`
 
-Size: 2.6 KB
+Size: 401 B
 
 ```html
 {% extends "layouts/base.html" %}
@@ -2507,49 +2519,7 @@ Size: 2.6 KB
 {% block title %}{% if history_read_only %}Program generat{% else %}Generator perioade{% endif %} | Platforma TUVTK{% endblock %}
 
 {% block content %}
-    <section id="generator-workflow" data-current-step="{% if generation %}3{% else %}1{% endif %}" class="mx-auto w-full max-w-[1360px] space-y-12" style="max-width:1360px">
-        <div class="space-y-2">
-            <div class="breadcrumbs p-0 text-sm text-muted">
-                <ul>
-                    <li>Planificator</li>
-                    {% if history_read_only %}<li><a href="{% url 'planificator:istoric' %}">Istoric</a></li><li>Program generat</li>{% else %}<li>Generator perioade</li>{% endif %}
-                </ul>
-            </div>
-            <div>
-                <h1 class="text-xl font-bold text-primary sm:text-[1.75rem]">{% if history_read_only %}Program generat{% else %}Planifică seriile de curs{% endif %}</h1>
-                <p class="mt-1 max-w-3xl text-sm text-muted">{% if history_read_only %}Vizualizare în mod citire a unei generări din istoric.{% else %}Încarcă oferta de cursuri, configurează programarea și verifică rezultatul.{% endif %}</p>
-            </div>
-        </div>
-
-        {% if history_read_only %}
-            <div class="alert alert-info py-2 text-sm" role="status">
-                <span>Acest program este deschis din istoric. Fișierul sursă și setările nu pot fi modificate.</span>
-            </div>
-        {% endif %}
-
-        {% include "planificator/includes/messages.html" %}
-
-        <form id="generator-form" method="post" action="{% url 'planificator:generator_perioade' %}" enctype="multipart/form-data" class="space-y-5">
-            {% csrf_token %}
-            <fieldset class="contents"{% if history_read_only %} disabled aria-disabled="true"{% endif %}>
-                <div class="space-y-12">
-                    {{ form.source_generation_id }}
-                    {% include "planificator/includes/upload.html" %}
-
-                    {% include "planificator/includes/settings.html" %}
-                </div>
-            </fieldset>
-        </form>
-
-        {% if generation %}
-            <form id="export-form" method="post" action="{% url 'planificator:generator_perioade_export' %}">
-                {% csrf_token %}
-                {{ export_form.generation_id }}
-            </form>
-        {% endif %}
-
-        {% include "planificator/includes/result_table.html" %}
-    </section>
+    {% include "planificator/includes/generator_workflow.html" %}
 {% endblock %}
 
 {% block page_scripts %}
@@ -2559,7 +2529,7 @@ Size: 2.6 KB
 
 ## `apps/planificator/templates/planificator/includes/actions.html`
 
-Size: 998 B
+Size: 1.2 KB
 
 ```html
 <div class="card-actions items-center justify-between gap-3 border-t border-base-300 bg-base-200 p-4">
@@ -2568,7 +2538,10 @@ Size: 998 B
         <span id="ops-holiday-count">{{ holiday_count }}</span> zile nelucrătoare · variație
         <span id="ops-randomness-summary">{{ form.randomness.value }}</span>/10
     </p>
-    <button type="submit" id="ops-preview-submit" class="btn btn-outline btn-primary btn-sm">Generează programul</button>
+    <div class="flex items-center gap-3">
+        <span id="ops-generator-loading" class="htmx-indicator loading loading-spinner loading-sm text-primary" aria-hidden="true"></span>
+        <button type="submit" id="ops-preview-submit" class="btn btn-outline btn-primary btn-sm">Generează programul</button>
+    </div>
 </div>
 
 {% if generation_error %}
@@ -2583,6 +2556,195 @@ Size: 998 B
         </div>
     </div>
 {% endif %}
+```
+
+## `apps/planificator/templates/planificator/includes/generator_workflow.html`
+
+Size: 2.3 KB
+
+```html
+<section id="generator-workflow" data-current-step="{% if generation %}3{% else %}1{% endif %}" class="mx-auto w-full max-w-[1360px] space-y-12" style="max-width:1360px">
+    <div class="space-y-2">
+        <div class="breadcrumbs p-0 text-sm text-muted">
+            <ul>
+                <li>Planificator</li>
+                {% if history_read_only %}<li><a href="{% url 'planificator:istoric' %}">Istoric</a></li><li>Program generat</li>{% else %}<li>Generator perioade</li>{% endif %}
+            </ul>
+        </div>
+        <div>
+            <h1 class="text-xl font-bold text-primary sm:text-[1.75rem]">{% if history_read_only %}Program generat{% else %}Planifică seriile de curs{% endif %}</h1>
+            <p class="mt-1 max-w-3xl text-sm text-muted">{% if history_read_only %}Vizualizare în mod citire a unei generări din istoric.{% else %}Încarcă oferta de cursuri, configurează programarea și verifică rezultatul.{% endif %}</p>
+        </div>
+    </div>
+
+    {% if history_read_only %}
+        <div class="alert alert-info py-2 text-sm" role="status">
+            <span>Acest program este deschis din istoric. Fișierul sursă și setările nu pot fi modificate.</span>
+        </div>
+    {% endif %}
+
+    {% include "planificator/includes/messages.html" %}
+
+    <form
+        id="generator-form"
+        method="post"
+        action="{% url 'planificator:generator_perioade' %}"
+        enctype="multipart/form-data"
+        class="space-y-5"
+        hx-post="{% url 'planificator:generator_perioade' %}"
+        hx-encoding="multipart/form-data"
+        hx-target="#generator-workflow"
+        hx-swap="outerHTML"
+        hx-indicator="#ops-generator-loading"
+    >
+        {% csrf_token %}
+        <fieldset class="contents"{% if history_read_only %} disabled aria-disabled="true"{% endif %}>
+            <div class="space-y-12">
+                {{ form.source_generation_id }}
+                {% include "planificator/includes/upload.html" %}
+
+                {% include "planificator/includes/settings.html" %}
+            </div>
+        </fieldset>
+    </form>
+
+    {% if generation %}
+        <form id="export-form" method="post" action="{% url 'planificator:generator_perioade_export' %}">
+            {% csrf_token %}
+            {{ export_form.generation_id }}
+        </form>
+    {% endif %}
+
+    {% include "planificator/includes/result_table.html" %}
+</section>
+```
+
+## `apps/planificator/templates/planificator/includes/history_list.html`
+
+Size: 7.6 KB
+
+```html
+<section
+    id="history-list"
+    class="card generator-step-card bg-base-100 shadow-none"
+    aria-labelledby="history-list-title"
+>
+    <header class="generator-card-header flex flex-col gap-3 bg-base-200 px-4 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-5">
+        <div>
+            <h2 id="history-list-title" class="text-base font-semibold text-primary">Programe disponibile</h2>
+            <p class="mt-1 text-xs text-muted">Fișierele expirate nu mai pot fi descărcate și sunt eliminate automat.</p>
+        </div>
+        <a
+            href="?page={{ page_obj.number|default:1 }}"
+            class="btn btn-outline btn-primary btn-sm self-start"
+            hx-get="?page={{ page_obj.number|default:1 }}"
+            hx-target="#history-list"
+            hx-swap="outerHTML"
+            hx-indicator="#history-list-loading"
+        >
+            Reîmprospătează
+        </a>
+    </header>
+
+    <div id="history-list-loading" class="htmx-indicator border-t border-base-300 bg-base-100 px-4 py-2 text-sm text-muted" role="status">
+        Se actualizează lista...
+    </div>
+
+    {% if generations %}
+        <div class="divide-y divide-base-300 md:hidden">
+            {% for generation in generations %}
+                <article class="space-y-3 p-4">
+                    <div>
+                        <a href="{% url 'planificator:istoric_detail' generation.pk %}" class="link link-primary font-semibold">{{ generation.source_file_name }}</a>
+                        <span class="mt-0.5 block font-mono text-[11px] text-muted">SHA-256 {{ generation.source_file_digest|slice:":12" }}</span>
+                    </div>
+                    <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        <div><dt class="text-xs text-muted">An</dt><dd class="font-semibold">{{ generation.year }}</dd></div>
+                        <div><dt class="text-xs text-muted">Luni</dt><dd class="font-semibold">{{ generation.selected_months|join:", " }}</dd></div>
+                        <div><dt class="text-xs text-muted">Cursuri</dt><dd class="font-semibold">{{ generation.source_course_count }}</dd></div>
+                        <div><dt class="text-xs text-muted">Perioade</dt><dd class="font-semibold">{{ generation.generated_entry_count }}</dd></div>
+                        <div><dt class="text-xs text-muted">Generat</dt><dd>{{ generation.created_at|date:"d.m.Y H:i" }}</dd></div>
+                        <div><dt class="text-xs text-muted">Expiră</dt><dd>{{ generation.expires_at|date:"d.m.Y H:i" }}</dd></div>
+                    </dl>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="{% url 'planificator:istoric_detail' generation.pk %}" class="btn btn-outline btn-primary btn-sm">Vezi</a>
+                        <form method="post" action="{% url 'planificator:generator_perioade_export' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="generation_id" value="{{ generation.pk }}">
+                            <button type="submit" class="btn btn-outline btn-secondary btn-sm">Descarcă XLSX</button>
+                        </form>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+
+        <div class="hidden overflow-x-auto md:block">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th scope="col">Fișier sursă</th>
+                        <th scope="col">An</th>
+                        <th scope="col">Luni</th>
+                        <th scope="col">Cursuri</th>
+                        <th scope="col">Perioade</th>
+                        <th scope="col">Generat</th>
+                        <th scope="col">Expiră</th>
+                        <th scope="col" class="text-right">Acțiuni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for generation in generations %}
+                        <tr>
+                            <th scope="row" class="min-w-48">
+                                <a href="{% url 'planificator:istoric_detail' generation.pk %}" class="link link-primary font-semibold">{{ generation.source_file_name }}</a>
+                                <span class="mt-0.5 block font-mono text-[11px] font-normal text-muted">SHA-256 {{ generation.source_file_digest|slice:":12" }}</span>
+                            </th>
+                            <td>{{ generation.year }}</td>
+                            <td>{{ generation.selected_months|join:", " }}</td>
+                            <td>{{ generation.source_course_count }}</td>
+                            <td>{{ generation.generated_entry_count }}</td>
+                            <td class="whitespace-nowrap">{{ generation.created_at|date:"d.m.Y H:i" }}</td>
+                            <td class="whitespace-nowrap">{{ generation.expires_at|date:"d.m.Y H:i" }}</td>
+                            <td>
+                                <div class="flex justify-end gap-2">
+                                    <a href="{% url 'planificator:istoric_detail' generation.pk %}" class="btn btn-outline btn-primary btn-sm">Vezi</a>
+                                    <form method="post" action="{% url 'planificator:generator_perioade_export' %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="generation_id" value="{{ generation.pk }}">
+                                        <button type="submit" class="btn btn-outline btn-secondary btn-sm">Descarcă XLSX</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="px-4 py-12 text-center sm:px-6">
+            <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-10 w-10 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6.5h16M6.5 3.5v3m11-3v3M5.5 20.5h13a1.5 1.5 0 0 0 1.5-1.5V6.5H4V19a1.5 1.5 0 0 0 1.5 1.5Zm2.5-10h3v3H8v-3Z" /></svg>
+            <h3 class="mt-3 text-base font-semibold text-primary">Nu există programe disponibile</h3>
+            <p class="mx-auto mt-1 max-w-md text-sm text-muted">Generează primul program pentru a-l putea consulta și descărca de aici.</p>
+            <a href="{% url 'planificator:generator_perioade' %}" class="btn btn-outline btn-primary btn-sm mt-4">Deschide generatorul</a>
+        </div>
+    {% endif %}
+
+    {% if is_paginated %}
+        <nav class="flex items-center justify-between gap-3 border-t border-base-300 px-4 py-3" aria-label="Paginare istoric">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-outline btn-primary btn-sm" hx-get="?page={{ page_obj.previous_page_number }}" hx-target="#history-list" hx-swap="outerHTML" hx-indicator="#history-list-loading">Pagina anterioară</a>
+            {% else %}
+                <span></span>
+            {% endif %}
+            <span class="text-sm text-muted">Pagina {{ page_obj.number }} din {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" class="btn btn-outline btn-primary btn-sm" hx-get="?page={{ page_obj.next_page_number }}" hx-target="#history-list" hx-swap="outerHTML" hx-indicator="#history-list-loading">Pagina următoare</a>
+            {% else %}
+                <span></span>
+            {% endif %}
+        </nav>
+    {% endif %}
+</section>
 ```
 
 ## `apps/planificator/templates/planificator/includes/messages.html`
@@ -2819,7 +2981,7 @@ Size: 4.7 KB
 
 ## `apps/planificator/templates/planificator/istoric.html`
 
-Size: 8.3 KB
+Size: 1.1 KB
 
 ```html
 {% extends "layouts/base.html" %}
@@ -2844,99 +3006,7 @@ Size: 8.3 KB
             </div>
         </div>
 
-        <section class="card generator-step-card bg-base-100 shadow-none" aria-labelledby="history-list-title">
-            <header class="generator-card-header bg-base-200 px-4 py-4 sm:px-5">
-                <h2 id="history-list-title" class="text-base font-semibold text-primary">Programe disponibile</h2>
-                <p class="mt-1 text-xs text-muted">Fișierele expirate nu mai pot fi descărcate și sunt eliminate automat.</p>
-            </header>
-
-            {% if generations %}
-                <div class="divide-y divide-base-300 md:hidden">
-                    {% for generation in generations %}
-                        <article class="space-y-3 p-4">
-                            <div>
-                                <a href="{% url 'planificator:istoric_detail' generation.pk %}" class="link link-primary font-semibold">{{ generation.source_file_name }}</a>
-                                <span class="mt-0.5 block font-mono text-[11px] text-muted">SHA-256 {{ generation.source_file_digest|slice:":12" }}</span>
-                            </div>
-                            <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                                <div><dt class="text-xs text-muted">An</dt><dd class="font-semibold">{{ generation.year }}</dd></div>
-                                <div><dt class="text-xs text-muted">Luni</dt><dd class="font-semibold">{{ generation.selected_months|join:", " }}</dd></div>
-                                <div><dt class="text-xs text-muted">Cursuri</dt><dd class="font-semibold">{{ generation.source_course_count }}</dd></div>
-                                <div><dt class="text-xs text-muted">Perioade</dt><dd class="font-semibold">{{ generation.generated_entry_count }}</dd></div>
-                                <div><dt class="text-xs text-muted">Generat</dt><dd>{{ generation.created_at|date:"d.m.Y H:i" }}</dd></div>
-                                <div><dt class="text-xs text-muted">Expiră</dt><dd>{{ generation.expires_at|date:"d.m.Y H:i" }}</dd></div>
-                            </dl>
-                            <div class="flex flex-wrap gap-2">
-                                <a href="{% url 'planificator:istoric_detail' generation.pk %}" class="btn btn-outline btn-primary btn-sm">Vezi</a>
-                                <form method="post" action="{% url 'planificator:generator_perioade_export' %}">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="generation_id" value="{{ generation.pk }}">
-                                    <button type="submit" class="btn btn-outline btn-secondary btn-sm">Descarcă XLSX</button>
-                                </form>
-                            </div>
-                        </article>
-                    {% endfor %}
-                </div>
-
-                <div class="hidden overflow-x-auto md:block">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th scope="col">Fișier sursă</th>
-                                <th scope="col">An</th>
-                                <th scope="col">Luni</th>
-                                <th scope="col">Cursuri</th>
-                                <th scope="col">Perioade</th>
-                                <th scope="col">Generat</th>
-                                <th scope="col">Expiră</th>
-                                <th scope="col" class="text-right">Acțiuni</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for generation in generations %}
-                                <tr>
-                                    <th scope="row" class="min-w-48">
-                                        <a href="{% url 'planificator:istoric_detail' generation.pk %}" class="link link-primary font-semibold">{{ generation.source_file_name }}</a>
-                                        <span class="mt-0.5 block font-mono text-[11px] font-normal text-muted">SHA-256 {{ generation.source_file_digest|slice:":12" }}</span>
-                                    </th>
-                                    <td>{{ generation.year }}</td>
-                                    <td>{{ generation.selected_months|join:", " }}</td>
-                                    <td>{{ generation.source_course_count }}</td>
-                                    <td>{{ generation.generated_entry_count }}</td>
-                                    <td class="whitespace-nowrap">{{ generation.created_at|date:"d.m.Y H:i" }}</td>
-                                    <td class="whitespace-nowrap">{{ generation.expires_at|date:"d.m.Y H:i" }}</td>
-                                    <td>
-                                        <div class="flex justify-end gap-2">
-                                            <a href="{% url 'planificator:istoric_detail' generation.pk %}" class="btn btn-outline btn-primary btn-sm">Vezi</a>
-                                            <form method="post" action="{% url 'planificator:generator_perioade_export' %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="generation_id" value="{{ generation.pk }}">
-                                                <button type="submit" class="btn btn-outline btn-secondary btn-sm">Descarcă XLSX</button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="px-4 py-12 text-center sm:px-6">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-10 w-10 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6.5h16M6.5 3.5v3m11-3v3M5.5 20.5h13a1.5 1.5 0 0 0 1.5-1.5V6.5H4V19a1.5 1.5 0 0 0 1.5 1.5Zm2.5-10h3v3H8v-3Z" /></svg>
-                    <h3 class="mt-3 text-base font-semibold text-primary">Nu există programe disponibile</h3>
-                    <p class="mx-auto mt-1 max-w-md text-sm text-muted">Generează primul program pentru a-l putea consulta și descărca de aici.</p>
-                    <a href="{% url 'planificator:generator_perioade' %}" class="btn btn-outline btn-primary btn-sm mt-4">Deschide generatorul</a>
-                </div>
-            {% endif %}
-        </section>
-
-        {% if is_paginated %}
-            <nav class="flex items-center justify-between gap-3" aria-label="Paginare istoric">
-                {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}" class="btn btn-outline btn-primary btn-sm">Pagina anterioară</a>{% else %}<span></span>{% endif %}
-                <span class="text-sm text-muted">Pagina {{ page_obj.number }} din {{ page_obj.paginator.num_pages }}</span>
-                {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}" class="btn btn-outline btn-primary btn-sm">Pagina următoare</a>{% else %}<span></span>{% endif %}
-            </nav>
-        {% endif %}
+        {% include "planificator/includes/history_list.html" %}
     </section>
 {% endblock %}
 ```
@@ -3173,7 +3243,7 @@ Size: 4.9 KB
 
 ## `apps/planificator/tests.py`
 
-Size: 22.7 KB
+Size: 26.2 KB
 
 ```python
 import io
@@ -3348,6 +3418,38 @@ class PlanificatorViewTests(TestCase):
         )
         self.assertTrue(generation.source_file_data)
 
+    def test_htmx_generator_validation_error_returns_workflow_partial(self):
+        response = self.client.post(
+            reverse("planificator:generator_perioade"),
+            {"year": 2026, "months": ["1"], "randomness": 5, "holidays": ""},
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "planificator/includes/generator_workflow.html")
+        self.assertContains(response, 'id="generator-workflow"')
+        self.assertContains(response, "Formularul este incomplet")
+        self.assertContains(response, "CSV sau XLSX")
+        self.assertNotContains(response, "<html")
+
+    def test_htmx_generator_success_returns_result_workflow_partial(self):
+        response = self.client.post(
+            reverse("planificator:generator_perioade"),
+            {"input_file": csv_upload(), "year": 2026, "months": ["1", "2"], "randomness": 5, "holidays": ""},
+            HTTP_HX_REQUEST="true",
+        )
+        generation = ScheduleGeneration.objects.get()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "planificator/includes/generator_workflow.html")
+        self.assertContains(response, 'id="generator-workflow"')
+        self.assertContains(response, 'id="generator-result" class="card generator-step-card overflow-hidden')
+        self.assertContains(response, "ops-schedule-table", count=1)
+        self.assertContains(response, 'id="export-form"')
+        self.assertContains(response, f'value="{generation.pk}"')
+        self.assertContains(response, "Program generat")
+        self.assertNotContains(response, "<html")
+
     def test_result_can_regenerate_with_saved_upload_after_year_change(self):
         initial_response = self.client.post(
             reverse("planificator:generator_perioade"),
@@ -3436,6 +3538,21 @@ class PlanificatorViewTests(TestCase):
         self.assertContains(response, reverse("planificator:istoric_detail", kwargs={"generation_id": owned.pk}))
         self.assertContains(response, "Descarcă XLSX")
 
+    def test_htmx_history_returns_list_partial(self):
+        owned = generation_for(self.user)
+        owned.source_file_name = "owned.csv"
+        owned.save(update_fields=["source_file_name"])
+
+        response = self.client.get(reverse("planificator:istoric"), HTTP_HX_REQUEST="true")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "planificator/includes/history_list.html")
+        self.assertContains(response, 'id="history-list"')
+        self.assertContains(response, "owned.csv")
+        self.assertContains(response, 'hx-get="?page=1"')
+        self.assertContains(response, reverse("planificator:generator_perioade_export"))
+        self.assertNotContains(response, "<html")
+
     def test_history_displays_generation_time_in_bucharest(self):
         generation = generation_for(self.user)
         ScheduleGeneration.objects.filter(pk=generation.pk).update(
@@ -3492,6 +3609,22 @@ class PlanificatorViewTests(TestCase):
             response["Content-Type"],
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
+        self.assertIn("Program", load_workbook(io.BytesIO(response.content)).sheetnames)
+
+    def test_export_download_is_unchanged_for_htmx_header(self):
+        generation = generation_for(self.user)
+        response = self.client.post(
+            reverse("planificator:generator_perioade_export"),
+            {"generation_id": generation.pk},
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response["Content-Type"],
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        self.assertIn('filename="program_cursuri_2026.xlsx"', response["Content-Disposition"])
         self.assertIn("Program", load_workbook(io.BytesIO(response.content)).sheetnames)
 
     def test_other_users_and_expired_generations_are_not_exportable(self):
@@ -4829,7 +4962,7 @@ def validate_public_http_url(value: str) -> str:
 
 ## `apps/planificator/views.py`
 
-Size: 31.6 KB
+Size: 33.9 KB
 
 ```python
 import base64
@@ -4843,6 +4976,7 @@ from zipfile import BadZipFile
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.http import Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect
+from django.template.response import TemplateResponse
 from django.utils import timezone
 from django.views import View
 from django.views.generic import ListView, TemplateView
@@ -4912,6 +5046,20 @@ def _json_error(message: str, *, status: int = 400) -> JsonResponse:
     return JsonResponse({"success": False, "error": message}, status=status)
 
 
+def _is_htmx(request: HttpRequest) -> bool:
+    return request.headers.get("HX-Request") == "true"
+
+
+def _template_response(
+    request: HttpRequest,
+    template_name: str,
+    context: dict,
+    *,
+    status: int = 200,
+) -> TemplateResponse:
+    return TemplateResponse(request, template_name, context, status=status)
+
+
 def _json_request_data(request: HttpRequest) -> dict:
     if request.content_type != "application/json":
         raise ClientInputError("Cererea trebuie trimisă ca JSON.")
@@ -4958,12 +5106,41 @@ def generator_context(form: ScheduleGeneratorForm, **extra) -> dict:
     return context
 
 
+def generation_result_context(user, generation, *, form: ScheduleGeneratorForm | None = None, **extra) -> dict:
+    context = generator_context(
+        form or build_generator_form(user, source_generation_id=generation.pk),
+        generation=generation,
+        schedule=generation.schedule,
+        preview_rows=build_preview_rows(generation.schedule, generation.selected_months),
+        source_preview_rows=build_source_preview(generation.schedule),
+        source_course_count=generation.source_course_count,
+        source_file_digest=generation.source_file_digest[:12],
+        uploaded_file_name=generation.source_file_name,
+        selected_months=generation.selected_months,
+        selected_month_count=len(generation.selected_months),
+        selected_month_headers=selected_month_headers(generation.selected_months),
+        export_form=ScheduleExportForm(initial={"generation_id": generation.pk}),
+    )
+    context.update(extra)
+    return context
+
+
 class PeriodGeneratorView(PlanificatorPermissionMixin, TemplateView):
     template_name = "planificator/generator_perioade.html"
+    partial_template_name = "planificator/includes/generator_workflow.html"
 
     def get_context_data(self, **kwargs):
         form = kwargs.pop("form", None) or build_generator_form(self.request.user)
         return generator_context(form, **super().get_context_data(**kwargs))
+
+    def render_generator_response(self, context: dict, *, status: int = 200) -> HttpResponse:
+        if _is_htmx(self.request):
+            return _template_response(
+                self.request,
+                self.partial_template_name,
+                context,
+            )
+        return self.render_to_response(context, status=status)
 
     def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         form = ScheduleGeneratorForm(request.POST, request.FILES)
@@ -4976,7 +5153,10 @@ class PeriodGeneratorView(PlanificatorPermissionMixin, TemplateView):
                     "body": "Corectează câmpurile marcate și încearcă din nou.",
                 }],
             )
-            return self.render_to_response(context, status=getattr(form, "upload_error_status", 400))
+            return self.render_generator_response(
+                context,
+                status=getattr(form, "upload_error_status", 400),
+            )
 
         try:
             workflow = create_schedule_generation(
@@ -5000,14 +5180,25 @@ class PeriodGeneratorView(PlanificatorPermissionMixin, TemplateView):
                         "body": "Ajustează lunile sau zilele nelucrătoare și încearcă din nou.",
                     }],
                 )
-                return self.render_to_response(context, status=400)
+                return self.render_generator_response(context, status=400)
+            if _is_htmx(request):
+                context = generation_result_context(
+                    request.user,
+                    workflow.generation,
+                    page_messages=[{
+                        "level": "success",
+                        "title": "Program generat",
+                        "body": "Rezultatul este disponibil mai jos și poate fi descărcat ca XLSX.",
+                    }],
+                )
+                return self.render_generator_response(context)
             return redirect(
                 "planificator:generator_perioade_result",
                 generation_id=workflow.generation.pk,
             )
         except GenerationSourceUnavailable as exc:
             form.add_error("input_file", exc.message)
-            return self.render_to_response(
+            return self.render_generator_response(
                 generator_context(
                     form,
                     page_messages=[{
@@ -5029,10 +5220,10 @@ class PeriodGeneratorView(PlanificatorPermissionMixin, TemplateView):
                     "body": exc.message,
                 }],
             )
-            return self.render_to_response(context, status=exc.status)
+            return self.render_generator_response(context, status=exc.status)
         except ClientInputError as exc:
             form.add_error(None, exc.message)
-            return self.render_to_response(
+            return self.render_generator_response(
                 generator_context(
                     form,
                     page_messages=[{
@@ -5048,7 +5239,7 @@ class PeriodGeneratorView(PlanificatorPermissionMixin, TemplateView):
         except Exception:
             logger.exception("Unexpected schedule generation failure", extra={"user_id": request.user.pk})
             form.add_error(None, "Fișierul nu a putut fi procesat.")
-            return self.render_to_response(
+            return self.render_generator_response(
                 generator_context(
                     form,
                     page_messages=[{
@@ -5063,6 +5254,7 @@ class PeriodGeneratorView(PlanificatorPermissionMixin, TemplateView):
 
 class ScheduleResultView(PlanificatorPermissionMixin, TemplateView):
     template_name = "planificator/generator_perioade.html"
+    partial_template_name = "planificator/includes/generator_workflow.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -5070,24 +5262,18 @@ class ScheduleResultView(PlanificatorPermissionMixin, TemplateView):
             generation_id=self.kwargs["generation_id"],
             user=self.request.user,
         )
-        form = build_generator_form(self.request.user, source_generation_id=generation.pk)
-        context.update(
-            generator_context(
-                form,
-                generation=generation,
-                schedule=generation.schedule,
-                preview_rows=build_preview_rows(generation.schedule, generation.selected_months),
-                source_preview_rows=build_source_preview(generation.schedule),
-                source_course_count=generation.source_course_count,
-                source_file_digest=generation.source_file_digest[:12],
-                uploaded_file_name=generation.source_file_name,
-                selected_months=generation.selected_months,
-                selected_month_count=len(generation.selected_months),
-                selected_month_headers=selected_month_headers(generation.selected_months),
-                export_form=ScheduleExportForm(initial={"generation_id": generation.pk}),
-            )
-        )
+        context.update(generation_result_context(self.request.user, generation))
         return context
+
+    def render_to_response(self, context, **response_kwargs):
+        if _is_htmx(self.request):
+            return _template_response(
+                self.request,
+                self.partial_template_name,
+                context,
+                status=response_kwargs.get("status", 200),
+            )
+        return super().render_to_response(context, **response_kwargs)
 
 
 class ScheduleHistoryDetailView(ScheduleResultView):
@@ -5596,11 +5782,22 @@ class WordMatchGenerateView(WordMatcherPermissionMixin, View):
 
 class ScheduleHistoryView(PlanificatorPermissionMixin, ListView):
     template_name = "planificator/istoric.html"
+    partial_template_name = "planificator/includes/history_list.html"
     context_object_name = "generations"
     paginate_by = 20
 
     def get_queryset(self):
         return list_owned_generations(user=self.request.user)
+
+    def render_to_response(self, context, **response_kwargs):
+        if _is_htmx(self.request):
+            return _template_response(
+                self.request,
+                self.partial_template_name,
+                context,
+                status=response_kwargs.get("status", 200),
+            )
+        return super().render_to_response(context, **response_kwargs)
 
 
 class ScheduleSampleCsvView(PlanificatorPermissionMixin, View):
