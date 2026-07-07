@@ -1,8 +1,23 @@
 # Platforma TUVTK — Agent Router
 
-Operating rules for coding agents working in this repository.
+Coding-agent entry point for this repository.
 
 Working code only. Minimal context. Verified changes.
+
+## Fast Path
+
+- Backend bug fix:
+  `AGENTS.md` -> `coding-standards.md` -> `apps/<app>/AGENTS.md` -> exact files.
+- UX, template, HTMX, Alpine, CSS, or JavaScript work:
+  `AGENTS.md` -> `coding-standards.md` -> `frontend.md` -> `apps/<app>/AGENTS.md` -> exact files.
+- Shared shell, navigation, or layout work:
+  `AGENTS.md` -> `coding-standards.md` -> `frontend.md` -> `core/AGENTS.md` -> exact files.
+- Table or list screen work:
+  add `docs/frontend/table-patterns.md` only after the page is confirmed to be a table/list workflow.
+- Path unknown:
+  `codex-context-index.md` -> `codex-file-map.txt` -> `codex-context/apps/<app>.md`.
+
+Stop once the next required file is known.
 
 ## Project
 
@@ -11,49 +26,50 @@ Working code only. Minimal context. Verified changes.
 - Django templates and PostgreSQL are the source of truth.
 - HTMX returns server-rendered partial HTML.
 - Alpine.js owns local browser state only.
-- Existing scoped custom JavaScript may remain when it is safer or clearer.
+- Scoped custom JavaScript may remain when safer or clearer.
 - Do not convert the project into a SPA.
 - Do not add another frontend framework unless explicitly requested.
 
-## Required reading order
+## Required Reading Order
 
 Read only what the task needs:
 
 1. `AGENTS.md`.
 2. `coding-standards.md`.
-3. `frontend.md` when templates, CSS, JavaScript, HTMX, Alpine, UX, or UI are involved.
-4. The deeper `apps/<app>/AGENTS.md` for the target app.
-5. The exact source files needed for the requested workflow.
-6. Directly referenced imports, includes, templates, forms, services, selectors, or tests only when required.
+3. `frontend.md` for templates, CSS, JavaScript, HTMX, Alpine, UX, or UI.
+4. `apps/<app>/AGENTS.md` for the target app.
+5. Exact source files for the selected workflow.
+6. Direct imports, includes, templates, forms, services, selectors, or tests only when required.
 
 Do not preload:
 
 - the whole repository;
 - all generated `codex-context/` files;
+- `codex-context/files/` generated wrapper files;
+- `codex-prompt-demos/` unless the task is prompt design;
+- implementation plans unless the task is roadmap or migration planning;
 - unrelated apps;
 - unrelated tests;
 - migration history;
 - Docker/deployment files;
 - generated/runtime folders.
 
-Use `codex-context/apps/<app>.md` only when source paths are unknown.
+Use generated context only as navigation support when source paths are unknown.
 
-Use `codex-file-map.txt` only to locate an unknown file.
+Open real source files before editing.
 
-Open real source files before editing. Generated context is navigation support, not authority.
-
-## App boundaries
+## App Boundaries
 
 - `platforma_tuvtk/`: settings, root URLs, ASGI, WSGI.
 - `core/`: shared shell, navigation, middleware, context processors, shared templates.
-- `theme/`: Tailwind/daisyUI theme, global frontend assets.
-- `apps/`: domain apps. Each app owns its routes, views, forms, services, selectors, templates, static files, and tests.
+- `theme/`: Tailwind/daisyUI theme and global frontend assets.
+- `apps/`: domain apps with owned routes, views, forms, services, selectors, templates, static files, and tests.
 
-Do not duplicate an existing model, service, selector, route, template, include, component pattern, or workflow.
+Do not duplicate existing models, services, selectors, routes, templates, includes, component patterns, or workflows.
 
-## Coding standards
+## Coding Standards
 
-Detailed coding standards live in `coding-standards.md`.
+Detailed standards live in `coding-standards.md`.
 
 Default split:
 
@@ -65,15 +81,15 @@ Default split:
 - Templates render state and submit forms; they do not own business rules.
 - JavaScript improves interaction only.
 
-Before adding new code, search the target app for an existing form, include, table, action-button, message, service, selector, or validator pattern.
+Before adding code, search the target app for reusable forms, includes, tables, action buttons, messages, services, selectors, and validators.
 
-If the same pattern appears twice and is stable, reuse or extract it. If it appears once, keep it explicit.
+If the same stable pattern appears twice, reuse or extract it.
 
-## Frontend standards
+## Frontend Standards
 
 Detailed frontend rules live in `frontend.md`.
 
-Default frontend split:
+Default split:
 
 - Tailwind/daisyUI: layout and components.
 - HTMX: server-rendered partial updates, forms, filters, pagination, table/list refreshes.
@@ -82,11 +98,12 @@ Default frontend split:
 
 Use shared semantic theme tokens. Do not introduce app-local color systems.
 
-New business screens should use sharp, professional, enterprise-grade layouts. Avoid childish, oversized, rounded card-heavy screens.
+New business screens should be sharp, professional, and enterprise-grade.
+Avoid childish, oversized, rounded card-heavy screens.
 
 ## Commands
 
-Use the repository wrapper. `install.sh` routes ordinary commands through the Python command router.
+Use the repository wrapper.
 
 Linux/Debian:
 
@@ -112,19 +129,19 @@ Do not reconstruct raw Docker Compose commands unless the task is Compose-specif
 
 - Prefer the smallest focused test or check.
 - Do not run full test suites by default.
-- Do not claim tests passed unless you ran them and read the output.
-- If verification cannot be run, say why.
-- For UI changes, report the manual browser checks still needed.
+- Report checks only after reading the output.
+- Explain why a check was skipped when it cannot be run.
+- For UI changes, report manual browser checks still needed.
 - For visual work, inspect before/after behavior when tooling allows it.
-- Do not weaken tests to make a failure disappear.
+- Do not weaken tests to hide a failure.
 
 ## Safety
 
 - Preserve unrelated tracked and untracked changes.
-- Never inspect or expose `.env` or `/etc/tuvtk/tuvtk.env` unless explicitly authorized.
-- Do not delete database volumes, PostgreSQL data, media, private media, secrets, or environment files.
-- Do not run clean, restore, SQL import, database reset, production restart, or destructive commands unless explicitly requested.
-- Do not claim HTTPS works; current production Compose/Nginx is HTTP-only.
+- Environment files and production env files require explicit user authorization before inspection.
+- Preserve database volumes, PostgreSQL data, media, private media, secrets, and environment files.
+- Destructive commands require explicit user authorization.
+- Current production Compose/Nginx is HTTP-only.
 
 Avoid generated, runtime, dependency, binary, and local-tool paths unless directly required:
 
@@ -143,7 +160,7 @@ Avoid generated, runtime, dependency, binary, and local-tool paths unless direct
 - `theme/static/fonts/`
 - `theme/static/images/`
 
-## Stop conditions
+## Stop Conditions
 
 Stop and ask before expanding scope when:
 
@@ -154,7 +171,7 @@ Stop and ask before expanding scope when:
 - validation would require destructive commands or full test suites;
 - two attempted fixes fail for the same issue.
 
-## Completion report
+## Completion Report
 
 Always report:
 
