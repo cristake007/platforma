@@ -264,6 +264,40 @@ class DiplomaTemplateViewTests(TestCase):
         self.assertContains(response, "SSM")
         self.assertNotContains(response, "Categorie privată")
 
+    def test_template_list_htmx_returns_partial_panel(self):
+        ssm = self.create_template(name="Template SSM", category="SSM")
+        psi = self.create_template(name="Template PSI", category="PSI")
+
+        response = self.client.get(
+            reverse("diplome:template_list"),
+            {"category": "SSM"},
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "diplome/includes/template_list_panel.html")
+        self.assertContains(response, 'id="template-list-panel"')
+        self.assertContains(response, ssm.name)
+        self.assertNotContains(response, psi.name)
+        self.assertNotContains(response, "<title>")
+
+    def test_template_delete_htmx_refreshes_list_panel(self):
+        template = self.create_template(name="Template de șters")
+        keep = self.create_template(name="Template păstrat")
+
+        response = self.client.post(
+            reverse("diplome:template_delete", kwargs={"template_id": template.pk}),
+            HTTP_HX_REQUEST="true",
+            HTTP_HX_TARGET="template-list-panel",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "diplome/includes/template_list_panel.html")
+        self.assertFalse(DiplomaTemplate.objects.filter(pk=template.pk).exists())
+        self.assertContains(response, "Template-ul a fost șters.")
+        self.assertContains(response, keep.name)
+        self.assertNotContains(response, template.name)
+
     def test_user_can_open_own_editor_and_navigation_is_active(self):
         template = self.create_template()
 

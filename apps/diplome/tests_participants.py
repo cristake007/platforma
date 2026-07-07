@@ -447,6 +447,98 @@ class ParticipantImportTests(TestCase):
             404,
         )
 
+    def test_participant_list_htmx_returns_partial_panel(self):
+        own = ParticipantList.objects.create(
+            owner=self.user,
+            name="Lista proprie",
+            source_file_name="own.csv",
+        )
+        foreign = ParticipantList.objects.create(
+            owner=self.other_user,
+            name="Lista străină",
+            source_file_name="foreign.csv",
+        )
+
+        response = self.client.get(
+            reverse("diplome:list_index"),
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "diplome/includes/participant_list_panel.html")
+        self.assertContains(response, 'id="participant-list-panel"')
+        self.assertContains(response, own.name)
+        self.assertNotContains(response, foreign.name)
+        self.assertNotContains(response, "<title>")
+
+    def test_participant_list_delete_htmx_refreshes_list_panel(self):
+        participant_list = ParticipantList.objects.create(
+            owner=self.user,
+            name="Lista de șters",
+            source_file_name="delete.csv",
+        )
+        keep = ParticipantList.objects.create(
+            owner=self.user,
+            name="Lista păstrată",
+            source_file_name="keep.csv",
+        )
+
+        response = self.client.post(
+            reverse(
+                "diplome:participant_list_delete",
+                kwargs={"participant_list_id": participant_list.pk},
+            ),
+            HTTP_HX_REQUEST="true",
+            HTTP_HX_TARGET="participant-list-panel",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "diplome/includes/participant_list_panel.html")
+        self.assertFalse(ParticipantList.objects.filter(pk=participant_list.pk).exists())
+        self.assertContains(response, "Lista de participanți a fost ștearsă.")
+        self.assertContains(response, keep.name)
+        self.assertNotContains(response, participant_list.name)
+
+    def test_participant_detail_htmx_pagination_returns_partial_panel(self):
+        participant_list = ParticipantList.objects.create(
+            owner=self.user,
+            name="Lista paginată",
+            source_file_name="participanti.csv",
+            participant_count=101,
+        )
+        participants = [
+            Participant(
+                owner=self.user,
+                participant_list=participant_list,
+                full_name=f"Participant {index:03d}",
+                date_of_birth=datetime(1990, 4, 12).date(),
+                place_of_birth="Brașov",
+                certificate_number=f"CERT-{index:03d}",
+                source_row=index,
+            )
+            for index in range(1, 102)
+        ]
+        Participant.objects.bulk_create(participants)
+
+        response = self.client.get(
+            reverse(
+                "diplome:participant_list_detail",
+                kwargs={"participant_list_id": participant_list.pk},
+            ),
+            {"page": "2"},
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(
+            response,
+            "diplome/includes/participant_list_detail_panel.html",
+        )
+        self.assertContains(response, 'id="participant-list-detail-panel"')
+        self.assertContains(response, "Participant 101")
+        self.assertNotContains(response, "Participant 001")
+        self.assertNotContains(response, "<title>")
+
     def test_confirmed_list_does_not_expire(self):
         participant_list = ParticipantList.objects.create(
             owner=self.user,

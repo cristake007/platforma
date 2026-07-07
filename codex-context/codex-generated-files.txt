@@ -11,6 +11,7 @@ codex-file-map.txt
 files/.agents/plugins/marketplace.json.md
 files/.dockerignore.md
 files/.gitattributes.md
+files/.github/agents/codex.agent.md.md
 files/.github/workflows/ci.yml.md
 files/.gitignore.md
 files/.tuvtk/config.json.md
@@ -47,6 +48,12 @@ files/apps/diplome/templates/diplome/batch_detail.html.md
 files/apps/diplome/templates/diplome/generation_index.html.md
 files/apps/diplome/templates/diplome/generation_preview.html.md
 files/apps/diplome/templates/diplome/history_index.html.md
+files/apps/diplome/templates/diplome/includes/batch_detail_panel.html.md
+files/apps/diplome/templates/diplome/includes/history_panel.html.md
+files/apps/diplome/templates/diplome/includes/messages.html.md
+files/apps/diplome/templates/diplome/includes/participant_list_detail_panel.html.md
+files/apps/diplome/templates/diplome/includes/participant_list_panel.html.md
+files/apps/diplome/templates/diplome/includes/template_list_panel.html.md
 files/apps/diplome/templates/diplome/participant_import.html.md
 files/apps/diplome/templates/diplome/participant_import_mapping.html.md
 files/apps/diplome/templates/diplome/participant_import_preview.html.md
@@ -174,7 +181,14 @@ files/apps/tasks/templates/tasks/includes/board_settings_content.html.md
 files/apps/tasks/templates/tasks/includes/board_task_list.html.md
 files/apps/tasks/templates/tasks/includes/form_fields.html.md
 files/apps/tasks/templates/tasks/includes/hub_task_list.html.md
+files/apps/tasks/templates/tasks/includes/kanban_board.html.md
+files/apps/tasks/templates/tasks/includes/kanban_board_response.html.md
+files/apps/tasks/templates/tasks/includes/kanban_card.html.md
+files/apps/tasks/templates/tasks/includes/kanban_create_response.html.md
+files/apps/tasks/templates/tasks/includes/kanban_empty_stage.html.md
+files/apps/tasks/templates/tasks/includes/kanban_messages.html.md
 files/apps/tasks/templates/tasks/includes/messages.html.md
+files/apps/tasks/templates/tasks/includes/task_create_dialog_body.html.md
 files/apps/tasks/templates/tasks/includes/task_form_panel.html.md
 files/apps/tasks/templates/tasks/includes/timer.html.md
 files/apps/tasks/templates/tasks/task_form.html.md
@@ -186,8 +200,10 @@ files/bin/tuvtk.md
 files/codex-prompt-demos/README.md.md
 files/codex-prompt-demos/custom-js-to-alpine.md.md
 files/codex-prompt-demos/htmx-alpine-phased-migration.md.md
+files/coding-standards.md.md
 files/compose.dev.yaml.md
 files/compose.yaml.md
+files/core/AGENTS.md.md
 files/core/__init__.py.md
 files/core/admin.py.md
 files/core/apps.py.md
@@ -235,6 +251,7 @@ files/scripts/tests/test_tuvtk_cli.py.md
 files/scripts/tuvtk_cli.py.md
 files/start_postgres.bat.md
 files/stop_postgres.bat.md
+files/theme/AGENTS.md.md
 files/theme/__init__.py.md
 files/theme/apps.py.md
 files/theme/static/fonts/inter/LICENSE.txt.md

@@ -2,12 +2,10 @@
 
 ## `apps/tasks/static/tasks/tasks.js`
 
-Size: 7.0 KB
+Size: 11.3 KB
 
 ```javascript
 (() => {
-    const timerElements = Array.from(document.querySelectorAll("[data-task-timer]"));
-
     const formatDuration = (milliseconds) => {
         const totalSeconds = Math.max(0, Math.floor(Math.abs(milliseconds) / 1000));
         const days = Math.floor(totalSeconds / 86400);
@@ -29,7 +27,7 @@ Size: 7.0 KB
 
     const updateTimers = () => {
         const now = Date.now();
-        timerElements.forEach((element) => {
+        document.querySelectorAll("[data-task-timer]").forEach((element) => {
             const label = element.querySelector("[data-timer-label]");
             if (!label) return;
             if (element.dataset.completedAt) {
@@ -59,74 +57,147 @@ Size: 7.0 KB
             }
         });
     };
-    updateTimers();
-    if (timerElements.length) window.setInterval(updateTimers, 1000);
 
-    document.querySelectorAll("[data-board-switcher]").forEach((select) => {
-        select.addEventListener("change", () => { window.location.assign(select.value); });
-    });
+    let timerInterval = null;
+    const initTimers = () => {
+        updateTimers();
+        if (!timerInterval && document.querySelector("[data-task-timer]")) {
+            timerInterval = window.setInterval(updateTimers, 1000);
+        }
+    };
 
-    const dialog = document.getElementById("task-create-dialog");
-    document.querySelectorAll("[data-open-task-dialog]").forEach((button) => button.addEventListener("click", () => dialog?.showModal()));
-    document.querySelectorAll("[data-close-task-dialog]").forEach((button) => button.addEventListener("click", () => dialog?.close()));
-
-    const root = document.querySelector("[data-kanban-root]");
-    if (!root) return;
-    const csrf = document.querySelector("[name=csrfmiddlewaretoken]")?.value;
+    const getDialog = () => document.getElementById("task-create-dialog");
+    const getRoot = () => document.querySelector("[data-kanban-root]");
+    const getCsrf = () => document.querySelector("[name=csrfmiddlewaretoken]")?.value || "";
     let draggedCard = null;
     let requestInFlight = false;
+    let knownSignature = null;
+    let pollInterval = null;
 
     const updateCounts = () => document.querySelectorAll("[data-stage-column]").forEach((column) => {
         const count = column.querySelectorAll(":scope [data-stage-cards] > [data-task-card]").length;
         const target = column.querySelector("[data-stage-count]");
         if (target) target.textContent = String(count);
+        const emptyState = column.querySelector("[data-stage-empty]");
+        if (emptyState) emptyState.classList.toggle("hidden", count > 0);
     });
 
-    document.querySelectorAll("[data-task-card][draggable=true]").forEach((card) => {
-        card.addEventListener("dragstart", () => { draggedCard = card; card.classList.add("opacity-50"); });
-        card.addEventListener("dragend", () => { card.classList.remove("opacity-50"); draggedCard = null; });
-    });
+    const setDropState = (container, active) => {
+        container.classList.toggle("outline", active);
+        container.classList.toggle("outline-2", active);
+        container.classList.toggle("outline-primary", active);
+        container.classList.toggle("outline-offset-2", active);
+        container.classList.toggle("border-primary", active);
+        container.classList.toggle("bg-primary/10", active);
+    };
 
-    document.querySelectorAll("[data-stage-cards]").forEach((container) => {
-        container.addEventListener("dragover", (event) => event.preventDefault());
-        container.addEventListener("drop", async (event) => {
-            event.preventDefault();
-            if (!draggedCard || requestInFlight) return;
-            const card = draggedCard;
-            const cards = Array.from(container.querySelectorAll(":scope > [data-task-card]")).filter((item) => item !== card);
-            const target = event.target.closest("[data-task-card]");
-            const targetIndex = target && target !== card ? cards.indexOf(target) : cards.length;
-            const oldParent = card.parentElement;
-            const reference = cards[targetIndex] || container.querySelector("[data-open-task-dialog]");
-            container.insertBefore(card, reference || null);
-            updateCounts();
-            requestInFlight = true;
-            try {
-                const response = await fetch(card.dataset.moveUrl, {
-                    method: "POST",
-                    headers: {"Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded", "X-CSRFToken": csrf},
-                    body: new URLSearchParams({stage: container.closest("[data-stage-column]").dataset.stageId, target_index: String(targetIndex), expected_version: card.dataset.taskVersion}),
-                });
-                const payload = await response.json();
-                if (!response.ok) throw new Error(payload.error || "Mutarea nu a putut fi salvată.");
-                card.dataset.taskVersion = String(payload.task.version);
-                const fallbackVersion = card.querySelector("[name=expected_version]");
-                if (fallbackVersion) fallbackVersion.value = String(payload.task.version);
-                const fallbackStage = card.querySelector("[name=stage]");
-                if (fallbackStage) fallbackStage.value = payload.task.stageId;
-            } catch (error) {
-                oldParent.insertBefore(card, oldParent.querySelector("[data-open-task-dialog]") || null);
-                updateCounts();
-                window.alert(error.message);
-            } finally {
-                requestInFlight = false;
-            }
+    const setDragContext = (active) => {
+        const board = document.querySelector("[data-kanban-board]");
+        if (board) board.toggleAttribute("data-kanban-dragging", active);
+        document.querySelectorAll("[data-stage-drop-zone]").forEach((container) => {
+            container.classList.toggle("border-dashed", active);
+            container.classList.toggle("border-base-300", active);
+            container.classList.toggle("bg-base-100", active);
+            container.classList.toggle("opacity-90", active);
         });
-    });
+    };
 
-    let knownSignature = null;
+    const markMoved = (card) => {
+        card.classList.add("ring-2", "ring-success", "bg-success/10");
+        window.setTimeout(() => card.classList.remove("ring-2", "ring-success", "bg-success/10"), 900);
+    };
+
+    const setDragDisabled = (disabled) => {
+        document.querySelectorAll("[data-task-card][draggable=true]").forEach((card) => {
+            card.classList.toggle("opacity-60", disabled);
+            card.toggleAttribute("aria-disabled", disabled);
+        });
+    };
+
+    const updateMovedCardTimer = (card, taskPayload) => {
+        const timer = card.querySelector("[data-task-timer]");
+        if (!timer || !Object.prototype.hasOwnProperty.call(taskPayload, "completedAt")) return;
+        if (taskPayload.completedAt) timer.dataset.completedAt = taskPayload.completedAt;
+        else delete timer.dataset.completedAt;
+        updateTimers();
+    };
+
+    const initDragDrop = () => {
+        document.querySelectorAll("[data-task-card][draggable=true]:not([data-kanban-drag-bound])").forEach((card) => {
+            card.dataset.kanbanDragBound = "true";
+            card.addEventListener("dragstart", () => {
+                if (requestInFlight) return;
+                draggedCard = card;
+                setDragContext(true);
+                card.classList.add("opacity-70", "ring-2", "ring-primary", "cursor-grabbing");
+            });
+            card.addEventListener("dragend", () => {
+                card.classList.remove("opacity-70", "ring-2", "ring-primary", "cursor-grabbing");
+                document.querySelectorAll("[data-stage-cards]").forEach((container) => setDropState(container, false));
+                setDragContext(false);
+                draggedCard = null;
+            });
+        });
+
+        document.querySelectorAll("[data-stage-cards]:not([data-kanban-drop-bound])").forEach((container) => {
+            container.dataset.kanbanDropBound = "true";
+            container.addEventListener("dragover", (event) => {
+                event.preventDefault();
+                if (draggedCard && !requestInFlight) setDropState(container, true);
+            });
+            container.addEventListener("dragleave", (event) => {
+                if (!container.contains(event.relatedTarget)) setDropState(container, false);
+            });
+            container.addEventListener("drop", async (event) => {
+                event.preventDefault();
+                setDropState(container, false);
+                if (!draggedCard || requestInFlight) return;
+                const card = draggedCard;
+                const stageColumn = container.closest("[data-stage-column]");
+                if (!stageColumn) return;
+                const cards = Array.from(container.querySelectorAll(":scope > [data-task-card]")).filter((item) => item !== card);
+                const target = event.target.closest("[data-task-card]");
+                const targetIndex = target && target !== card ? cards.indexOf(target) : cards.length;
+                const oldParent = card.parentElement;
+                const reference = cards[targetIndex] || container.querySelector("[data-open-task-dialog]");
+                container.insertBefore(card, reference || null);
+                updateCounts();
+                requestInFlight = true;
+                setDragDisabled(true);
+                card.setAttribute("aria-busy", "true");
+                try {
+                    const response = await fetch(card.dataset.moveUrl, {
+                        method: "POST",
+                        headers: {"Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded", "X-CSRFToken": getCsrf()},
+                        body: new URLSearchParams({stage: stageColumn.dataset.stageId, target_index: String(targetIndex), expected_version: card.dataset.taskVersion}),
+                    });
+                    const payload = await response.json();
+                    if (!response.ok) throw new Error(payload.error || "Mutarea nu a putut fi salvată.");
+                    card.dataset.taskVersion = String(payload.task.version);
+                    const fallbackVersion = card.querySelector("[name=expected_version]");
+                    if (fallbackVersion) fallbackVersion.value = String(payload.task.version);
+                    const fallbackStage = card.querySelector("[name=stage]");
+                    if (fallbackStage) fallbackStage.value = payload.task.stageId;
+                    updateMovedCardTimer(card, payload.task);
+                    knownSignature = null;
+                    markMoved(card);
+                } catch (error) {
+                    oldParent.insertBefore(card, oldParent.querySelector("[data-open-task-dialog]") || null);
+                    updateCounts();
+                    window.alert(error.message);
+                } finally {
+                    card.removeAttribute("aria-busy");
+                    setDragDisabled(false);
+                    requestInFlight = false;
+                }
+            });
+        });
+    };
+
     const pollState = async () => {
-        if (document.hidden || requestInFlight || dialog?.open) return;
+        const root = getRoot();
+        const dialog = getDialog();
+        if (!root || document.hidden || requestInFlight || dialog?.open) return;
         try {
             const response = await fetch(root.dataset.stateUrl, {headers: {"Accept": "application/json"}});
             if (!response.ok) return;
@@ -137,7 +208,37 @@ Size: 7.0 KB
             // A later poll retries; local task operations remain server-authoritative.
         }
     };
-    pollState();
-    window.setInterval(pollState, 30000);
+
+    const initPolling = () => {
+        if (!pollInterval && getRoot()) {
+            pollState();
+            pollInterval = window.setInterval(pollState, 30000);
+        }
+    };
+
+    const initKanban = ({resetSignature = false} = {}) => {
+        initTimers();
+        initDragDrop();
+        if (resetSignature) knownSignature = null;
+        initPolling();
+    };
+
+    document.addEventListener("change", (event) => {
+        const select = event.target.closest("[data-board-switcher]");
+        if (select) window.location.assign(select.value);
+    });
+
+    document.addEventListener("click", (event) => {
+        const openButton = event.target.closest("[data-open-task-dialog]");
+        if (openButton) getDialog()?.showModal();
+        const closeButton = event.target.closest("[data-close-task-dialog]");
+        if (closeButton) getDialog()?.close();
+    });
+
+    document.addEventListener("taskKanban:taskCreated", () => getDialog()?.close());
+    document.addEventListener("htmx:afterSwap", () => initKanban({resetSignature: true}));
+    document.addEventListener("htmx:oobAfterSwap", () => initKanban({resetSignature: true}));
+
+    initKanban();
 })();
 ```

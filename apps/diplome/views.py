@@ -63,6 +63,26 @@ logger = logging.getLogger(__name__)
 DRAFT_TEMPLATE_IDS_SESSION_KEY = "diplome_draft_template_ids"
 
 
+def _is_htmx(request) -> bool:
+    return request.headers.get("HX-Request") == "true"
+
+
+class HtmxPartialMixin:
+    partial_template_name = ""
+
+    def render_to_response(self, context, **response_kwargs):
+        if _is_htmx(self.request) and self.partial_template_name:
+            response_kwargs.setdefault("content_type", self.content_type)
+            return self.response_class(
+                request=self.request,
+                template=self.partial_template_name,
+                context=context,
+                using=self.template_engine,
+                **response_kwargs,
+            )
+        return super().render_to_response(context, **response_kwargs)
+
+
 def _draft_template_ids(request) -> list[str]:
     return list(request.session.get(DRAFT_TEMPLATE_IDS_SESSION_KEY, []))
 
@@ -88,8 +108,9 @@ def _clear_draft_template(request, template_id) -> None:
         request.session.pop(DRAFT_TEMPLATE_IDS_SESSION_KEY, None)
 
 
-class DiplomaTemplateListView(LoginRequiredMixin, ListView):
+class DiplomaTemplateListView(HtmxPartialMixin, LoginRequiredMixin, ListView):
     template_name = "diplome/template_list.html"
+    partial_template_name = "diplome/includes/template_list_panel.html"
     context_object_name = "templates"
 
     def get_filter_form(self):
@@ -300,8 +321,9 @@ class BulkDiplomaGenerationCreateView(LoginRequiredMixin, View):
         return redirect("diplome:batch_detail", batch_id=batch.pk)
 
 
-class DiplomaGenerationHistoryView(LoginRequiredMixin, TemplateView):
+class DiplomaGenerationHistoryView(HtmxPartialMixin, LoginRequiredMixin, TemplateView):
     template_name = "diplome/history_index.html"
+    partial_template_name = "diplome/includes/history_panel.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -315,8 +337,9 @@ class DiplomaGenerationHistoryView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class DiplomaGenerationBatchDetailView(LoginRequiredMixin, TemplateView):
+class DiplomaGenerationBatchDetailView(HtmxPartialMixin, LoginRequiredMixin, TemplateView):
     template_name = "diplome/batch_detail.html"
+    partial_template_name = "diplome/includes/batch_detail_panel.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -356,6 +379,33 @@ class DiplomaGenerationBatchResumeView(LoginRequiredMixin, View):
             )
         else:
             _add_batch_result_message(request, batch)
+        if _is_htmx(request):
+            target = request.headers.get("HX-Target", "")
+            if target == "history-panel":
+                filter_form = DiplomaGenerationHistoryFilterForm(
+                    request.GET,
+                    user=request.user,
+                )
+                filters = filter_form.cleaned_data if filter_form.is_valid() else {}
+                context = build_generation_history_context(request.user, filters)
+                context["filter_form"] = filter_form
+                return render(
+                    request,
+                    "diplome/includes/history_panel.html",
+                    context,
+                )
+            batch = get_owned_generation_batch(request.user, batch_id)
+            return render(
+                request,
+                "diplome/includes/batch_detail_panel.html",
+                {
+                    "batch": batch,
+                    "generated_diplomas": list_generated_diplomas_for_batch(
+                        request.user,
+                        batch.pk,
+                    ),
+                },
+            )
         return redirect("diplome:batch_detail", batch_id=batch_id)
 
 
@@ -466,11 +516,21 @@ class DiplomaTemplateDeleteView(LoginRequiredMixin, View):
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return JsonResponse({"success": True})
         messages.success(request, "Template-ul a fost șters.")
+        if _is_htmx(request):
+            view = DiplomaTemplateListView()
+            view.setup(request)
+            view.object_list = view.get_queryset()
+            return render(
+                request,
+                "diplome/includes/template_list_panel.html",
+                view.get_context_data(),
+            )
         return redirect("diplome:template_list")
 
 
-class ParticipantListView(LoginRequiredMixin, ListView):
+class ParticipantListView(HtmxPartialMixin, LoginRequiredMixin, ListView):
     template_name = "diplome/participant_list.html"
+    partial_template_name = "diplome/includes/participant_list_panel.html"
     context_object_name = "participant_lists"
     paginate_by = 50
 
@@ -630,8 +690,9 @@ class ParticipantImportConfirmView(LoginRequiredMixin, View):
         )
 
 
-class ParticipantListDetailView(LoginRequiredMixin, TemplateView):
+class ParticipantListDetailView(HtmxPartialMixin, LoginRequiredMixin, TemplateView):
     template_name = "diplome/participant_list_detail.html"
+    partial_template_name = "diplome/includes/participant_list_detail_panel.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -665,6 +726,15 @@ class ParticipantListDeleteView(LoginRequiredMixin, View):
             participant_list_id=kwargs["participant_list_id"],
         )
         messages.success(request, "Lista de participanți a fost ștearsă.")
+        if _is_htmx(request):
+            view = ParticipantListView()
+            view.setup(request)
+            view.object_list = view.get_queryset()
+            return render(
+                request,
+                "diplome/includes/participant_list_panel.html",
+                view.get_context_data(object_list=view.object_list),
+            )
         return redirect("diplome:list_index")
 
 

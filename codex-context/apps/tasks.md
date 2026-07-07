@@ -49,7 +49,7 @@ class TaskAdmin(admin.ModelAdmin):
 
 ## `apps/tasks/AGENTS.md`
 
-Size: 1.2 KB
+Size: 1.9 KB
 
 ````markdown
 # Tasks App Instructions
@@ -58,22 +58,44 @@ Size: 1.2 KB
 
 This app owns collaborative boards, memberships, stages, task persistence, task-list and Kanban views, deadline timers, and the reusable cross-app task-creation contract.
 
+## Read before editing
+
+- Root `AGENTS.md`.
+- `coding-standards.md`.
+- `frontend.md` for UI/template work.
+- This file.
+- Only the files for the selected workflow.
+
+Use `codex-context/apps/tasks.md` only when a path is unknown.
+
 ## Architecture
 
-- Keep request validation in `forms.py`, reusable invariants in `validators.py`, writes in `services.py`, and permission-filtered reads in `selectors.py`.
+- Keep request validation in `forms.py`.
+- Keep reusable invariants in `validators.py`.
+- Keep writes in `services.py`.
+- Keep permission-filtered reads in `selectors.py`.
 - All pages and endpoints require authentication.
-- Ordinary members see tasks they created or received. Board owners and staff see all tasks on the relevant board.
-- Creators and staff edit/archive tasks; creators, assignees, and staff may move tasks.
-- Treat PostgreSQL as authoritative. JavaScript only enhances timers, polling, dialogs, and drag-and-drop.
-- Use POST with CSRF for every state change. Return 404 for inaccessible boards and tasks.
+- Ordinary members see tasks they created or received.
+- Board owners and staff see all tasks on the relevant board.
+- Creators and staff edit/archive tasks.
+- Creators, assignees, and staff may move tasks.
+- PostgreSQL is authoritative.
+- JavaScript enhances timers, polling, dialogs, and drag-and-drop only.
+- Use POST with CSRF for every state change.
+- Return 404 for inaccessible boards and tasks.
 
-## Frontend
+## Reuse and UI standards
 
-- Extend `layouts/base.html` and use the shared semantic theme tokens.
-- Keep the list horizontally scrollable and the Kanban board horizontally usable on narrow screens.
-- Preserve the native form fallback for task stage changes.
+- Reuse existing board, task, stage, member, message, and action patterns.
+- Extend `layouts/base.html` and use shared semantic theme tokens.
+- Keep task lists horizontally usable on narrow screens.
+- Preserve native form fallback for task stage changes.
+- Board settings must use compact structured rows, not decorative rounded cards.
+- Kanban stage dragging and ordering must show obvious active, drop, moved, disabled, and destructive states.
+- Destructive stage/task actions should use consistent bin/trash icon treatment with accessible labels.
+- Do not hide replacement or destructive behavior behind vague controls.
 
-## Focused Checks
+## Focused checks
 
 ```powershell
 python manage.py test apps.tasks
@@ -81,7 +103,6 @@ python manage.py check
 python manage.py makemigrations --check --dry-run
 python manage.py tailwind build
 ```
-
 ````
 
 ## `apps/tasks/apps.py`
@@ -1011,12 +1032,10 @@ task_reassigned = Signal()
 
 ## `apps/tasks/static/tasks/tasks.js`
 
-Size: 7.0 KB
+Size: 11.3 KB
 
 ```javascript
 (() => {
-    const timerElements = Array.from(document.querySelectorAll("[data-task-timer]"));
-
     const formatDuration = (milliseconds) => {
         const totalSeconds = Math.max(0, Math.floor(Math.abs(milliseconds) / 1000));
         const days = Math.floor(totalSeconds / 86400);
@@ -1038,7 +1057,7 @@ Size: 7.0 KB
 
     const updateTimers = () => {
         const now = Date.now();
-        timerElements.forEach((element) => {
+        document.querySelectorAll("[data-task-timer]").forEach((element) => {
             const label = element.querySelector("[data-timer-label]");
             if (!label) return;
             if (element.dataset.completedAt) {
@@ -1068,74 +1087,147 @@ Size: 7.0 KB
             }
         });
     };
-    updateTimers();
-    if (timerElements.length) window.setInterval(updateTimers, 1000);
 
-    document.querySelectorAll("[data-board-switcher]").forEach((select) => {
-        select.addEventListener("change", () => { window.location.assign(select.value); });
-    });
+    let timerInterval = null;
+    const initTimers = () => {
+        updateTimers();
+        if (!timerInterval && document.querySelector("[data-task-timer]")) {
+            timerInterval = window.setInterval(updateTimers, 1000);
+        }
+    };
 
-    const dialog = document.getElementById("task-create-dialog");
-    document.querySelectorAll("[data-open-task-dialog]").forEach((button) => button.addEventListener("click", () => dialog?.showModal()));
-    document.querySelectorAll("[data-close-task-dialog]").forEach((button) => button.addEventListener("click", () => dialog?.close()));
-
-    const root = document.querySelector("[data-kanban-root]");
-    if (!root) return;
-    const csrf = document.querySelector("[name=csrfmiddlewaretoken]")?.value;
+    const getDialog = () => document.getElementById("task-create-dialog");
+    const getRoot = () => document.querySelector("[data-kanban-root]");
+    const getCsrf = () => document.querySelector("[name=csrfmiddlewaretoken]")?.value || "";
     let draggedCard = null;
     let requestInFlight = false;
+    let knownSignature = null;
+    let pollInterval = null;
 
     const updateCounts = () => document.querySelectorAll("[data-stage-column]").forEach((column) => {
         const count = column.querySelectorAll(":scope [data-stage-cards] > [data-task-card]").length;
         const target = column.querySelector("[data-stage-count]");
         if (target) target.textContent = String(count);
+        const emptyState = column.querySelector("[data-stage-empty]");
+        if (emptyState) emptyState.classList.toggle("hidden", count > 0);
     });
 
-    document.querySelectorAll("[data-task-card][draggable=true]").forEach((card) => {
-        card.addEventListener("dragstart", () => { draggedCard = card; card.classList.add("opacity-50"); });
-        card.addEventListener("dragend", () => { card.classList.remove("opacity-50"); draggedCard = null; });
-    });
+    const setDropState = (container, active) => {
+        container.classList.toggle("outline", active);
+        container.classList.toggle("outline-2", active);
+        container.classList.toggle("outline-primary", active);
+        container.classList.toggle("outline-offset-2", active);
+        container.classList.toggle("border-primary", active);
+        container.classList.toggle("bg-primary/10", active);
+    };
 
-    document.querySelectorAll("[data-stage-cards]").forEach((container) => {
-        container.addEventListener("dragover", (event) => event.preventDefault());
-        container.addEventListener("drop", async (event) => {
-            event.preventDefault();
-            if (!draggedCard || requestInFlight) return;
-            const card = draggedCard;
-            const cards = Array.from(container.querySelectorAll(":scope > [data-task-card]")).filter((item) => item !== card);
-            const target = event.target.closest("[data-task-card]");
-            const targetIndex = target && target !== card ? cards.indexOf(target) : cards.length;
-            const oldParent = card.parentElement;
-            const reference = cards[targetIndex] || container.querySelector("[data-open-task-dialog]");
-            container.insertBefore(card, reference || null);
-            updateCounts();
-            requestInFlight = true;
-            try {
-                const response = await fetch(card.dataset.moveUrl, {
-                    method: "POST",
-                    headers: {"Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded", "X-CSRFToken": csrf},
-                    body: new URLSearchParams({stage: container.closest("[data-stage-column]").dataset.stageId, target_index: String(targetIndex), expected_version: card.dataset.taskVersion}),
-                });
-                const payload = await response.json();
-                if (!response.ok) throw new Error(payload.error || "Mutarea nu a putut fi salvată.");
-                card.dataset.taskVersion = String(payload.task.version);
-                const fallbackVersion = card.querySelector("[name=expected_version]");
-                if (fallbackVersion) fallbackVersion.value = String(payload.task.version);
-                const fallbackStage = card.querySelector("[name=stage]");
-                if (fallbackStage) fallbackStage.value = payload.task.stageId;
-            } catch (error) {
-                oldParent.insertBefore(card, oldParent.querySelector("[data-open-task-dialog]") || null);
-                updateCounts();
-                window.alert(error.message);
-            } finally {
-                requestInFlight = false;
-            }
+    const setDragContext = (active) => {
+        const board = document.querySelector("[data-kanban-board]");
+        if (board) board.toggleAttribute("data-kanban-dragging", active);
+        document.querySelectorAll("[data-stage-drop-zone]").forEach((container) => {
+            container.classList.toggle("border-dashed", active);
+            container.classList.toggle("border-base-300", active);
+            container.classList.toggle("bg-base-100", active);
+            container.classList.toggle("opacity-90", active);
         });
-    });
+    };
 
-    let knownSignature = null;
+    const markMoved = (card) => {
+        card.classList.add("ring-2", "ring-success", "bg-success/10");
+        window.setTimeout(() => card.classList.remove("ring-2", "ring-success", "bg-success/10"), 900);
+    };
+
+    const setDragDisabled = (disabled) => {
+        document.querySelectorAll("[data-task-card][draggable=true]").forEach((card) => {
+            card.classList.toggle("opacity-60", disabled);
+            card.toggleAttribute("aria-disabled", disabled);
+        });
+    };
+
+    const updateMovedCardTimer = (card, taskPayload) => {
+        const timer = card.querySelector("[data-task-timer]");
+        if (!timer || !Object.prototype.hasOwnProperty.call(taskPayload, "completedAt")) return;
+        if (taskPayload.completedAt) timer.dataset.completedAt = taskPayload.completedAt;
+        else delete timer.dataset.completedAt;
+        updateTimers();
+    };
+
+    const initDragDrop = () => {
+        document.querySelectorAll("[data-task-card][draggable=true]:not([data-kanban-drag-bound])").forEach((card) => {
+            card.dataset.kanbanDragBound = "true";
+            card.addEventListener("dragstart", () => {
+                if (requestInFlight) return;
+                draggedCard = card;
+                setDragContext(true);
+                card.classList.add("opacity-70", "ring-2", "ring-primary", "cursor-grabbing");
+            });
+            card.addEventListener("dragend", () => {
+                card.classList.remove("opacity-70", "ring-2", "ring-primary", "cursor-grabbing");
+                document.querySelectorAll("[data-stage-cards]").forEach((container) => setDropState(container, false));
+                setDragContext(false);
+                draggedCard = null;
+            });
+        });
+
+        document.querySelectorAll("[data-stage-cards]:not([data-kanban-drop-bound])").forEach((container) => {
+            container.dataset.kanbanDropBound = "true";
+            container.addEventListener("dragover", (event) => {
+                event.preventDefault();
+                if (draggedCard && !requestInFlight) setDropState(container, true);
+            });
+            container.addEventListener("dragleave", (event) => {
+                if (!container.contains(event.relatedTarget)) setDropState(container, false);
+            });
+            container.addEventListener("drop", async (event) => {
+                event.preventDefault();
+                setDropState(container, false);
+                if (!draggedCard || requestInFlight) return;
+                const card = draggedCard;
+                const stageColumn = container.closest("[data-stage-column]");
+                if (!stageColumn) return;
+                const cards = Array.from(container.querySelectorAll(":scope > [data-task-card]")).filter((item) => item !== card);
+                const target = event.target.closest("[data-task-card]");
+                const targetIndex = target && target !== card ? cards.indexOf(target) : cards.length;
+                const oldParent = card.parentElement;
+                const reference = cards[targetIndex] || container.querySelector("[data-open-task-dialog]");
+                container.insertBefore(card, reference || null);
+                updateCounts();
+                requestInFlight = true;
+                setDragDisabled(true);
+                card.setAttribute("aria-busy", "true");
+                try {
+                    const response = await fetch(card.dataset.moveUrl, {
+                        method: "POST",
+                        headers: {"Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded", "X-CSRFToken": getCsrf()},
+                        body: new URLSearchParams({stage: stageColumn.dataset.stageId, target_index: String(targetIndex), expected_version: card.dataset.taskVersion}),
+                    });
+                    const payload = await response.json();
+                    if (!response.ok) throw new Error(payload.error || "Mutarea nu a putut fi salvată.");
+                    card.dataset.taskVersion = String(payload.task.version);
+                    const fallbackVersion = card.querySelector("[name=expected_version]");
+                    if (fallbackVersion) fallbackVersion.value = String(payload.task.version);
+                    const fallbackStage = card.querySelector("[name=stage]");
+                    if (fallbackStage) fallbackStage.value = payload.task.stageId;
+                    updateMovedCardTimer(card, payload.task);
+                    knownSignature = null;
+                    markMoved(card);
+                } catch (error) {
+                    oldParent.insertBefore(card, oldParent.querySelector("[data-open-task-dialog]") || null);
+                    updateCounts();
+                    window.alert(error.message);
+                } finally {
+                    card.removeAttribute("aria-busy");
+                    setDragDisabled(false);
+                    requestInFlight = false;
+                }
+            });
+        });
+    };
+
     const pollState = async () => {
-        if (document.hidden || requestInFlight || dialog?.open) return;
+        const root = getRoot();
+        const dialog = getDialog();
+        if (!root || document.hidden || requestInFlight || dialog?.open) return;
         try {
             const response = await fetch(root.dataset.stateUrl, {headers: {"Accept": "application/json"}});
             if (!response.ok) return;
@@ -1146,8 +1238,38 @@ Size: 7.0 KB
             // A later poll retries; local task operations remain server-authoritative.
         }
     };
-    pollState();
-    window.setInterval(pollState, 30000);
+
+    const initPolling = () => {
+        if (!pollInterval && getRoot()) {
+            pollState();
+            pollInterval = window.setInterval(pollState, 30000);
+        }
+    };
+
+    const initKanban = ({resetSignature = false} = {}) => {
+        initTimers();
+        initDragDrop();
+        if (resetSignature) knownSignature = null;
+        initPolling();
+    };
+
+    document.addEventListener("change", (event) => {
+        const select = event.target.closest("[data-board-switcher]");
+        if (select) window.location.assign(select.value);
+    });
+
+    document.addEventListener("click", (event) => {
+        const openButton = event.target.closest("[data-open-task-dialog]");
+        if (openButton) getDialog()?.showModal();
+        const closeButton = event.target.closest("[data-close-task-dialog]");
+        if (closeButton) getDialog()?.close();
+    });
+
+    document.addEventListener("taskKanban:taskCreated", () => getDialog()?.close());
+    document.addEventListener("htmx:afterSwap", () => initKanban({resetSignature: true}));
+    document.addEventListener("htmx:oobAfterSwap", () => initKanban({resetSignature: true}));
+
+    initKanban();
 })();
 ```
 
@@ -1172,7 +1294,7 @@ Size: 563 B
 
 ## `apps/tasks/templates/tasks/board_kanban.html`
 
-Size: 8.6 KB
+Size: 4.2 KB
 
 ```html
 {% extends "layouts/base.html" %}
@@ -1182,7 +1304,7 @@ Size: 8.6 KB
 
 {% block content %}
 <section class="space-y-4" data-kanban-root data-state-url="{{ state_url }}">
-    {% include "tasks/includes/messages.html" %}
+    {% include "tasks/includes/kanban_messages.html" %}
     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div class="min-w-0">
             <p class="text-xs font-medium text-muted"><a href="{% url 'tasks:index' %}" class="hover:text-primary">Task-uri</a> / Board</p>
@@ -1212,50 +1334,16 @@ Size: 8.6 KB
     <form method="get" class="grid gap-3 border-b border-base-300 pb-4 sm:grid-cols-2 lg:grid-cols-4">
         <label class="fieldset"><span class="fieldset-legend">Responsabil</span><select name="assignee" class="select select-bordered select-sm w-full"><option value="">Orice responsabil</option>{% for membership in members %}<option value="{{ membership.user_id }}"{% if filters.assignee == membership.user_id|stringformat:'s' %} selected{% endif %}>{{ membership.user.get_full_name|default:membership.user.username }}</option>{% endfor %}</select></label>
         <label class="fieldset"><span class="fieldset-legend">Prioritate</span><select name="priority" class="select select-bordered select-sm w-full"><option value="">Orice prioritate</option>{% for value,label in priority_choices %}<option value="{{ value }}"{% if filters.priority == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-        <label class="fieldset"><span class="fieldset-legend">Caută</span><input type="search" name="q" value="{{ filters.q|default:'' }}" class="input input-bordered input-sm w-full" placeholder="Caută task-uri…"></label>
+        <label class="fieldset"><span class="fieldset-legend">Caută</span><input type="search" name="q" value="{{ filters.q|default:'' }}" class="input input-bordered input-sm w-full" placeholder="Caută task-uri..."></label>
         <div class="flex items-end gap-2"><button class="btn btn-primary btn-sm flex-1">Filtrează</button><a href="{% url 'tasks:board_kanban' board.pk %}" class="btn btn-ghost btn-sm">Resetează</a></div>
     </form>
 
-    <div class="flex min-h-[32rem] gap-3 overflow-x-auto pb-3" data-kanban-board>
-        {% for stage in stages %}
-        <section class="flex w-72 shrink-0 flex-col border border-base-300 bg-base-200/60 {% if stage.tone == 'error' %}border-t-2 border-t-error{% elif stage.tone == 'success' %}border-t-2 border-t-success{% elif stage.tone == 'warning' %}border-t-2 border-t-warning{% elif stage.tone == 'info' %}border-t-2 border-t-primary{% endif %}" data-stage-column data-stage-id="{{ stage.pk }}">
-            <header class="flex items-center justify-between border-b border-base-300 px-3 py-3">
-                <h2 class="font-semibold text-base-content">{{ stage.name }}</h2>
-                <span class="badge badge-sm bg-base-100" data-stage-count>{{ stage.visible_tasks|length }}</span>
-            </header>
-            <div class="flex min-h-32 flex-1 flex-col gap-2 p-2" data-stage-cards>
-                {% for task in stage.visible_tasks %}
-                <article class="border border-base-300 bg-base-100 p-3 shadow-sm focus-within:border-primary {% if task.can_move %}cursor-grab{% endif %}" data-task-card data-task-id="{{ task.pk }}" data-task-version="{{ task.version }}" data-move-url="{% url 'tasks:task_move' task.pk %}" {% if task.can_move %}draggable="true" tabindex="0"{% endif %}>
-                    <div class="flex items-start justify-between gap-2"><h3 class="text-sm font-semibold leading-5 text-base-content">{{ task.title }}</h3>{% if task.origin_url %}<a href="{{ task.origin_url }}" class="shrink-0 text-primary" title="{{ task.origin_label|default:'Deschide sursa' }}">↗</a>{% endif %}</div>
-                    {% if task.description %}<p class="mt-1 line-clamp-2 text-xs leading-5 text-muted">{{ task.description }}</p>{% endif %}
-                    <div class="mt-3 flex items-center gap-2 text-xs"><span class="flex h-6 w-6 items-center justify-center rounded-full bg-base-200 font-bold">{{ task.assignee.username|slice:':2'|upper }}</span><span class="truncate">{{ task.assignee.get_full_name|default:task.assignee.username }}</span></div>
-                    <div class="mt-2 flex flex-wrap items-center gap-2 text-xs"><span class="font-medium {% if task.priority == 'high' %}text-error{% elif task.priority == 'medium' %}text-warning{% else %}text-success{% endif %}">⚑ {{ task.get_priority_display }}</span>{% include "tasks/includes/timer.html" %}</div>
-                    <div class="mt-3 flex items-center justify-between gap-2 border-t border-base-300 pt-2">
-                        {% if task.can_edit %}<a href="{% url 'tasks:task_edit' task.pk %}" class="btn btn-ghost btn-xs">Editează</a>{% else %}<span></span>{% endif %}
-                        {% if task.can_move %}
-                        <form method="post" action="{% url 'tasks:task_move' task.pk %}" class="flex items-center gap-1" data-stage-fallback-form>
-                            {% csrf_token %}<input type="hidden" name="target_index" value="99999"><input type="hidden" name="expected_version" value="{{ task.version }}">
-                            <label class="sr-only" for="stage-{{ task.pk }}">Mută în etapa</label><select id="stage-{{ task.pk }}" name="stage" class="select select-ghost select-xs" onchange="this.form.submit()">{% for target in stages %}<option value="{{ target.pk }}"{% if target.pk == task.stage_id %} selected{% endif %}>{{ target.name }}</option>{% endfor %}</select>
-                        </form>
-                        {% endif %}
-                    </div>
-                </article>
-                {% endfor %}
-                <button type="button" class="mt-auto min-h-10 border border-dashed border-base-300 bg-base-100 text-sm text-muted hover:border-primary hover:text-primary" data-open-task-dialog>+ Adaugă task</button>
-            </div>
-        </section>
-        {% endfor %}
-    </div>
+    {% include "tasks/includes/kanban_board.html" %}
 </section>
 
 <dialog id="task-create-dialog" class="modal">
     <div class="modal-box max-w-2xl rounded-box border border-base-300 bg-base-100 shadow-xl">
-        <form method="dialog"><button class="btn btn-ghost btn-sm btn-circle absolute right-3 top-3" aria-label="Închide">✕</button></form>
-        <h2 class="text-xl font-bold text-base-content">Task nou</h2><p class="mt-1 text-sm text-muted">Adaugă un task în {{ board.name }}.</p>
-        <form method="post" action="{% url 'tasks:task_create' board.pk %}" class="mt-5 space-y-4">
-            {% csrf_token %}<div class="grid gap-x-4 sm:grid-cols-2">{% include "tasks/includes/form_fields.html" with form=task_form %}</div>
-            <div class="flex justify-end gap-2"><button type="button" class="btn btn-ghost btn-sm" data-close-task-dialog>Anulează</button><button class="btn btn-primary btn-sm">Creează task</button></div>
-        </form>
+        {% include "tasks/includes/task_create_dialog_body.html" %}
     </div>
     <form method="dialog" class="modal-backdrop"><button>Închide</button></form>
 </dialog>
@@ -1417,7 +1505,7 @@ Size: 513 B
 
 ## `apps/tasks/templates/tasks/includes/board_settings_content.html`
 
-Size: 12.7 KB
+Size: 17.1 KB
 
 ```html
 <section id="board-settings-content" class="space-y-6">
@@ -1486,23 +1574,120 @@ Size: 12.7 KB
         </section>
     </div>
 
-    <section class="border border-base-300 bg-base-100 p-5">
-        <div class="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-                <h2 class="font-semibold">Etape Kanban</h2>
-                <p class="mt-1 text-xs text-muted">P&#259;streaz&#259; cel pu&#539;in o etap&#259; activ&#259; &#537;i una final&#259;.</p>
+    <section class="border border-base-300 bg-base-100">
+        <div class="border-b border-base-300 px-5 py-4">
+            <div class="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                    <h2 class="font-semibold">Etape Kanban</h2>
+                    <p class="mt-1 text-xs text-muted">Configureaz&#259; ordinea etapelor f&#259;r&#259; s&#259; schimbi task-urile direct.</p>
+                </div>
+                <p class="max-w-2xl text-xs text-muted">
+                    Etapele finale marcheaz&#259; task-urile ca finalizate. Etapele &#537;terse trebuie s&#259; mute task-urile existente
+                    &#238;ntr-o alt&#259; etap&#259; din acela&#537;i board.
+                </p>
             </div>
-            <p class="max-w-xl text-xs text-muted">
-                Etapele finale marcheaz&#259; task-urile ca finalizate. La &#537;tergerea unei etape, task-urile existente trebuie mutate
-                &#238;ntr-o alt&#259; etap&#259; din acela&#537;i board.
-            </p>
         </div>
 
-        <form method="post" action="{% url 'tasks:stage_create' board.pk %}" class="mt-5 border border-dashed border-base-300 bg-base-200/30 p-4" hx-post="{% url 'tasks:stage_create' board.pk %}" hx-target="#board-settings-content" hx-swap="outerHTML">
+        <div class="overflow-x-auto">
+            <div class="min-w-[960px]">
+                <div class="grid grid-cols-[4.5rem_1fr_9rem_9rem_8rem_8rem] items-center gap-3 border-b border-base-300 bg-base-200/50 px-5 py-2 text-xs font-semibold uppercase text-muted">
+                    <span>Pozi&#539;ie</span>
+                    <span>Etap&#259;</span>
+                    <span>Ton semantic</span>
+                    <span>Tip</span>
+                    <span>Mutare</span>
+                    <span class="text-right">Ac&#539;iuni</span>
+                </div>
+                <div class="divide-y divide-base-300">
+                    {% for row in stage_rows %}
+                        <article class="bg-base-100" x-data="{ edit: {% if row.form.errors %}true{% else %}false{% endif %} }" @keydown.escape.window="edit = false">
+                            <div class="grid grid-cols-[4.5rem_1fr_9rem_9rem_8rem_8rem] items-center gap-3 px-5 py-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="inline-flex size-8 items-center justify-center border border-base-300 bg-base-200 text-sm font-semibold tabular-nums text-base-content">{{ forloop.counter }}</span>
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="truncate text-sm font-semibold text-base-content">{{ row.stage.name }}</p>
+                                </div>
+                                <div>
+                                    <span class="badge badge-outline badge-sm {% if row.stage.tone == 'success' %}badge-success{% elif row.stage.tone == 'error' %}badge-error{% elif row.stage.tone == 'warning' %}badge-warning{% elif row.stage.tone == 'info' %}badge-info{% endif %}">{{ row.stage.get_tone_display }}</span>
+                                </div>
+                                <div>
+                                    {% if row.stage.is_terminal %}
+                                        <span class="badge badge-success badge-outline badge-sm">Etap&#259; final&#259;</span>
+                                    {% else %}
+                                        <span class="badge badge-ghost badge-sm">Activ&#259;</span>
+                                    {% endif %}
+                                </div>
+                                <form method="post" action="{% url 'tasks:stage_position' row.stage.pk %}" class="join" hx-post="{% url 'tasks:stage_position' row.stage.pk %}" hx-target="#board-settings-content" hx-swap="outerHTML">
+                                    {% csrf_token %}
+                                    <button name="direction" value="up" class="btn btn-ghost btn-xs join-item" aria-label="Mut&#259; etapa &#238;n sus" title="Mut&#259; etapa &#238;n sus">&uarr;</button>
+                                    <button name="direction" value="down" class="btn btn-ghost btn-xs join-item" aria-label="Mut&#259; etapa &#238;n jos" title="Mut&#259; etapa &#238;n jos">&darr;</button>
+                                </form>
+                                <div class="flex justify-end gap-1">
+                                    <button type="button" class="btn btn-square btn-ghost btn-xs text-primary hover:bg-primary/10" aria-label="Editeaz&#259; etapa" title="Editeaz&#259; etapa" @click="edit = !edit">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m16.862 3.487 3.651 3.651M4.5 19.5l4.228-.845a2 2 0 0 0 1.024-.547L20.513 7.347a1.75 1.75 0 0 0 0-2.474l-1.386-1.386a1.75 1.75 0 0 0-2.474 0L5.892 14.248a2 2 0 0 0-.547 1.024L4.5 19.5Z" />
+                                        </svg>
+                                    </button>
+                                    <button type="button" class="btn btn-square btn-ghost btn-xs text-error hover:bg-error/10" aria-label="&#536;terge etapa" title="&#536;terge etapa" x-on:click="$refs.deleteStageDialog.showModal()">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6.75 7.5h10.5m-8.5 0V18a1.5 1.5 0 0 0 1.5 1.5h3.5a1.5 1.5 0 0 0 1.5-1.5V7.5m-5.25 0V5.75A1.25 1.25 0 0 1 11.25 4.5h1.5A1.25 1.25 0 0 1 14 5.75V7.5" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <form method="post" action="{% url 'tasks:stage_update' row.stage.pk %}" class="border-t border-base-300 bg-base-200/20 px-5 py-4" hx-post="{% url 'tasks:stage_update' row.stage.pk %}" hx-target="#board-settings-content" hx-swap="outerHTML" x-show="edit" {% if not row.form.errors %}style="display: none;"{% endif %}>
+                                {% csrf_token %}
+                                <div class="grid items-end gap-3 md:grid-cols-[1.4fr_1fr_auto_auto]">
+                                    <fieldset class="fieldset">
+                                        <label class="fieldset-legend" for="{{ row.form.name.id_for_label }}">Nume</label>
+                                        {{ row.form.name }}
+                                        {% if row.form.name.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ row.form.name.errors|join:", " }}</p>{% endif %}
+                                    </fieldset>
+                                    <fieldset class="fieldset">
+                                        <label class="fieldset-legend" for="{{ row.form.tone.id_for_label }}">Ton semantic</label>
+                                        {{ row.form.tone }}
+                                        {% if row.form.tone.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ row.form.tone.errors|join:", " }}</p>{% endif %}
+                                    </fieldset>
+                                    <label class="flex h-8 items-center gap-2 text-sm">{{ row.form.is_terminal }} Etap&#259; final&#259;</label>
+                                    <button class="btn btn-outline btn-sm">Salveaz&#259;</button>
+                                </div>
+                            </form>
+                            <dialog x-ref="deleteStageDialog" class="modal" aria-labelledby="delete-stage-{{ row.stage.pk }}-title" {% if row.delete_form.replacement_stage.errors %}open{% endif %}>
+                                <div class="modal-box max-w-md rounded-box border border-error/40 bg-base-100 shadow-xl">
+                                    <form method="dialog">
+                                        <button class="btn btn-ghost btn-sm btn-circle absolute right-3 top-3" aria-label="&#206;nchide">x</button>
+                                    </form>
+                                    <form method="post" action="{% url 'tasks:stage_delete' row.stage.pk %}" class="space-y-4" hx-post="{% url 'tasks:stage_delete' row.stage.pk %}" hx-target="#board-settings-content" hx-swap="outerHTML">
+                                        {% csrf_token %}
+                                        <div>
+                                            <h3 id="delete-stage-{{ row.stage.pk }}-title" class="text-base font-semibold text-error">&#536;terge etapa {{ row.stage.name }}</h3>
+                                            <p class="mt-2 text-sm text-muted">Task-urile din aceast&#259; etap&#259; vor fi mutate &#238;n etapa aleas&#259; mai jos.</p>
+                                        </div>
+                                        <fieldset class="fieldset">
+                                            <label class="fieldset-legend" for="{{ row.delete_form.replacement_stage.id_for_label }}">Mut&#259; task-urile &#238;n</label>
+                                            {{ row.delete_form.replacement_stage }}
+                                            {% if row.delete_form.replacement_stage.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ row.delete_form.replacement_stage.errors|join:", " }}</p>{% endif %}
+                                        </fieldset>
+                                        <div class="modal-action">
+                                            <button type="button" class="btn btn-ghost btn-sm" x-on:click="$refs.deleteStageDialog.close()">Anuleaz&#259;</button>
+                                            <button class="btn btn-error btn-sm">&#536;terge etapa</button>
+                                        </div>
+                                    </form>
+                                </div>
+                                <form method="dialog" class="modal-backdrop"><button>&#206;nchide</button></form>
+                            </dialog>
+                        </article>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <form method="post" action="{% url 'tasks:stage_create' board.pk %}" class="m-5 border border-dashed border-base-300 bg-base-200/30 p-3" hx-post="{% url 'tasks:stage_create' board.pk %}" hx-target="#board-settings-content" hx-swap="outerHTML">
             {% csrf_token %}
             <div class="grid items-end gap-3 md:grid-cols-[1.4fr_1fr_auto_auto]">
                 <fieldset class="fieldset">
-                    <label class="fieldset-legend" for="{{ stage_form.name.id_for_label }}">Etap&#259; nou&#259;</label>
+                    <label class="fieldset-legend" for="{{ stage_form.name.id_for_label }}">Adaug&#259; etap&#259;</label>
                     {{ stage_form.name }}
                     {% if stage_form.name.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ stage_form.name.errors|join:", " }}</p>{% endif %}
                 </fieldset>
@@ -1512,65 +1697,9 @@ Size: 12.7 KB
                     {% if stage_form.tone.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ stage_form.tone.errors|join:", " }}</p>{% endif %}
                 </fieldset>
                 <label class="flex h-8 items-center gap-2 text-sm">{{ stage_form.is_terminal }} Etap&#259; final&#259;</label>
-                <button class="btn btn-primary btn-sm">Adaug&#259; etap&#259;</button>
+                <button class="btn btn-outline btn-sm">Adaug&#259;</button>
             </div>
         </form>
-
-        <div class="mt-5 space-y-3">
-            {% for row in stage_rows %}
-                <article class="border border-base-300 bg-base-100 p-4">
-                    <div class="flex flex-col gap-1 border-b border-base-300 pb-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                            <h3 class="text-sm font-semibold text-base-content">{{ row.stage.name }}</h3>
-                            <p class="text-xs text-muted">Pozi&#539;ia {{ row.stage.position|add:1 }}{% if row.stage.is_terminal %} &middot; etap&#259; final&#259;{% endif %}</p>
-                        </div>
-                        <span class="badge badge-outline badge-sm">{{ row.stage.get_tone_display }}</span>
-                    </div>
-
-                    <form method="post" action="{% url 'tasks:stage_update' row.stage.pk %}" class="mt-4" hx-post="{% url 'tasks:stage_update' row.stage.pk %}" hx-target="#board-settings-content" hx-swap="outerHTML">
-                        {% csrf_token %}
-                        <div class="grid items-end gap-3 md:grid-cols-[1.4fr_1fr_auto_auto]">
-                            <fieldset class="fieldset">
-                                <label class="fieldset-legend" for="{{ row.form.name.id_for_label }}">Nume</label>
-                                {{ row.form.name }}
-                                {% if row.form.name.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ row.form.name.errors|join:", " }}</p>{% endif %}
-                            </fieldset>
-                            <fieldset class="fieldset">
-                                <label class="fieldset-legend" for="{{ row.form.tone.id_for_label }}">Ton semantic</label>
-                                {{ row.form.tone }}
-                                {% if row.form.tone.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ row.form.tone.errors|join:", " }}</p>{% endif %}
-                            </fieldset>
-                            <label class="flex h-8 items-center gap-2 text-sm">{{ row.form.is_terminal }} Etap&#259; final&#259;</label>
-                            <button class="btn btn-outline btn-sm">Salveaz&#259;</button>
-                        </div>
-                    </form>
-
-                    <div class="mt-4 grid gap-3 border-t border-base-300 pt-3 lg:grid-cols-[auto_1fr]">
-                        <div>
-                            <p class="mb-2 text-xs font-medium text-base-content">Mutare</p>
-                            <form method="post" action="{% url 'tasks:stage_position' row.stage.pk %}" class="join" hx-post="{% url 'tasks:stage_position' row.stage.pk %}" hx-target="#board-settings-content" hx-swap="outerHTML">
-                                {% csrf_token %}
-                                <button name="direction" value="up" class="btn btn-ghost btn-xs join-item" aria-label="Mut&#259; etapa &#238;n sus">&uarr;</button>
-                                <button name="direction" value="down" class="btn btn-ghost btn-xs join-item" aria-label="Mut&#259; etapa &#238;n jos">&darr;</button>
-                            </form>
-                        </div>
-                        <details class="border-l-0 border-base-300 lg:border-l lg:pl-4" {% if row.delete_form.replacement_stage.errors %}open{% endif %}>
-                            <summary class="btn btn-outline btn-error btn-xs">Preg&#259;te&#537;te &#537;tergerea</summary>
-                            <form method="post" action="{% url 'tasks:stage_delete' row.stage.pk %}" class="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end" hx-post="{% url 'tasks:stage_delete' row.stage.pk %}" hx-target="#board-settings-content" hx-swap="outerHTML">
-                                {% csrf_token %}
-                                <fieldset class="fieldset min-w-64 flex-1">
-                                    <label class="fieldset-legend" for="{{ row.delete_form.replacement_stage.id_for_label }}">Mut&#259; task-urile &#238;n</label>
-                                    {{ row.delete_form.replacement_stage }}
-                                    <p class="label whitespace-normal text-xs text-muted">Aceast&#259; alegere se aplic&#259; tuturor task-urilor din etapa &#537;tears&#259;.</p>
-                                    {% if row.delete_form.replacement_stage.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ row.delete_form.replacement_stage.errors|join:", " }}</p>{% endif %}
-                                </fieldset>
-                                <button class="btn btn-error btn-sm">&#536;terge etapa</button>
-                            </form>
-                        </details>
-                    </div>
-                </article>
-            {% endfor %}
-        </div>
     </section>
 
     {% if archived_tasks %}
@@ -1759,6 +1888,138 @@ Size: 4.8 KB
 </div>
 ```
 
+## `apps/tasks/templates/tasks/includes/kanban_board.html`
+
+Size: 2.1 KB
+
+```html
+<div id="kanban-board-region" class="flex min-h-[34rem] gap-3 overflow-x-auto border-y border-base-300 bg-base-100 py-3" data-kanban-board{% if kanban_board_oob %} hx-swap-oob="true"{% endif %}>
+    {% for stage in stages %}
+        <section class="flex w-80 shrink-0 flex-col border border-base-300 bg-base-200/60 transition-colors {% if stage.tone == 'error' %}border-t-4 border-t-error{% elif stage.tone == 'success' %}border-t-4 border-t-success{% elif stage.tone == 'warning' %}border-t-4 border-t-warning{% elif stage.tone == 'info' %}border-t-4 border-t-primary{% else %}border-t-4 border-t-base-300{% endif %}" data-stage-column data-stage-id="{{ stage.pk }}">
+            <header class="border-b border-base-300 bg-base-100 px-3 py-3">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <h2 class="truncate text-sm font-semibold text-base-content">{{ stage.name }}</h2>
+                        <p class="mt-0.5 text-[11px] font-medium uppercase tracking-wide text-muted">{% if stage.is_terminal %}Etapă finală{% else %}Etapă activă{% endif %}</p>
+                    </div>
+                    <span class="badge badge-sm border-base-300 bg-base-200 font-semibold" data-stage-count>{{ stage.visible_tasks|length }}</span>
+                </div>
+            </header>
+            <div class="flex min-h-80 flex-1 flex-col gap-2 border border-transparent p-2 transition-colors" data-stage-cards data-stage-drop-zone>
+                {% include "tasks/includes/kanban_empty_stage.html" %}
+                {% for task in stage.visible_tasks %}
+                    {% include "tasks/includes/kanban_card.html" %}
+                {% endfor %}
+                <button type="button" class="mt-auto min-h-10 border border-dashed border-base-300 bg-base-100 px-3 text-sm font-medium text-muted transition-colors hover:border-primary hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" data-open-task-dialog>+ Adaugă task</button>
+            </div>
+        </section>
+    {% endfor %}
+</div>
+```
+
+## `apps/tasks/templates/tasks/includes/kanban_board_response.html`
+
+Size: 101 B
+
+```html
+{% include "tasks/includes/kanban_board.html" %}
+{% include "tasks/includes/kanban_messages.html" %}
+```
+
+## `apps/tasks/templates/tasks/includes/kanban_card.html`
+
+Size: 4.9 KB
+
+```html
+<article class="group border border-base-300 bg-base-100 p-3 transition-colors focus-within:border-primary focus-within:outline focus-within:outline-2 focus-within:outline-primary {% if task.can_move %}cursor-grab hover:border-primary{% endif %} {% if task.priority == 'high' %}border-l-4 border-l-error{% elif task.priority == 'medium' %}border-l-4 border-l-warning{% else %}border-l-4 border-l-success{% endif %}" data-task-card data-task-id="{{ task.pk }}" data-task-version="{{ task.version }}" data-move-url="{% url 'tasks:task_move' task.pk %}" {% if task.can_move %}draggable="true" tabindex="0"{% endif %}>
+    <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0">
+            <div class="flex items-start gap-2">
+                {% if task.can_move %}<span class="mt-0.5 cursor-grab text-muted group-hover:text-primary" aria-hidden="true" data-card-grip>::</span>{% endif %}
+                <h3 class="text-sm font-semibold leading-5 text-base-content">{{ task.title }}</h3>
+            </div>
+        </div>
+        {% if task.origin_url %}<a href="{{ task.origin_url }}" class="shrink-0 text-primary hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" title="{{ task.origin_label|default:'Deschide sursa' }}">&#8599;</a>{% endif %}
+    </div>
+    {% if task.description %}<p class="mt-1 line-clamp-2 text-xs leading-5 text-muted">{{ task.description }}</p>{% endif %}
+    <div class="mt-3 flex items-center gap-2 border-t border-base-300 pt-2 text-xs">
+        <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-base-200 font-bold text-base-content">{{ task.assignee.username|slice:':2'|upper }}</span>
+        <span class="min-w-0 truncate font-medium text-base-content">{{ task.assignee.get_full_name|default:task.assignee.username }}</span>
+    </div>
+    <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
+        <span class="badge badge-xs border-base-300 bg-base-100 font-semibold {% if task.priority == 'high' %}text-error{% elif task.priority == 'medium' %}text-warning{% else %}text-success{% endif %}">&#9873; {{ task.get_priority_display }}</span>
+        {% include "tasks/includes/timer.html" %}
+    </div>
+    <div class="mt-3 flex items-center justify-between gap-2 border-t border-base-300 pt-2">
+        <div class="flex items-center gap-1">
+            {% if task.can_edit %}
+                <a href="{% url 'tasks:task_edit' task.pk %}" class="btn btn-ghost btn-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">Editeaz&#259;</a>
+                {% url 'tasks:task_archive' task.pk as task_archive_url %}
+                <form method="post" action="{{ task_archive_url }}{% if kanban_query %}?{{ kanban_query }}{% endif %}" hx-post="{{ task_archive_url }}{% if kanban_query %}?{{ kanban_query }}{% endif %}" hx-target="#kanban-board-region" hx-swap="outerHTML">
+                    {% csrf_token %}
+                    <input type="hidden" name="_kanban" value="1">
+                    <input type="hidden" name="archived" value="1">
+                    <input type="hidden" name="next" value="{{ kanban_path }}">
+                    <button class="btn btn-outline btn-error btn-xs btn-square focus-visible:outline focus-visible:outline-2 focus-visible:outline-error" type="submit" aria-label="Arhivează task-ul {{ task.title }}" title="Arhivează task-ul" data-archive-action>
+                        <svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 6h18"></path>
+                            <path d="M8 6V4h8v2"></path>
+                            <path d="M19 6l-1 14H6L5 6"></path>
+                            <path d="M10 11v6"></path>
+                            <path d="M14 11v6"></path>
+                        </svg>
+                    </button>
+                </form>
+            {% else %}
+                <span></span>
+            {% endif %}
+        </div>
+        {% if task.can_move %}
+            <form method="post" action="{% url 'tasks:task_move' task.pk %}" class="flex items-center gap-1" data-stage-fallback-form>
+                {% csrf_token %}
+                <input type="hidden" name="target_index" value="99999">
+                <input type="hidden" name="expected_version" value="{{ task.version }}">
+                <label class="sr-only" for="stage-{{ task.pk }}">Mută în etapa</label>
+                <select id="stage-{{ task.pk }}" name="stage" class="select select-bordered select-xs max-w-28 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" onchange="this.form.submit()">
+                    {% for target in stages %}<option value="{{ target.pk }}"{% if target.pk == task.stage_id %} selected{% endif %}>{{ target.name }}</option>{% endfor %}
+                </select>
+            </form>
+        {% endif %}
+    </div>
+</article>
+```
+
+## `apps/tasks/templates/tasks/includes/kanban_create_response.html`
+
+Size: 161 B
+
+```html
+{% include "tasks/includes/task_create_dialog_body.html" %}
+{% include "tasks/includes/kanban_messages.html" %}
+{% include "tasks/includes/kanban_board.html" %}
+```
+
+## `apps/tasks/templates/tasks/includes/kanban_empty_stage.html`
+
+Size: 368 B
+
+```html
+<div class="{% if stage.visible_tasks %}hidden {% endif %}flex min-h-28 flex-col items-center justify-center border border-dashed border-base-300 bg-base-100 px-3 py-5 text-center text-xs text-muted" data-stage-empty>
+    <span class="font-semibold text-base-content">Etapă liberă</span>
+    <span class="mt-1">Trage un task aici sau adaugă unul nou.</span>
+</div>
+```
+
+## `apps/tasks/templates/tasks/includes/kanban_messages.html`
+
+Size: 132 B
+
+```html
+<div id="task-messages"{% if messages_oob %} hx-swap-oob="true"{% endif %}>
+    {% include "tasks/includes/messages.html" %}
+</div>
+```
+
 ## `apps/tasks/templates/tasks/includes/messages.html`
 
 Size: 316 B
@@ -1772,6 +2033,28 @@ Size: 316 B
 </div>
 {% endif %}
 
+```
+
+## `apps/tasks/templates/tasks/includes/task_create_dialog_body.html`
+
+Size: 1.1 KB
+
+```html
+<div id="task-create-dialog-body">
+    <form method="dialog"><button class="btn btn-ghost btn-sm btn-circle absolute right-3 top-3" aria-label="Închide">×</button></form>
+    <h2 class="text-xl font-bold text-base-content">Task nou</h2>
+    <p class="mt-1 text-sm text-muted">Adaugă un task în {{ board.name }}.</p>
+    {% url 'tasks:task_create' board.pk as task_create_url %}
+    <form method="post" action="{{ task_create_url }}{% if kanban_query %}?{{ kanban_query }}{% endif %}" class="mt-5 space-y-4" hx-post="{{ task_create_url }}{% if kanban_query %}?{{ kanban_query }}{% endif %}" hx-target="#task-create-dialog-body" hx-swap="outerHTML">
+        {% csrf_token %}
+        <input type="hidden" name="_kanban" value="1">
+        <div class="grid gap-x-4 sm:grid-cols-2">{% include "tasks/includes/form_fields.html" with form=task_form %}</div>
+        <div class="flex justify-end gap-2">
+            <button type="button" class="btn btn-ghost btn-sm" data-close-task-dialog>Anulează</button>
+            <button class="btn btn-primary btn-sm">Creează task</button>
+        </div>
+    </form>
+</div>
 ```
 
 ## `apps/tasks/templates/tasks/includes/task_form_panel.html`
@@ -1845,10 +2128,11 @@ Size: 588 B
 
 ## `apps/tasks/tests.py`
 
-Size: 16.5 KB
+Size: 24.4 KB
 
 ```python
 from datetime import timedelta
+from pathlib import Path
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -2046,6 +2330,25 @@ class TasksAppTests(TestCase):
         )
         self.assertIsNone(task.completed_at)
 
+    def test_move_json_reports_completed_state_for_timer_updates(self):
+        response = self.client.post(
+            reverse("tasks:task_move", args=[self.task.pk]),
+            {"stage": self.done.pk, "target_index": 0, "expected_version": self.task.version},
+            HTTP_ACCEPT="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertIsNotNone(payload["task"]["completedAt"])
+
+        self.task.refresh_from_db()
+        response = self.client.post(
+            reverse("tasks:task_move", args=[self.task.pk]),
+            {"stage": self.doing.pk, "target_index": 0, "expected_version": self.task.version},
+            HTTP_ACCEPT="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.json()["task"]["completedAt"])
+
     def test_manual_order_is_persisted(self):
         second = create_task(
             actor=self.owner,
@@ -2207,6 +2510,148 @@ class TasksAppTests(TestCase):
         self.assertContains(response, 'id="task-form-panel"', status_code=400)
         self.assertNotContains(response, "Task nou", status_code=400)
 
+    def test_kanban_task_create_htmx_success_refreshes_board_and_messages(self):
+        due_at = timezone.localtime(timezone.now() + timedelta(days=1)).strftime("%Y-%m-%dT%H:%M")
+        title = "Task creat din Kanban HTMX"
+        response = self.client.post(
+            reverse("tasks:task_create", args=[self.board.pk]),
+            {
+                "_kanban": "1",
+                "title": title,
+                "description": "",
+                "assignee": self.assignee.pk,
+                "stage": self.todo.pk,
+                "priority": Task.Priority.MEDIUM,
+                "start_at": "",
+                "due_at": due_at,
+            },
+            HTTP_HX_REQUEST="true",
+            HTTP_HX_TARGET="task-create-dialog-body",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["HX-Trigger"], "taskKanban:taskCreated")
+        self.assertTrue(Task.objects.filter(board=self.board, title=title).exists())
+        self.assertContains(response, 'id="task-create-dialog-body"')
+        self.assertContains(response, 'id="task-messages" hx-swap-oob="true"')
+        self.assertContains(response, 'id="kanban-board-region"')
+        self.assertContains(response, 'hx-swap-oob="true"')
+        self.assertContains(response, title)
+        self.assertContains(response, "Task-ul a fost creat.")
+        self.assertContains(response, "data-stage-column")
+        self.assertContains(response, "data-stage-id")
+        self.assertContains(response, "data-stage-drop-zone")
+        self.assertContains(response, "data-stage-empty")
+        self.assertContains(response, "data-task-card")
+        self.assertContains(response, "data-task-id")
+        self.assertContains(response, "data-task-version")
+        self.assertContains(response, "data-move-url")
+        self.assertContains(response, "data-card-grip")
+        self.assertContains(response, "data-archive-action")
+        self.assertContains(response, 'draggable="true"')
+        self.assertContains(response, "data-stage-fallback-form")
+        self.assertContains(response, "data-task-timer")
+        self.assertNotContains(response, "<html")
+
+    def test_kanban_task_create_htmx_invalid_stays_inside_dialog_body(self):
+        response = self.client.post(
+            reverse("tasks:task_create", args=[self.board.pk]),
+            {
+                "_kanban": "1",
+                "title": "",
+                "description": "",
+                "assignee": self.assignee.pk,
+                "stage": self.todo.pk,
+                "priority": Task.Priority.MEDIUM,
+                "start_at": "",
+                "due_at": "",
+            },
+            HTTP_HX_REQUEST="true",
+            HTTP_HX_TARGET="task-create-dialog-body",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertContains(response, 'id="task-create-dialog-body"', status_code=400)
+        self.assertContains(response, 'role="alert"', status_code=400)
+        self.assertNotContains(response, 'id="kanban-board-region"', status_code=400)
+        self.assertNotContains(response, "<html", status_code=400)
+
+    def test_kanban_task_archive_htmx_refreshes_board_and_messages(self):
+        response = self.client.post(
+            reverse("tasks:task_archive", args=[self.task.pk]),
+            {
+                "_kanban": "1",
+                "archived": "1",
+                "next": reverse("tasks:board_kanban", args=[self.board.pk]),
+            },
+            HTTP_HX_REQUEST="true",
+            HTTP_HX_TARGET="kanban-board-region",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.task.refresh_from_db()
+        self.assertIsNotNone(self.task.archived_at)
+        self.assertContains(response, 'id="kanban-board-region"')
+        self.assertContains(response, 'id="task-messages" hx-swap-oob="true"')
+        self.assertContains(response, "Task arhivat.")
+        self.assertContains(response, "data-stage-column")
+        self.assertNotContains(response, self.task.title)
+        self.assertNotContains(response, "<html")
+
+    def test_task_archive_native_fallback_redirects_to_kanban(self):
+        response = self.client.post(
+            reverse("tasks:task_archive", args=[self.task.pk]),
+            {"archived": "1", "next": reverse("tasks:board_kanban", args=[self.board.pk])},
+        )
+        self.assertRedirects(response, reverse("tasks:board_kanban", args=[self.board.pk]))
+        self.task.refresh_from_db()
+        self.assertIsNotNone(self.task.archived_at)
+
+    def test_task_archive_permission_is_unchanged_for_non_editor(self):
+        self.client.force_login(self.assignee)
+        response = self.client.post(
+            reverse("tasks:task_archive", args=[self.task.pk]),
+            {"_kanban": "1", "archived": "1"},
+            HTTP_HX_REQUEST="true",
+            HTTP_HX_TARGET="kanban-board-region",
+        )
+        self.assertEqual(response.status_code, 404)
+        self.task.refresh_from_db()
+        self.assertIsNone(self.task.archived_at)
+
+    def test_tasks_js_reinitializes_kanban_after_htmx_refreshes(self):
+        script = (Path(__file__).resolve().parent / "static" / "tasks" / "tasks.js").read_text(encoding="utf-8")
+        self.assertIn("htmx:afterSwap", script)
+        self.assertIn("htmx:oobAfterSwap", script)
+        self.assertIn("initDragDrop", script)
+        self.assertIn("setDragContext(true)", script)
+        self.assertIn("setDropState(container, true)", script)
+        self.assertIn("data-stage-empty", script)
+        self.assertIn("querySelectorAll(\"[data-task-timer]\")", script)
+        self.assertIn("updateMovedCardTimer(card, payload.task)", script)
+        self.assertIn("timer.dataset.completedAt = taskPayload.completedAt", script)
+        self.assertIn("delete timer.dataset.completedAt", script)
+        self.assertIn("knownSignature = null", script)
+        self.assertIn("setInterval(pollState, 30000)", script)
+
+    def test_kanban_renders_empty_drop_zones_and_destructive_actions_for_editor(self):
+        response = self.client.get(reverse("tasks:board_kanban", args=[self.board.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "data-stage-drop-zone")
+        self.assertContains(response, "data-stage-empty")
+        self.assertContains(response, "data-card-grip")
+        self.assertContains(response, "data-archive-action")
+        self.assertContains(response, "btn-outline btn-error")
+        self.assertContains(response, "data-stage-fallback-form")
+        self.assertContains(response, 'name="expected_version"')
+        self.assertContains(response, 'name="target_index"')
+
+    def test_kanban_hides_archive_action_for_non_editor_but_keeps_move_fallback(self):
+        self.client.force_login(self.assignee)
+        response = self.client.get(reverse("tasks:board_kanban", args=[self.board.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.task.title)
+        self.assertContains(response, "data-stage-fallback-form")
+        self.assertContains(response, "data-card-grip")
+        self.assertNotContains(response, "data-archive-action")
+
     def test_stage_create_htmx_refreshes_settings_section(self):
         response = self.client.post(
             reverse("tasks:stage_create", args=[self.board.pk]),
@@ -2300,7 +2745,7 @@ def validate_stage_balance(*, terminal_count: int, non_terminal_count: int) -> N
 
 ## `apps/tasks/views.py`
 
-Size: 23.5 KB
+Size: 25.0 KB
 
 ```python
 import hashlib
@@ -2370,6 +2815,10 @@ def _htmx_redirect(url: str) -> HttpResponse:
     response = HttpResponse(status=204)
     response["HX-Redirect"] = url
     return response
+
+
+def _is_kanban_htmx(request) -> bool:
+    return _is_htmx(request) and request.POST.get("_kanban") == "1"
 
 
 def _decorate_tasks(tasks, user):
@@ -2486,7 +2935,15 @@ def _board_context(*, request, board, task_form=None):
         "state_url": reverse("tasks:board_state", kwargs={"board_id": board.pk}),
         "priority_choices": Task.Priority.choices,
         "filters": request.GET,
+        "kanban_query": request.META.get("QUERY_STRING", ""),
+        "kanban_path": request.get_full_path(),
     }
+
+
+def _render_kanban_partial(request, board, *, template_name, task_form=None, status=200, **context_overrides):
+    context = _board_context(request=request, board=board, task_form=task_form)
+    context.update(context_overrides)
+    return render(request, template_name, context, status=status)
 
 
 class BoardKanbanView(LoginRequiredMixin, View):
@@ -2530,9 +2987,27 @@ class TaskCreateView(LoginRequiredMixin, View):
                 form.add_error(None, _error_text(exc))
             else:
                 messages.success(request, "Task-ul a fost creat.")
+                if _is_kanban_htmx(request):
+                    response = _render_kanban_partial(
+                        request,
+                        board,
+                        template_name="tasks/includes/kanban_create_response.html",
+                        kanban_board_oob=True,
+                        messages_oob=True,
+                    )
+                    response["HX-Trigger"] = "taskKanban:taskCreated"
+                    return response
                 if _is_htmx(request):
                     return _htmx_redirect(reverse("tasks:board_kanban", kwargs={"board_id": board.pk}))
                 return redirect("tasks:board_kanban", board_id=board.pk)
+        if _is_kanban_htmx(request):
+            return _render_kanban_partial(
+                request,
+                board,
+                template_name="tasks/includes/task_create_dialog_body.html",
+                task_form=form,
+                status=400,
+            )
         template_name = self.partial_template_name if _is_htmx(request) else self.template_name
         return render(request, template_name, {"board": board, "form": form}, status=400)
 
@@ -2615,6 +3090,13 @@ class TaskArchiveView(LoginRequiredMixin, View):
             raise Http404(_error_text(exc)) from exc
         messages.success(request, "Task arhivat." if archived else "Task restaurat.")
         if _is_htmx(request):
+            if request.POST.get("_kanban") == "1":
+                return _render_kanban_partial(
+                    request,
+                    task.board,
+                    template_name="tasks/includes/kanban_board_response.html",
+                    messages_oob=True,
+                )
             next_url = request.POST.get("next") or reverse("tasks:board_kanban", kwargs={"board_id": task.board_id})
             settings_url = reverse("tasks:board_settings", kwargs={"board_id": task.board_id})
             if next_url == settings_url:

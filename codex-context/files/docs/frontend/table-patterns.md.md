@@ -2,12 +2,14 @@
 
 ## `docs/frontend/table-patterns.md`
 
-Size: 4.0 KB
+Size: 5.8 KB
 
 ````markdown
 # Frontend Table Patterns
 
 Guidance for Django templates, HTMX, Alpine.js, Tailwind, and daisyUI table/list screens.
+
+Use this together with `frontend.md` and `coding-standards.md`.
 
 ## Preferred default
 
@@ -20,7 +22,8 @@ For internal operations, tables must stay:
 - debuggable;
 - safe with permissions;
 - usable after refresh;
-- friendly to browser memory.
+- friendly to browser memory;
+- consistent with the rest of the app.
 
 ## Template structure
 
@@ -28,9 +31,11 @@ A good list page usually has:
 
 ```text
 templates/<app>/<model>_list.html
+templates/<app>/partials/<model>_filters.html
 templates/<app>/partials/<model>_table.html
 templates/<app>/partials/<model>_rows.html
 templates/<app>/partials/<model>_empty.html
+templates/<app>/partials/<model>_messages.html
 ```
 
 Use partials for repeated page sections, but do not make a generic table engine too early.
@@ -40,13 +45,51 @@ Different tables may have different columns. That is normal.
 Extract common pieces only when they are truly shared:
 
 - table wrapper;
+- filter bar;
 - empty state;
 - pagination controls;
 - loading indicator;
 - bulk action toolbar;
-- row action button style.
+- row action button group;
+- message/toast region.
 
 Keep business columns explicit in the app template.
+
+## Visual style
+
+- Use sharp, bordered, operational tables.
+- Prefer `rounded-none` for new table wrappers and action regions.
+- Prefer borders and compact spacing over shadows and decorative cards.
+- Keep row height consistent.
+- Keep action columns aligned and predictable.
+- Keep empty/loading/error states inside or directly above the table region.
+
+## Filters and search
+
+Filters should be compact and easy to reset.
+
+Recommended structure:
+
+- search field first;
+- high-value filters next;
+- reset/clear action last;
+- advanced filters hidden behind a disclosure only when needed;
+- applied state visible after refresh.
+
+HTMX filters should preserve the same server-side query logic as full-page requests.
+
+## Row actions
+
+Use consistent action hierarchy:
+
+- view/open: normal compact action;
+- edit/change: secondary compact action;
+- archive/restore/delete: clearly marked destructive or recovery action;
+- icon-only actions require an accessible label or title.
+
+Do not hide unavailable actions only with CSS.
+
+If an action is disabled, the reason should be obvious from nearby copy, title text, or state messaging.
 
 ## HTMX table refresh
 
@@ -57,7 +100,8 @@ Good for:
 - sorting;
 - pagination;
 - local list refresh after create/edit/delete;
-- row archive/restore.
+- row archive/restore;
+- message area refresh.
 
 Pattern:
 
@@ -84,6 +128,8 @@ def list_view(request):
         return render(request, "app/partials/table.html", context)
     return render(request, "app/list.html", context)
 ```
+
+The partial should include the affected messages/empty state when the action changes what the user sees.
 
 ## Fixed-height lazy rows
 
@@ -171,14 +217,17 @@ Target page:
 - <template path>
 
 Goal:
-[describe: HTMX filter refresh / fixed-height lazy rows / selected row UI]
+[describe: HTMX filter refresh / fixed-height lazy rows / selected row UI / action column cleanup]
 
 Rules:
+- Read AGENTS.md, coding-standards.md, frontend.md, and apps/<app>/AGENTS.md.
 - Keep Django as source of truth.
 - Use HTMX only for server-rendered partial updates.
 - Use Alpine only for local UI state.
 - Preserve full-page fallback where practical.
 - Preserve permissions and filters.
+- Reuse existing table, message, empty-state, and action-button patterns.
+- Keep the visual style sharp, compact, and professional.
 - Do not touch unrelated apps.
 - Return a minimal diff.
 ```

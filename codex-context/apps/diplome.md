@@ -149,43 +149,64 @@ class DiplomaGenerationBatchAdmin(admin.ModelAdmin):
 
 ## `apps/diplome/AGENTS.md`
 
-Size: 2.7 KB
+Size: 3.1 KB
 
 ````markdown
 # Diplome App Instructions
 
-## Scope and Workflows
+## Scope and workflows
 
-This app owns diploma templates and layout JSON, participant-list import, single/bulk PDF generation, downloads, and generation history. It integrates with `media_library` for owned layout assets.
+This app owns diploma templates and layout JSON, participant-list import, single/bulk PDF generation, downloads, and generation history.
 
-## Minimal Routing
+It integrates with `media_library` for owned layout assets.
 
-- Template list/create/editor/preview: `urls.py`, `views.py`, `forms.py`, `services.py`, `validators.py`, the exact template/static file, then `tests.py`.
-- Participant CSV/XLSX import and mapping: `forms.py`, `services.py`, `views.py`, the exact participant template/JavaScript, then `tests_participants.py`.
+## Read before editing
+
+- Root `AGENTS.md`.
+- `coding-standards.md`.
+- `frontend.md` for UI/template work.
+- This file.
+- Only the files for the selected workflow.
+
+Use `codex-context/apps/diplome.md` only when a path is unknown.
+
+Do not open editor, participant, generation, and history files together unless the change crosses those contracts.
+
+## Minimal routing
+
+- Template list/create/editor/preview: `urls.py`, `views.py`, `forms.py`, `services.py`, `validators.py`, exact template/static file, then `tests.py`.
+- Participant CSV/XLSX import and mapping: `forms.py`, `services.py`, `views.py`, exact participant template/JavaScript, then `tests_participants.py`.
 - Single generation/download: `forms.py`, `selectors.py`, `services.py`, `pdf_renderer.py`, relevant generation templates, then `tests_generation.py`.
 - Bulk generation/history/ZIP: `models.py`, `selectors.py`, `services.py`, relevant batch/history templates, then `tests_bulk_generation.py`.
-- Model changes: `models.py`, affected service/selector/tests, then only the relevant migration history.
-- Unknown path only: `codex-context/apps/diplome.md`.
+- Model changes: `models.py`, affected service/selector/tests, then only relevant migration history.
 
-Do not open all editor, participant, generation, and history files for a change confined to one workflow.
+## Domain contracts
 
-## Domain Contracts
-
-- All templates, participant records, drafts, generated diplomas, and batches are owner-scoped. Cross-owner access returns 404 or a validation error appropriate to the existing endpoint.
-- `validators.py` is the canonical layout JSON contract. Keep browser rendering, PDF rendering, form validation, and stored layout versions compatible.
-- Use `services.py` for transactional imports, template mutation, generation, ZIP creation, and history snapshots. Views orchestrate HTTP only.
+- Templates, participant records, drafts, generated diplomas, and batches are owner-scoped.
+- Cross-owner access returns 404 or a validation error appropriate to the existing endpoint.
+- `validators.py` is the canonical layout JSON contract.
+- Keep browser rendering, PDF rendering, form validation, and stored layout versions compatible.
+- Use `services.py` for transactional imports, template mutation, generation, ZIP creation, and history snapshots.
+- Views orchestrate HTTP only.
 - Preserve history snapshots when source participants, lists, or templates are deleted.
-- Validate participant membership against the selected owned list and validate every media asset through `media_library` ownership services.
-- Keep state-changing endpoints POST-only with CSRF protection. Downloads must use owned selectors and safe filenames.
+- Validate participant membership against the selected owned list.
+- Validate every media asset through `media_library` ownership services.
+- Keep state-changing endpoints POST-only with CSRF protection.
+- Downloads must use owned selectors and safe filenames.
 
-## Frontend Contract
+## Reuse and UI standards
 
+- Reuse existing form, participant, table, history, and message partials before adding markup.
 - Standard pages extend `layouts/base.html` and use shared semantic tokens.
-- `template_editor.css` may implement editor geometry. Editor chrome must consume global semantic variables.
-- Diploma canvas element colors are user-authored document data and may remain literal/stored values; do not confuse them with application theme colors.
-- Keep `template_renderer.js` behavior compatible with preview and editor consumers. Server validation remains authoritative.
+- Use sharp bordered operational screens for list/import/history pages.
+- Avoid rounded card-heavy ordinary pages.
+- `template_editor.css` may implement editor geometry.
+- Editor chrome must consume global semantic variables.
+- Diploma canvas element colors are user-authored document data and may remain literal/stored values.
+- Keep `template_renderer.js` behavior compatible with preview and editor consumers.
+- Server validation remains authoritative.
 
-## Focused Checks
+## Focused checks
 
 ```powershell
 python manage.py test apps.diplome.tests
@@ -6433,7 +6454,7 @@ Size: 9.3 KB
 
 ## `apps/diplome/templates/diplome/batch_detail.html`
 
-Size: 6.4 KB
+Size: 247 B
 
 ```html
 {% extends "layouts/base.html" %}
@@ -6441,105 +6462,8 @@ Size: 6.4 KB
 {% block title %}Lot diplome | Platforma TUVTK{% endblock %}
 
 {% block content %}
-<section class="mx-auto w-full max-w-7xl space-y-6">
-    <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div class="space-y-2">
-            <div class="breadcrumbs p-0 text-sm text-muted">
-                <ul><li>Diplome</li><li><a href="{% url 'diplome:history_index' %}">Istoric</a></li><li>Detalii lot</li></ul>
-            </div>
-            <div>
-                <h1 class="text-2xl font-bold text-primary">{{ batch.participant_list_display_name }}</h1>
-                <p class="mt-1 text-sm text-muted">Template: {{ batch.template_display_name }}</p>
-            </div>
-        </div>
-        <div class="flex flex-wrap gap-2">
-            {% if batch.status == 'pending' %}
-                <form method="post" action="{% url 'diplome:batch_resume' batch.pk %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-primary btn-sm">Reia generarea</button>
-                </form>
-            {% endif %}
-            <a href="{% url 'diplome:history_index' %}" class="btn btn-outline btn-primary btn-sm">Înapoi la istoric</a>
-            {% if batch.success_count %}<a href="{% url 'diplome:batch_zip_download' batch.pk %}" class="btn btn-primary btn-sm">Descarcă ZIP</a>{% endif %}
-        </div>
-    </header>
-
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert {% if message.tags == 'error' %}alert-error{% elif message.tags == 'warning' %}alert-warning{% else %}alert-success{% endif %} py-2 text-sm" role="{% if message.tags == 'error' %}alert{% else %}status{% endif %}"><span>{{ message }}</span></div>
-        {% endfor %}
-    {% endif %}
-
-    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div class="border border-base-300 bg-base-100 p-4">
-            <p class="text-xs font-semibold uppercase tracking-wide text-muted">Status</p>
-            <p class="mt-2 font-semibold text-base-content">{{ batch.get_status_display }}</p>
-        </div>
-        <div class="border border-base-300 bg-base-100 p-4">
-            <p class="text-xs font-semibold uppercase tracking-wide text-muted">Total</p>
-            <p class="mt-2 text-xl font-bold text-base-content">{{ batch.total_count }}</p>
-        </div>
-        <div class="border border-success/40 bg-success/10 p-4">
-            <p class="text-xs font-semibold uppercase tracking-wide text-muted">Generate</p>
-            <p class="mt-2 text-xl font-bold text-success">{{ batch.success_count }}</p>
-        </div>
-        <div class="border border-error/40 bg-error/10 p-4">
-            <p class="text-xs font-semibold uppercase tracking-wide text-muted">Eșuate</p>
-            <p class="mt-2 text-xl font-bold text-error">{{ batch.failed_count }}</p>
-        </div>
-    </div>
-
-    <dl class="grid gap-3 border border-base-300 bg-base-100 p-4 text-sm sm:grid-cols-3">
-        <div><dt class="text-xs text-muted">Creat</dt><dd class="mt-1 text-base-content">{{ batch.created_at|date:"d.m.Y H:i" }}</dd></div>
-        <div><dt class="text-xs text-muted">Început</dt><dd class="mt-1 text-base-content">{% if batch.started_at %}{{ batch.started_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</dd></div>
-        <div><dt class="text-xs text-muted">Finalizat</dt><dd class="mt-1 text-base-content">{% if batch.completed_at %}{{ batch.completed_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</dd></div>
-    </dl>
-
-    {% if batch.error_summary %}
-        <section class="border border-warning/40 bg-warning/10 p-4" aria-labelledby="batch-errors-title">
-            <h2 id="batch-errors-title" class="font-semibold text-base-content">Erori de generare</h2>
-            <ul class="mt-2 space-y-1 text-sm text-muted">
-                {% for error in batch.error_summary %}
-                    <li>{% if error.participant_name %}<span class="font-medium text-base-content">{{ error.participant_name }}</span>{% if error.certificate_number %} ({{ error.certificate_number }}){% endif %}: {% endif %}{{ error.message }}</li>
-                {% endfor %}
-            </ul>
-        </section>
-    {% endif %}
-
-    <section class="space-y-3" aria-labelledby="generated-pdfs-title">
-        <h2 id="generated-pdfs-title" class="text-lg font-semibold text-primary">Fișiere PDF generate</h2>
-        <div class="overflow-x-auto border border-base-300 bg-base-100">
-            <table class="table table-xs">
-                <thead><tr><th>Participant</th><th>Număr certificat</th><th>Status</th><th>Creat</th><th class="text-right">Acțiuni</th></tr></thead>
-                <tbody>
-                    {% for diploma in generated_diplomas %}
-                        <tr>
-                            <td class="font-medium text-base-content">{{ diploma.participant_name }}</td>
-                            <td>{{ diploma.certificate_number }}</td>
-                            <td><span class="badge badge-success badge-sm">Disponibil</span></td>
-                            <td class="whitespace-nowrap">{{ diploma.created_at|date:"d.m.Y H:i" }}</td>
-                            <td>
-                                <div class="flex justify-end">
-                                    <a
-                                        href="{% url 'diplome:generation_download' diploma.pk %}"
-                                        class="btn btn-square btn-ghost btn-xs text-success hover:bg-success/10"
-                                        aria-label="Descarcă diploma PDF"
-                                        title="Descarcă diploma PDF"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 3.75v11.5m0 0 4-4m-4 4-4-4M5 19.25h14" />
-                                        </svg>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    {% empty %}
-                        <tr><td colspan="5" class="py-10 text-center text-muted">Nu a fost generat niciun fișier PDF.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </section>
+<section class="mx-auto w-full max-w-7xl">
+    {% include "diplome/includes/batch_detail_panel.html" %}
 </section>
 {% endblock %}
 ```
@@ -6805,7 +6729,7 @@ Size: 5.0 KB
 
 ## `apps/diplome/templates/diplome/history_index.html`
 
-Size: 6.9 KB
+Size: 884 B
 
 ```html
 {% extends "layouts/base.html" %}
@@ -6827,7 +6751,142 @@ Size: 6.9 KB
         <a href="{% url 'diplome:generation_index' %}" class="btn btn-primary btn-sm">Generare nouă</a>
     </header>
 
-    <form method="get" class="grid gap-3 border border-base-300 bg-base-100 p-4 sm:grid-cols-2 lg:grid-cols-5">
+    {% include "diplome/includes/history_panel.html" %}
+</section>
+{% endblock %}
+```
+
+## `apps/diplome/templates/diplome/includes/batch_detail_panel.html`
+
+Size: 6.2 KB
+
+```html
+<div id="batch-detail-panel" class="space-y-6">
+    <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div class="space-y-2">
+            <div class="breadcrumbs p-0 text-sm text-muted">
+                <ul><li>Diplome</li><li><a href="{% url 'diplome:history_index' %}">Istoric</a></li><li>Detalii lot</li></ul>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold text-primary">{{ batch.participant_list_display_name }}</h1>
+                <p class="mt-1 text-sm text-muted">Template: {{ batch.template_display_name }}</p>
+            </div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            {% if batch.status == 'pending' %}
+                <form
+                    method="post"
+                    action="{% url 'diplome:batch_resume' batch.pk %}"
+                    hx-post="{% url 'diplome:batch_resume' batch.pk %}"
+                    hx-target="#batch-detail-panel"
+                    hx-swap="outerHTML show:top"
+                    hx-confirm="Reiei generarea acestui lot?"
+                >
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary btn-sm">Reia generarea</button>
+                </form>
+            {% endif %}
+            <a href="{% url 'diplome:history_index' %}" class="btn btn-outline btn-primary btn-sm">Înapoi la istoric</a>
+            {% if batch.success_count %}<a href="{% url 'diplome:batch_zip_download' batch.pk %}" class="btn btn-primary btn-sm">Descarcă ZIP</a>{% endif %}
+        </div>
+    </header>
+
+    {% include "diplome/includes/messages.html" %}
+
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="border border-base-300 bg-base-100 p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-muted">Status</p>
+            <p class="mt-2 font-semibold text-base-content">{{ batch.get_status_display }}</p>
+        </div>
+        <div class="border border-base-300 bg-base-100 p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-muted">Total</p>
+            <p class="mt-2 text-xl font-bold text-base-content">{{ batch.total_count }}</p>
+        </div>
+        <div class="border border-success/40 bg-success/10 p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-muted">Generate</p>
+            <p class="mt-2 text-xl font-bold text-success">{{ batch.success_count }}</p>
+        </div>
+        <div class="border border-error/40 bg-error/10 p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-muted">Eșuate</p>
+            <p class="mt-2 text-xl font-bold text-error">{{ batch.failed_count }}</p>
+        </div>
+    </div>
+
+    <dl class="grid gap-3 border border-base-300 bg-base-100 p-4 text-sm sm:grid-cols-3">
+        <div><dt class="text-xs text-muted">Creat</dt><dd class="mt-1 text-base-content">{{ batch.created_at|date:"d.m.Y H:i" }}</dd></div>
+        <div><dt class="text-xs text-muted">Început</dt><dd class="mt-1 text-base-content">{% if batch.started_at %}{{ batch.started_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</dd></div>
+        <div><dt class="text-xs text-muted">Finalizat</dt><dd class="mt-1 text-base-content">{% if batch.completed_at %}{{ batch.completed_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</dd></div>
+    </dl>
+
+    {% if batch.error_summary %}
+        <section class="border border-warning/40 bg-warning/10 p-4" aria-labelledby="batch-errors-title">
+            <h2 id="batch-errors-title" class="font-semibold text-base-content">Erori de generare</h2>
+            <ul class="mt-2 space-y-1 text-sm text-muted">
+                {% for error in batch.error_summary %}
+                    <li>{% if error.participant_name %}<span class="font-medium text-base-content">{{ error.participant_name }}</span>{% if error.certificate_number %} ({{ error.certificate_number }}){% endif %}: {% endif %}{{ error.message }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+    {% endif %}
+
+    <section class="space-y-3" aria-labelledby="generated-pdfs-title">
+        <h2 id="generated-pdfs-title" class="text-lg font-semibold text-primary">Fișiere PDF generate</h2>
+        <div class="overflow-x-auto border border-base-300 bg-base-100">
+            <table class="table table-xs">
+                <thead><tr><th>Participant</th><th>Număr certificat</th><th>Status</th><th>Creat</th><th class="text-right">Acțiuni</th></tr></thead>
+                <tbody>
+                    {% for diploma in generated_diplomas %}
+                        <tr>
+                            <td class="font-medium text-base-content">{{ diploma.participant_name }}</td>
+                            <td>{{ diploma.certificate_number }}</td>
+                            <td><span class="badge badge-success badge-sm">Disponibil</span></td>
+                            <td class="whitespace-nowrap">{{ diploma.created_at|date:"d.m.Y H:i" }}</td>
+                            <td>
+                                <div class="flex justify-end">
+                                    <a
+                                        href="{% url 'diplome:generation_download' diploma.pk %}"
+                                        class="btn btn-square btn-ghost btn-xs text-success hover:bg-success/10"
+                                        aria-label="Descarcă diploma PDF"
+                                        title="Descarcă diploma PDF"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 3.75v11.5m0 0 4-4m-4 4-4-4M5 19.25h14" />
+                                        </svg>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="5" class="py-10 text-center text-muted">Nu a fost generat niciun fișier PDF.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+```
+
+## `apps/diplome/templates/diplome/includes/history_panel.html`
+
+Size: 8.0 KB
+
+```html
+<div id="history-panel" class="space-y-4">
+    {% include "diplome/includes/messages.html" %}
+
+    <form
+        method="get"
+        action="{% url 'diplome:history_index' %}"
+        class="grid gap-3 border border-base-300 bg-base-100 p-4 sm:grid-cols-2 lg:grid-cols-5"
+        hx-get="{% url 'diplome:history_index' %}"
+        hx-target="#history-panel"
+        hx-swap="outerHTML show:top"
+        hx-push-url="true"
+        hx-indicator="#history-loading"
+        hx-trigger="submit, change delay:250ms"
+        hx-sync="this:replace"
+        hx-disabled-elt="find input, find select, find button"
+    >
         <div>
             <label for="{{ filter_form.participant_list.id_for_label }}" class="mb-1 block text-xs font-semibold text-muted">{{ filter_form.participant_list.label }}</label>
             {{ filter_form.participant_list }}
@@ -6846,11 +6905,29 @@ Size: 6.9 KB
         </div>
         <div class="flex items-end gap-2">
             <button type="submit" class="btn btn-primary btn-sm">Filtrează</button>
-            <a href="{% url 'diplome:history_index' %}" class="btn btn-ghost btn-sm">Resetează</a>
+            <a
+                href="{% url 'diplome:history_index' %}"
+                class="btn btn-ghost btn-sm"
+                hx-get="{% url 'diplome:history_index' %}"
+                hx-target="#history-panel"
+                hx-swap="outerHTML show:top"
+                hx-push-url="true"
+                hx-indicator="#history-loading"
+            >Resetează</a>
         </div>
     </form>
 
-    <div class="overflow-x-auto border border-base-300 bg-base-100">
+    <div class="relative overflow-x-auto border border-base-300 bg-base-100" aria-live="polite">
+        <div
+            id="history-loading"
+            class="htmx-indicator absolute inset-0 z-10 flex items-center justify-center bg-base-100/80"
+            role="status"
+        >
+            <span class="inline-flex items-center gap-3 border border-base-300 bg-base-100 px-4 py-3 text-sm font-medium text-base-content shadow-sm">
+                <span class="loading loading-spinner loading-md text-primary" aria-hidden="true"></span>
+                Se actualizează istoricul
+            </span>
+        </div>
         <table class="table table-xs">
             <thead>
                 <tr>
@@ -6877,7 +6954,15 @@ Size: 6.9 KB
                         <td>
                             <div class="flex justify-end gap-1">
                                 {% if batch.status == 'pending' %}
-                                    <form method="post" action="{% url 'diplome:batch_resume' batch.pk %}" class="inline-flex">
+                                    <form
+                                        method="post"
+                                        action="{% url 'diplome:batch_resume' batch.pk %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+                                        class="inline-flex"
+                                        hx-post="{% url 'diplome:batch_resume' batch.pk %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+                                        hx-target="#history-panel"
+                                        hx-swap="outerHTML show:top"
+                                        hx-confirm="Reiei generarea acestui lot?"
+                                    >
                                         {% csrf_token %}
                                         <button
                                             type="submit"
@@ -6922,8 +7007,307 @@ Size: 6.9 KB
             </tbody>
         </table>
     </div>
-</section>
-{% endblock %}
+</div>
+```
+
+## `apps/diplome/templates/diplome/includes/messages.html`
+
+Size: 522 B
+
+```html
+{% if messages %}
+    <div class="space-y-2">
+        {% for message in messages %}
+            <div
+                class="alert {% if message.tags == 'error' %}alert-error{% elif message.tags == 'warning' %}alert-warning{% elif message.tags == 'info' %}alert-info{% else %}alert-success{% endif %} py-2 text-sm"
+                role="{% if message.tags == 'error' %}alert{% else %}status{% endif %}"
+            >
+                <span>{{ message }}</span>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+```
+
+## `apps/diplome/templates/diplome/includes/participant_list_detail_panel.html`
+
+Size: 2.9 KB
+
+```html
+<div id="participant-list-detail-panel" class="space-y-4">
+    {% include "diplome/includes/messages.html" %}
+
+    <div class="relative overflow-x-auto border border-base-300 bg-base-100" aria-live="polite">
+        <div
+            id="participant-detail-loading"
+            class="htmx-indicator absolute inset-0 z-10 flex items-center justify-center bg-base-100/80"
+            role="status"
+        >
+            <span class="inline-flex items-center gap-3 border border-base-300 bg-base-100 px-4 py-3 text-sm font-medium text-base-content shadow-sm">
+                <span class="loading loading-spinner loading-md text-primary" aria-hidden="true"></span>
+                Se actualizează participanții
+            </span>
+        </div>
+        <table class="table table-sm">
+            <thead class="bg-base-200 text-xs uppercase tracking-wide text-muted"><tr><th>#</th><th>Nume complet</th><th>Data nașterii</th><th>Locul nașterii</th><th>Număr certificat</th></tr></thead>
+            <tbody>
+                {% for participant in participants %}
+                    <tr><td>{{ page_obj.start_index|add:forloop.counter0 }}</td><td class="font-medium">{{ participant.full_name }}</td><td>{{ participant.date_of_birth|date:"d.m.Y" }}</td><td>{{ participant.place_of_birth }}</td><td>{{ participant.certificate_number }}</td></tr>
+                {% empty %}
+                    <tr><td colspan="5" class="py-8 text-center text-muted">Lista nu conține participanți.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if is_paginated %}
+        <nav class="flex items-center justify-between text-sm" aria-label="Paginare participanți">
+            <span class="text-muted">Pagina {{ page_obj.number }} din {{ page_obj.paginator.num_pages }}</span>
+            <div class="join">
+                {% if page_obj.has_previous %}
+                    <a
+                        href="?page={{ page_obj.previous_page_number }}"
+                        class="btn btn-sm join-item"
+                        hx-get="?page={{ page_obj.previous_page_number }}"
+                        hx-target="#participant-list-detail-panel"
+                        hx-swap="outerHTML show:top"
+                        hx-push-url="true"
+                        hx-indicator="#participant-detail-loading"
+                    >Anterior</a>
+                {% endif %}
+                {% if page_obj.has_next %}
+                    <a
+                        href="?page={{ page_obj.next_page_number }}"
+                        class="btn btn-sm join-item"
+                        hx-get="?page={{ page_obj.next_page_number }}"
+                        hx-target="#participant-list-detail-panel"
+                        hx-swap="outerHTML show:top"
+                        hx-push-url="true"
+                        hx-indicator="#participant-detail-loading"
+                    >Următor</a>
+                {% endif %}
+            </div>
+        </nav>
+    {% endif %}
+</div>
+```
+
+## `apps/diplome/templates/diplome/includes/participant_list_panel.html`
+
+Size: 5.3 KB
+
+```html
+<div id="participant-list-panel" class="space-y-4">
+    {% include "diplome/includes/messages.html" %}
+
+    <div class="relative overflow-hidden border border-base-300 bg-base-100" aria-live="polite">
+        <div
+            id="participant-list-loading"
+            class="htmx-indicator absolute inset-0 z-10 flex items-center justify-center bg-base-100/80"
+            role="status"
+        >
+            <span class="inline-flex items-center gap-3 border border-base-300 bg-base-100 px-4 py-3 text-sm font-medium text-base-content shadow-sm">
+                <span class="loading loading-spinner loading-md text-primary" aria-hidden="true"></span>
+                Se actualizează listele
+            </span>
+        </div>
+        {% if participant_lists %}
+            <div class="overflow-x-auto">
+                <table class="table table-sm">
+                    <thead class="bg-base-200 text-xs uppercase tracking-wide text-muted">
+                        <tr><th>Listă</th><th>Curs</th><th>Participanți</th><th>Fișier sursă</th><th>Creată</th><th class="text-right">Acțiuni</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for participant_list in participant_lists %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'diplome:participant_list_detail' participant_list.pk %}" class="font-semibold text-primary hover:underline">{{ participant_list.name }}</a>
+                                    {% if participant_list.description %}<p class="mt-0.5 max-w-lg text-xs text-muted">{{ participant_list.description }}</p>{% endif %}
+                                </td>
+                                <td>{{ participant_list.course_name|default:"—" }}</td>
+                                <td>{{ participant_list.participant_count }}</td>
+                                <td>{{ participant_list.source_file_name }}</td>
+                                <td class="whitespace-nowrap">{{ participant_list.created_at|date:"d.m.Y H:i" }}</td>
+                                <td>
+                                    <div class="flex justify-end gap-2">
+                                        <a href="{% url 'diplome:participant_list_detail' participant_list.pk %}" class="btn btn-outline btn-primary btn-xs">Deschide</a>
+                                        <form
+                                            method="post"
+                                            action="{% url 'diplome:participant_list_delete' participant_list.pk %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+                                            hx-post="{% url 'diplome:participant_list_delete' participant_list.pk %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+                                            hx-target="#participant-list-panel"
+                                            hx-swap="outerHTML show:top"
+                                            hx-confirm="Ștergi această listă de participanți?"
+                                        >
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-ghost btn-xs text-error">Șterge</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="px-6 py-14 text-center">
+                <h2 class="text-lg font-semibold text-base-content">Nu există liste de participanți</h2>
+                <p class="mt-2 text-sm text-muted">Importă un fișier CSV sau XLSX pentru a crea prima listă.</p>
+                <a href="{% url 'diplome:participant_import' %}" class="btn btn-primary btn-sm mt-5">Importă prima listă</a>
+            </div>
+        {% endif %}
+    </div>
+    {% if is_paginated %}
+        <nav class="flex items-center justify-between text-sm" aria-label="Paginare liste participanți">
+            <span class="text-muted">Pagina {{ page_obj.number }} din {{ page_obj.paginator.num_pages }}</span>
+            <div class="join">
+                {% if page_obj.has_previous %}
+                    <a
+                        href="?page={{ page_obj.previous_page_number }}"
+                        class="btn btn-sm join-item"
+                        hx-get="?page={{ page_obj.previous_page_number }}"
+                        hx-target="#participant-list-panel"
+                        hx-swap="outerHTML show:top"
+                        hx-push-url="true"
+                        hx-indicator="#participant-list-loading"
+                    >Anterior</a>
+                {% endif %}
+                {% if page_obj.has_next %}
+                    <a
+                        href="?page={{ page_obj.next_page_number }}"
+                        class="btn btn-sm join-item"
+                        hx-get="?page={{ page_obj.next_page_number }}"
+                        hx-target="#participant-list-panel"
+                        hx-swap="outerHTML show:top"
+                        hx-push-url="true"
+                        hx-indicator="#participant-list-loading"
+                    >Următor</a>
+                {% endif %}
+            </div>
+        </nav>
+    {% endif %}
+</div>
+```
+
+## `apps/diplome/templates/diplome/includes/template_list_panel.html`
+
+Size: 6.4 KB
+
+```html
+<div id="template-list-panel" class="space-y-4">
+    {% include "diplome/includes/messages.html" %}
+
+    <form
+        method="get"
+        action="{% url 'diplome:template_list' %}"
+        class="flex flex-col gap-3 border border-base-300 bg-base-100 p-4 sm:flex-row sm:items-end"
+        hx-get="{% url 'diplome:template_list' %}"
+        hx-target="#template-list-panel"
+        hx-swap="outerHTML show:top"
+        hx-push-url="true"
+        hx-indicator="#template-list-loading"
+        hx-trigger="submit, change delay:250ms"
+        hx-sync="this:replace"
+        hx-disabled-elt="find select, find button"
+    >
+        <label class="form-control">
+            <span class="label-text mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Categorie</span>
+            {{ filter_form.category }}
+        </label>
+        <div class="flex items-center gap-2">
+            <button type="submit" class="btn btn-primary btn-sm">Filtrează</button>
+            {% if selected_category %}
+                <a
+                    href="{% url 'diplome:template_list' %}"
+                    class="btn btn-ghost btn-sm"
+                    hx-get="{% url 'diplome:template_list' %}"
+                    hx-target="#template-list-panel"
+                    hx-swap="outerHTML show:top"
+                    hx-push-url="true"
+                    hx-indicator="#template-list-loading"
+                >Șterge filtrul</a>
+            {% endif %}
+        </div>
+    </form>
+
+    <div class="relative overflow-hidden border border-base-300 bg-base-100" aria-live="polite">
+        <div
+            id="template-list-loading"
+            class="htmx-indicator absolute inset-0 z-10 flex items-center justify-center bg-base-100/80"
+            role="status"
+        >
+            <span class="inline-flex items-center gap-3 border border-base-300 bg-base-100 px-4 py-3 text-sm font-medium text-base-content shadow-sm">
+                <span class="loading loading-spinner loading-md text-primary" aria-hidden="true"></span>
+                Se actualizează template-urile
+            </span>
+        </div>
+        {% if templates %}
+            <div class="overflow-x-auto">
+                <table class="table table-sm">
+                    <thead class="bg-base-200 text-xs uppercase tracking-wide text-muted">
+                        <tr>
+                            <th>Nume</th>
+                            <th>Categorie</th>
+                            <th>Format</th>
+                            <th>Stare</th>
+                            <th>Actualizat</th>
+                            <th class="text-right">Acțiuni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for diploma_template in templates %}
+                            <tr>
+                                <td>
+                                    <p class="font-semibold text-base-content">{{ diploma_template.name }}</p>
+                                    {% if diploma_template.description %}<p class="mt-0.5 max-w-xl text-xs text-muted">{{ diploma_template.description }}</p>{% endif %}
+                                </td>
+                                <td><span class="badge badge-outline badge-sm">{{ diploma_template.category }}</span></td>
+                                <td>{{ diploma_template.page_size }} · {{ diploma_template.get_orientation_display }}</td>
+                                <td>{% if diploma_template.is_active %}<span class="text-success">Activ</span>{% else %}<span class="text-muted">Inactiv</span>{% endif %}</td>
+                                <td>{{ diploma_template.updated_at|date:"d.m.Y H:i" }}</td>
+                                <td>
+                                    <div class="flex justify-end gap-2">
+                                        <a href="{% url 'diplome:template_editor' diploma_template.pk %}" class="btn btn-outline btn-primary btn-xs">Editează</a>
+                                        <a href="{% url 'diplome:template_preview' diploma_template.pk %}" class="btn btn-ghost btn-xs" target="_blank" rel="noopener">Preview</a>
+                                        <form
+                                            method="post"
+                                            action="{% url 'diplome:template_delete' diploma_template.pk %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+                                            hx-post="{% url 'diplome:template_delete' diploma_template.pk %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+                                            hx-target="#template-list-panel"
+                                            hx-swap="outerHTML show:top"
+                                            hx-confirm="Ștergi acest template?"
+                                        >
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-ghost btn-xs text-error">Șterge</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="px-6 py-14 text-center">
+                {% if selected_category %}
+                    <h2 class="text-lg font-semibold text-base-content">Niciun template în categoria „{{ selected_category }}”</h2>
+                    <p class="mt-2 text-sm text-muted">Alege o altă categorie sau elimină filtrul curent.</p>
+                    <a
+                        href="{% url 'diplome:template_list' %}"
+                        class="btn btn-outline btn-primary btn-sm mt-5"
+                        hx-get="{% url 'diplome:template_list' %}"
+                        hx-target="#template-list-panel"
+                        hx-swap="outerHTML show:top"
+                        hx-push-url="true"
+                    >Afișează toate template-urile</a>
+                {% else %}
+                    <h2 class="text-lg font-semibold text-base-content">Nu există template-uri</h2>
+                    <p class="mt-2 text-sm text-muted">Creează primul template și configurează-l în editorul vizual.</p>
+                    <a href="{% url 'diplome:template_create' %}" class="btn btn-primary btn-sm mt-5">Creează primul template</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
 ```
 
 ## `apps/diplome/templates/diplome/participant_import.html`
@@ -7201,7 +7585,7 @@ Size: 1.8 KB
 
 ## `apps/diplome/templates/diplome/participant_list.html`
 
-Size: 4.4 KB
+Size: 891 B
 
 ```html
 {% extends "layouts/base.html" %}
@@ -7221,68 +7605,14 @@ Size: 4.4 KB
         <a href="{% url 'diplome:participant_import' %}" class="btn btn-primary btn-sm">Importă o listă</a>
     </div>
 
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %} py-2 text-sm" role="status"><span>{{ message }}</span></div>
-        {% endfor %}
-    {% endif %}
-
-    <div class="overflow-hidden border border-base-300 bg-base-100">
-        {% if participant_lists %}
-            <div class="overflow-x-auto">
-                <table class="table table-sm">
-                    <thead class="bg-base-200 text-xs uppercase tracking-wide text-muted">
-                        <tr><th>Listă</th><th>Curs</th><th>Participanți</th><th>Fișier sursă</th><th>Creată</th><th class="text-right">Acțiuni</th></tr>
-                    </thead>
-                    <tbody>
-                        {% for participant_list in participant_lists %}
-                            <tr>
-                                <td>
-                                    <a href="{% url 'diplome:participant_list_detail' participant_list.pk %}" class="font-semibold text-primary hover:underline">{{ participant_list.name }}</a>
-                                    {% if participant_list.description %}<p class="mt-0.5 max-w-lg text-xs text-muted">{{ participant_list.description }}</p>{% endif %}
-                                </td>
-                                <td>{{ participant_list.course_name|default:"—" }}</td>
-                                <td>{{ participant_list.participant_count }}</td>
-                                <td>{{ participant_list.source_file_name }}</td>
-                                <td class="whitespace-nowrap">{{ participant_list.created_at|date:"d.m.Y H:i" }}</td>
-                                <td>
-                                    <div class="flex justify-end gap-2">
-                                        <a href="{% url 'diplome:participant_list_detail' participant_list.pk %}" class="btn btn-outline btn-primary btn-xs">Deschide</a>
-                                        <form method="post" action="{% url 'diplome:participant_list_delete' participant_list.pk %}">
-                                            {% csrf_token %}
-                                            <button type="submit" class="btn btn-ghost btn-xs text-error">Șterge</button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <div class="px-6 py-14 text-center">
-                <h2 class="text-lg font-semibold text-base-content">Nu există liste de participanți</h2>
-                <p class="mt-2 text-sm text-muted">Importă un fișier CSV sau XLSX pentru a crea prima listă.</p>
-                <a href="{% url 'diplome:participant_import' %}" class="btn btn-primary btn-sm mt-5">Importă prima listă</a>
-            </div>
-        {% endif %}
-    </div>
-    {% if is_paginated %}
-        <nav class="flex items-center justify-between text-sm" aria-label="Paginare liste participanți">
-            <span class="text-muted">Pagina {{ page_obj.number }} din {{ page_obj.paginator.num_pages }}</span>
-            <div class="join">
-                {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}" class="btn btn-sm join-item">Anterior</a>{% endif %}
-                {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}" class="btn btn-sm join-item">Următor</a>{% endif %}
-            </div>
-        </nav>
-    {% endif %}
+    {% include "diplome/includes/participant_list_panel.html" %}
 </section>
 {% endblock %}
 ```
 
 ## `apps/diplome/templates/diplome/participant_list_detail.html`
 
-Size: 2.9 KB
+Size: 1.4 KB
 
 ```html
 {% extends "layouts/base.html" %}
@@ -7306,29 +7636,7 @@ Size: 2.9 KB
         </form>
     </div>
 
-    {% if messages %}{% for message in messages %}<div class="alert alert-success py-2 text-sm" role="status"><span>{{ message }}</span></div>{% endfor %}{% endif %}
-
-    <div class="overflow-x-auto border border-base-300 bg-base-100">
-        <table class="table table-sm">
-            <thead class="bg-base-200 text-xs uppercase tracking-wide text-muted"><tr><th>#</th><th>Nume complet</th><th>Data nașterii</th><th>Locul nașterii</th><th>Număr certificat</th></tr></thead>
-            <tbody>
-                {% for participant in participants %}
-                    <tr><td>{{ page_obj.start_index|add:forloop.counter0 }}</td><td class="font-medium">{{ participant.full_name }}</td><td>{{ participant.date_of_birth|date:"d.m.Y" }}</td><td>{{ participant.place_of_birth }}</td><td>{{ participant.certificate_number }}</td></tr>
-                {% empty %}
-                    <tr><td colspan="5" class="py-8 text-center text-muted">Lista nu conține participanți.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% if is_paginated %}
-        <nav class="flex items-center justify-between text-sm" aria-label="Paginare participanți">
-            <span class="text-muted">Pagina {{ page_obj.number }} din {{ page_obj.paginator.num_pages }}</span>
-            <div class="join">
-                {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}" class="btn btn-sm join-item">Anterior</a>{% endif %}
-                {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}" class="btn btn-sm join-item">Următor</a>{% endif %}
-            </div>
-        </nav>
-    {% endif %}
+    {% include "diplome/includes/participant_list_detail_panel.html" %}
 </section>
 {% endblock %}
 ```
@@ -7768,7 +8076,7 @@ Size: 2.6 KB
 
 ## `apps/diplome/templates/diplome/template_list.html`
 
-Size: 5.2 KB
+Size: 902 B
 
 ```html
 {% extends "layouts/base.html" %}
@@ -7790,79 +8098,7 @@ Size: 5.2 KB
         <a href="{% url 'diplome:template_create' %}" class="btn btn-primary btn-sm">Template nou</a>
     </div>
 
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-success py-2 text-sm" role="status"><span>{{ message }}</span></div>
-        {% endfor %}
-    {% endif %}
-
-    <form method="get" class="flex flex-col gap-3 border border-base-300 bg-base-100 p-4 sm:flex-row sm:items-end">
-        <label class="form-control">
-            <span class="label-text mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Categorie</span>
-            {{ filter_form.category }}
-        </label>
-        <div class="flex items-center gap-2">
-            <button type="submit" class="btn btn-primary btn-sm">Filtrează</button>
-            {% if selected_category %}
-                <a href="{% url 'diplome:template_list' %}" class="btn btn-ghost btn-sm">Șterge filtrul</a>
-            {% endif %}
-        </div>
-    </form>
-
-    <div class="overflow-hidden border border-base-300 bg-base-100">
-        {% if templates %}
-            <div class="overflow-x-auto">
-                <table class="table table-sm">
-                    <thead class="bg-base-200 text-xs uppercase tracking-wide text-muted">
-                        <tr>
-                            <th>Nume</th>
-                            <th>Categorie</th>
-                            <th>Format</th>
-                            <th>Stare</th>
-                            <th>Actualizat</th>
-                            <th class="text-right">Acțiuni</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for diploma_template in templates %}
-                            <tr>
-                                <td>
-                                    <p class="font-semibold text-base-content">{{ diploma_template.name }}</p>
-                                    {% if diploma_template.description %}<p class="mt-0.5 max-w-xl text-xs text-muted">{{ diploma_template.description }}</p>{% endif %}
-                                </td>
-                                <td><span class="badge badge-outline badge-sm">{{ diploma_template.category }}</span></td>
-                                <td>{{ diploma_template.page_size }} · {{ diploma_template.get_orientation_display }}</td>
-                                <td>{% if diploma_template.is_active %}<span class="text-success">Activ</span>{% else %}<span class="text-muted">Inactiv</span>{% endif %}</td>
-                                <td>{{ diploma_template.updated_at|date:"d.m.Y H:i" }}</td>
-                                <td>
-                                    <div class="flex justify-end gap-2">
-                                        <a href="{% url 'diplome:template_editor' diploma_template.pk %}" class="btn btn-outline btn-primary btn-xs">Editează</a>
-                                        <a href="{% url 'diplome:template_preview' diploma_template.pk %}" class="btn btn-ghost btn-xs" target="_blank" rel="noopener">Preview</a>
-                                        <form method="post" action="{% url 'diplome:template_delete' diploma_template.pk %}">
-                                            {% csrf_token %}
-                                            <button type="submit" class="btn btn-ghost btn-xs text-error">Șterge</button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <div class="px-6 py-14 text-center">
-                {% if selected_category %}
-                    <h2 class="text-lg font-semibold text-base-content">Niciun template în categoria „{{ selected_category }}”</h2>
-                    <p class="mt-2 text-sm text-muted">Alege o altă categorie sau elimină filtrul curent.</p>
-                    <a href="{% url 'diplome:template_list' %}" class="btn btn-outline btn-primary btn-sm mt-5">Afișează toate template-urile</a>
-                {% else %}
-                    <h2 class="text-lg font-semibold text-base-content">Nu există template-uri</h2>
-                    <p class="mt-2 text-sm text-muted">Creează primul template și configurează-l în editorul vizual.</p>
-                    <a href="{% url 'diplome:template_create' %}" class="btn btn-primary btn-sm mt-5">Creează primul template</a>
-                {% endif %}
-            </div>
-        {% endif %}
-    </div>
+    {% include "diplome/includes/template_list_panel.html" %}
 </section>
 {% endblock %}
 ```
@@ -7913,7 +8149,7 @@ Size: 1.5 KB
 
 ## `apps/diplome/tests.py`
 
-Size: 30.2 KB
+Size: 31.7 KB
 
 Redacted secret-like assignments: 2
 
@@ -8183,6 +8419,40 @@ class DiplomaTemplateViewTests(TestCase):
         self.assertNotContains(response, other.name)
         self.assertContains(response, "SSM")
         self.assertNotContains(response, "Categorie privată")
+
+    def test_template_list_htmx_returns_partial_panel(self):
+        ssm = self.create_template(name="Template SSM", category="SSM")
+        psi = self.create_template(name="Template PSI", category="PSI")
+
+        response = self.client.get(
+            reverse("diplome:template_list"),
+            {"category": "SSM"},
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "diplome/includes/template_list_panel.html")
+        self.assertContains(response, 'id="template-list-panel"')
+        self.assertContains(response, ssm.name)
+        self.assertNotContains(response, psi.name)
+        self.assertNotContains(response, "<title>")
+
+    def test_template_delete_htmx_refreshes_list_panel(self):
+        template = self.create_template(name="Template de șters")
+        keep = self.create_template(name="Template păstrat")
+
+        response = self.client.post(
+            reverse("diplome:template_delete", kwargs={"template_id": template.pk}),
+            HTTP_HX_REQUEST="true",
+            HTTP_HX_TARGET="template-list-panel",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "diplome/includes/template_list_panel.html")
+        self.assertFalse(DiplomaTemplate.objects.filter(pk=template.pk).exists())
+        self.assertContains(response, "Template-ul a fost șters.")
+        self.assertContains(response, keep.name)
+        self.assertNotContains(response, template.name)
 
     def test_user_can_open_own_editor_and_navigation_is_active(self):
         template = self.create_template()
@@ -8681,7 +8951,7 @@ class DiplomaTemplateViewTests(TestCase):
 
 ## `apps/diplome/tests_bulk_generation.py`
 
-Size: 16.9 KB
+Size: 20.1 KB
 
 Redacted secret-like assignments: 2
 
@@ -9053,6 +9323,82 @@ class BulkDiplomaGenerationTests(TestCase):
         self.assertContains(detail, 'aria-label="Descarcă diploma PDF"')
         self.assertContains(detail, "text-success hover:bg-success/10")
         self.assertNotContains(detail, ">Descarcă PDF</a>")
+
+    def test_history_htmx_returns_partial_panel(self):
+        owned_batch = create_generation_batch(
+            self.user,
+            self.participant_list.pk,
+            self.template.pk,
+        )
+        foreign_batch = create_generation_batch(
+            self.other_user,
+            self.foreign_list.pk,
+            self.foreign_template.pk,
+        )
+
+        response = self.client.get(
+            reverse("diplome:history_index"),
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "diplome/includes/history_panel.html")
+        self.assertContains(response, 'id="history-panel"')
+        self.assertContains(response, owned_batch.participant_list_display_name)
+        self.assertNotContains(response, foreign_batch.participant_list_display_name)
+        self.assertNotContains(response, "<title>")
+
+    def test_pending_batch_resume_from_history_htmx_refreshes_history_panel(self):
+        batch = create_generation_batch(
+            self.user,
+            self.participant_list.pk,
+            self.template.pk,
+        )
+
+        response = self.client.post(
+            reverse("diplome:batch_resume", kwargs={"batch_id": batch.pk}),
+            HTTP_HX_REQUEST="true",
+            HTTP_HX_TARGET="history-panel",
+        )
+
+        batch.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "diplome/includes/history_panel.html")
+        self.assertEqual(batch.status, DiplomaGenerationBatch.Status.COMPLETED)
+        self.assertContains(response, "Lot finalizat")
+        self.assertContains(response, batch.participant_list_display_name)
+        self.assertContains(response, batch.get_status_display())
+        self.assertNotContains(response, "<title>")
+
+    def test_batch_detail_htmx_and_resume_refresh_detail_panel(self):
+        batch = create_generation_batch(
+            self.user,
+            self.participant_list.pk,
+            self.template.pk,
+        )
+        detail_url = reverse("diplome:batch_detail", kwargs={"batch_id": batch.pk})
+
+        detail = self.client.get(detail_url, HTTP_HX_REQUEST="true")
+        self.assertEqual(detail.status_code, 200)
+        self.assertTemplateUsed(detail, "diplome/includes/batch_detail_panel.html")
+        self.assertContains(detail, 'id="batch-detail-panel"')
+        self.assertContains(detail, "Reia generarea")
+        self.assertNotContains(detail, "<title>")
+
+        response = self.client.post(
+            reverse("diplome:batch_resume", kwargs={"batch_id": batch.pk}),
+            HTTP_HX_REQUEST="true",
+            HTTP_HX_TARGET="batch-detail-panel",
+        )
+
+        batch.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "diplome/includes/batch_detail_panel.html")
+        self.assertEqual(batch.status, DiplomaGenerationBatch.Status.COMPLETED)
+        self.assertContains(response, "Lot finalizat")
+        self.assertContains(response, batch.get_status_display())
+        self.assertNotContains(response, "Reia generarea")
+        self.assertContains(response, reverse("diplome:batch_zip_download", kwargs={"batch_id": batch.pk}))
 
     def test_pending_batch_can_be_resumed(self):
         batch = create_generation_batch(
@@ -9565,7 +9911,7 @@ class DiplomaGenerationTests(TestCase):
 
 ## `apps/diplome/tests_participants.py`
 
-Size: 20.3 KB
+Size: 23.7 KB
 
 Redacted secret-like assignments: 2
 
@@ -10018,6 +10364,98 @@ class ParticipantImportTests(TestCase):
             ).status_code,
             404,
         )
+
+    def test_participant_list_htmx_returns_partial_panel(self):
+        own = ParticipantList.objects.create(
+            owner=self.user,
+            name="Lista proprie",
+            source_file_name="own.csv",
+        )
+        foreign = ParticipantList.objects.create(
+            owner=self.other_user,
+            name="Lista străină",
+            source_file_name="foreign.csv",
+        )
+
+        response = self.client.get(
+            reverse("diplome:list_index"),
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "diplome/includes/participant_list_panel.html")
+        self.assertContains(response, 'id="participant-list-panel"')
+        self.assertContains(response, own.name)
+        self.assertNotContains(response, foreign.name)
+        self.assertNotContains(response, "<title>")
+
+    def test_participant_list_delete_htmx_refreshes_list_panel(self):
+        participant_list = ParticipantList.objects.create(
+            owner=self.user,
+            name="Lista de șters",
+            source_file_name="delete.csv",
+        )
+        keep = ParticipantList.objects.create(
+            owner=self.user,
+            name="Lista păstrată",
+            source_file_name="keep.csv",
+        )
+
+        response = self.client.post(
+            reverse(
+                "diplome:participant_list_delete",
+                kwargs={"participant_list_id": participant_list.pk},
+            ),
+            HTTP_HX_REQUEST="true",
+            HTTP_HX_TARGET="participant-list-panel",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "diplome/includes/participant_list_panel.html")
+        self.assertFalse(ParticipantList.objects.filter(pk=participant_list.pk).exists())
+        self.assertContains(response, "Lista de participanți a fost ștearsă.")
+        self.assertContains(response, keep.name)
+        self.assertNotContains(response, participant_list.name)
+
+    def test_participant_detail_htmx_pagination_returns_partial_panel(self):
+        participant_list = ParticipantList.objects.create(
+            owner=self.user,
+            name="Lista paginată",
+            source_file_name="participanti.csv",
+            participant_count=101,
+        )
+        participants = [
+            Participant(
+                owner=self.user,
+                participant_list=participant_list,
+                full_name=f"Participant {index:03d}",
+                date_of_birth=datetime(1990, 4, 12).date(),
+                place_of_birth="Brașov",
+                certificate_number=f"CERT-{index:03d}",
+                source_row=index,
+            )
+            for index in range(1, 102)
+        ]
+        Participant.objects.bulk_create(participants)
+
+        response = self.client.get(
+            reverse(
+                "diplome:participant_list_detail",
+                kwargs={"participant_list_id": participant_list.pk},
+            ),
+            {"page": "2"},
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(
+            response,
+            "diplome/includes/participant_list_detail_panel.html",
+        )
+        self.assertContains(response, 'id="participant-list-detail-panel"')
+        self.assertContains(response, "Participant 101")
+        self.assertNotContains(response, "Participant 001")
+        self.assertNotContains(response, "<title>")
 
     def test_confirmed_list_does_not_expire(self):
         participant_list = ParticipantList.objects.create(
@@ -10807,7 +11245,7 @@ def validate_layout_json(layout) -> dict:
 
 ## `apps/diplome/views.py`
 
-Size: 23.8 KB
+Size: 26.7 KB
 
 ```python
 import logging
@@ -10875,6 +11313,26 @@ logger = logging.getLogger(__name__)
 DRAFT_TEMPLATE_IDS_SESSION_KEY = "diplome_draft_template_ids"
 
 
+def _is_htmx(request) -> bool:
+    return request.headers.get("HX-Request") == "true"
+
+
+class HtmxPartialMixin:
+    partial_template_name = ""
+
+    def render_to_response(self, context, **response_kwargs):
+        if _is_htmx(self.request) and self.partial_template_name:
+            response_kwargs.setdefault("content_type", self.content_type)
+            return self.response_class(
+                request=self.request,
+                template=self.partial_template_name,
+                context=context,
+                using=self.template_engine,
+                **response_kwargs,
+            )
+        return super().render_to_response(context, **response_kwargs)
+
+
 def _draft_template_ids(request) -> list[str]:
     return list(request.session.get(DRAFT_TEMPLATE_IDS_SESSION_KEY, []))
 
@@ -10900,8 +11358,9 @@ def _clear_draft_template(request, template_id) -> None:
         request.session.pop(DRAFT_TEMPLATE_IDS_SESSION_KEY, None)
 
 
-class DiplomaTemplateListView(LoginRequiredMixin, ListView):
+class DiplomaTemplateListView(HtmxPartialMixin, LoginRequiredMixin, ListView):
     template_name = "diplome/template_list.html"
+    partial_template_name = "diplome/includes/template_list_panel.html"
     context_object_name = "templates"
 
     def get_filter_form(self):
@@ -11112,8 +11571,9 @@ class BulkDiplomaGenerationCreateView(LoginRequiredMixin, View):
         return redirect("diplome:batch_detail", batch_id=batch.pk)
 
 
-class DiplomaGenerationHistoryView(LoginRequiredMixin, TemplateView):
+class DiplomaGenerationHistoryView(HtmxPartialMixin, LoginRequiredMixin, TemplateView):
     template_name = "diplome/history_index.html"
+    partial_template_name = "diplome/includes/history_panel.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -11127,8 +11587,9 @@ class DiplomaGenerationHistoryView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class DiplomaGenerationBatchDetailView(LoginRequiredMixin, TemplateView):
+class DiplomaGenerationBatchDetailView(HtmxPartialMixin, LoginRequiredMixin, TemplateView):
     template_name = "diplome/batch_detail.html"
+    partial_template_name = "diplome/includes/batch_detail_panel.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -11168,6 +11629,33 @@ class DiplomaGenerationBatchResumeView(LoginRequiredMixin, View):
             )
         else:
             _add_batch_result_message(request, batch)
+        if _is_htmx(request):
+            target = request.headers.get("HX-Target", "")
+            if target == "history-panel":
+                filter_form = DiplomaGenerationHistoryFilterForm(
+                    request.GET,
+                    user=request.user,
+                )
+                filters = filter_form.cleaned_data if filter_form.is_valid() else {}
+                context = build_generation_history_context(request.user, filters)
+                context["filter_form"] = filter_form
+                return render(
+                    request,
+                    "diplome/includes/history_panel.html",
+                    context,
+                )
+            batch = get_owned_generation_batch(request.user, batch_id)
+            return render(
+                request,
+                "diplome/includes/batch_detail_panel.html",
+                {
+                    "batch": batch,
+                    "generated_diplomas": list_generated_diplomas_for_batch(
+                        request.user,
+                        batch.pk,
+                    ),
+                },
+            )
         return redirect("diplome:batch_detail", batch_id=batch_id)
 
 
@@ -11278,11 +11766,21 @@ class DiplomaTemplateDeleteView(LoginRequiredMixin, View):
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return JsonResponse({"success": True})
         messages.success(request, "Template-ul a fost șters.")
+        if _is_htmx(request):
+            view = DiplomaTemplateListView()
+            view.setup(request)
+            view.object_list = view.get_queryset()
+            return render(
+                request,
+                "diplome/includes/template_list_panel.html",
+                view.get_context_data(),
+            )
         return redirect("diplome:template_list")
 
 
-class ParticipantListView(LoginRequiredMixin, ListView):
+class ParticipantListView(HtmxPartialMixin, LoginRequiredMixin, ListView):
     template_name = "diplome/participant_list.html"
+    partial_template_name = "diplome/includes/participant_list_panel.html"
     context_object_name = "participant_lists"
     paginate_by = 50
 
@@ -11442,8 +11940,9 @@ class ParticipantImportConfirmView(LoginRequiredMixin, View):
         )
 
 
-class ParticipantListDetailView(LoginRequiredMixin, TemplateView):
+class ParticipantListDetailView(HtmxPartialMixin, LoginRequiredMixin, TemplateView):
     template_name = "diplome/participant_list_detail.html"
+    partial_template_name = "diplome/includes/participant_list_detail_panel.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -11477,6 +11976,15 @@ class ParticipantListDeleteView(LoginRequiredMixin, View):
             participant_list_id=kwargs["participant_list_id"],
         )
         messages.success(request, "Lista de participanți a fost ștearsă.")
+        if _is_htmx(request):
+            view = ParticipantListView()
+            view.setup(request)
+            view.object_list = view.get_queryset()
+            return render(
+                request,
+                "diplome/includes/participant_list_panel.html",
+                view.get_context_data(object_list=view.object_list),
+            )
         return redirect("diplome:list_index")
 
 

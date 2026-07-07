@@ -4,34 +4,36 @@ Project-level, configuration, deployment, shared Django, and frontend source fil
 
 ## `AGENTS.md`
 
-Size: 4.7 KB
+Size: 5.6 KB
 
 ````markdown
 # Platforma TUVTK — Agent Router
+
+Operating rules for coding agents working in this repository.
+
+Working code only. Minimal context. Verified changes.
 
 ## Project
 
 - Server-rendered Django application.
 - Stack: Django, PostgreSQL, Tailwind CSS, daisyUI, HTMX, Alpine.js.
 - Django templates and PostgreSQL are the source of truth.
-- HTMX is for server-rendered partial HTML updates.
-- Alpine.js is for local UI state only.
-- Existing custom JavaScript may remain when it is safer or clearer.
+- HTMX returns server-rendered partial HTML.
+- Alpine.js owns local browser state only.
+- Existing scoped custom JavaScript may remain when it is safer or clearer.
 - Do not convert the project into a SPA.
 - Do not add another frontend framework unless explicitly requested.
 
-## Scope
+## Required reading order
 
-These rules apply to the whole repository.
+Read only what the task needs:
 
-A deeper `AGENTS.md` adds app-specific rules for files below its directory.
-
-Before editing, read only:
-
-1. this file;
-2. the deeper app `AGENTS.md` for the target app;
-3. the exact files named by the user;
-4. files directly imported, included, extended, or referenced by those files when required.
+1. `AGENTS.md`.
+2. `coding-standards.md`.
+3. `frontend.md` when templates, CSS, JavaScript, HTMX, Alpine, UX, or UI are involved.
+4. The deeper `apps/<app>/AGENTS.md` for the target app.
+5. The exact source files needed for the requested workflow.
+6. Directly referenced imports, includes, templates, forms, services, selectors, or tests only when required.
 
 Do not preload:
 
@@ -49,8 +51,6 @@ Use `codex-file-map.txt` only to locate an unknown file.
 
 Open real source files before editing. Generated context is navigation support, not authority.
 
-If required context is missing, stop and ask for scope expansion.
-
 ## App boundaries
 
 - `platforma_tuvtk/`: settings, root URLs, ASGI, WSGI.
@@ -58,22 +58,27 @@ If required context is missing, stop and ask for scope expansion.
 - `theme/`: Tailwind/daisyUI theme, global frontend assets.
 - `apps/`: domain apps. Each app owns its routes, views, forms, services, selectors, templates, static files, and tests.
 
-Do not duplicate an existing model, service, selector, route, template, or workflow.
+Do not duplicate an existing model, service, selector, route, template, include, component pattern, or workflow.
 
-## Django rules
+## Coding standards
 
-- Keep views thin.
-- Put writes and multi-step workflows in `services.py`.
-- Put permission-filtered reads in `selectors.py`.
-- Put request/form validation in `forms.py`.
-- Put reusable validation in `validators.py`.
-- Keep validation, authorization, ownership checks, and persistence server-side.
-- Use POST with CSRF for state changes.
-- Return 404 for cross-owner access where the app already follows that pattern.
-- Use namespaced app URLs.
-- Add migrations for schema changes, but do not inspect old migrations unless needed.
+Detailed coding standards live in `coding-standards.md`.
 
-## Frontend rules
+Default split:
+
+- Views orchestrate HTTP only.
+- `forms.py` validates request/form input.
+- `services.py` performs writes, transactions, and multi-step workflows.
+- `selectors.py` performs permission-filtered reads.
+- `validators.py` contains reusable validation rules.
+- Templates render state and submit forms; they do not own business rules.
+- JavaScript improves interaction only.
+
+Before adding new code, search the target app for an existing form, include, table, action-button, message, service, selector, or validator pattern.
+
+If the same pattern appears twice and is stable, reuse or extract it. If it appears once, keep it explicit.
+
+## Frontend standards
 
 Detailed frontend rules live in `frontend.md`.
 
@@ -84,13 +89,13 @@ Default frontend split:
 - Alpine.js: local toggles, dialogs, selected state, loading flags, upload labels.
 - Custom JavaScript: complex JSON, downloads, drag/drop, file parsing, canvas/editor workflows.
 
-Pages should extend `core/templates/layouts/base.html` unless intentionally standalone.
-
 Use shared semantic theme tokens. Do not introduce app-local color systems.
+
+New business screens should use sharp, professional, enterprise-grade layouts. Avoid childish, oversized, rounded card-heavy screens.
 
 ## Commands
 
-Use the repository wrapper.
+Use the repository wrapper. `install.sh` routes ordinary commands through the Python command router.
 
 Linux/Debian:
 
@@ -112,13 +117,22 @@ Windows:
 
 Do not reconstruct raw Docker Compose commands unless the task is Compose-specific.
 
+## Verification
+
+- Prefer the smallest focused test or check.
+- Do not run full test suites by default.
+- Do not claim tests passed unless you ran them and read the output.
+- If verification cannot be run, say why.
+- For UI changes, report the manual browser checks still needed.
+- For visual work, inspect before/after behavior when tooling allows it.
+- Do not weaken tests to make a failure disappear.
+
 ## Safety
 
 - Preserve unrelated tracked and untracked changes.
 - Never inspect or expose `.env` or `/etc/tuvtk/tuvtk.env` unless explicitly authorized.
 - Do not delete database volumes, PostgreSQL data, media, private media, secrets, or environment files.
 - Do not run clean, restore, SQL import, database reset, production restart, or destructive commands unless explicitly requested.
-- Do not run full test suites by default. Use the smallest focused check.
 - Do not claim HTTPS works; current production Compose/Nginx is HTTP-only.
 
 Avoid generated, runtime, dependency, binary, and local-tool paths unless directly required:
@@ -146,7 +160,8 @@ Stop and ask before expanding scope when:
 - another app must be changed but was not listed;
 - a schema migration is needed but not requested;
 - a workflow would require a broad rewrite;
-- validation would require destructive commands or full test suites.
+- validation would require destructive commands or full test suites;
+- two attempted fixes fail for the same issue.
 
 ## Completion report
 
@@ -156,7 +171,7 @@ Always report:
 - behavior changed;
 - migrations created, if any;
 - checks run;
-- checks skipped;
+- checks skipped and why;
 - context regeneration status;
 - manual checks still needed.
 ````
@@ -3279,7 +3294,7 @@ Size: 155 B
 
 ## `README.md`
 
-Size: 3.7 KB
+Size: 4.3 KB
 
 ````markdown
 # Platforma TUVTK
@@ -3373,43 +3388,23 @@ Windows equivalents:
 
 `test` defaults to low verbosity.
 
-## Frontend Rules
+## Coding and Agent Rules
 
-See:
-
-```text
-frontend.md
-```
-
-Additional focused guides:
-
-```text
-docs/frontend/table-patterns.md
-codex-prompt-demos/custom-js-to-alpine.md
-codex-prompt-demos/htmx-alpine-phased-migration.md
-```
-
-Short version:
-
-- Tailwind/daisyUI: layout and components.
-- HTMX: server-rendered partial updates.
-- Alpine.js: local UI state only.
-- Custom JavaScript: complex workflows where safer.
-- Django/PostgreSQL: real business state.
-
-## Codex Rules
-
-See:
+Read these first for coding-agent work:
 
 ```text
 AGENTS.md
-```
-
-For app-specific work, also read the target app file:
-
-```text
+coding-standards.md
+frontend.md
 apps/<app>/AGENTS.md
 ```
+
+Guidance split:
+
+- `AGENTS.md`: context budget, routing, safety, verification, and completion report.
+- `coding-standards.md`: Django structure, reuse rules, forms, services, selectors, templates, buttons, tables, and messages.
+- `frontend.md`: Tailwind/daisyUI, brand tokens, sharp enterprise UI, HTMX, Alpine, custom JavaScript, and visual checks.
+- `apps/<app>/AGENTS.md`: app-specific ownership, contracts, focused files, and tests.
 
 Prompt examples live in:
 
@@ -3425,6 +3420,27 @@ codex-file-map.txt
 ```
 
 Do not load the whole generated context for normal work.
+
+## Frontend Rules
+
+See:
+
+```text
+frontend.md
+docs/frontend/table-patterns.md
+```
+
+Short version:
+
+- Tailwind/daisyUI: layout, components, and shared theme tokens.
+- Brand colors come from the `tuvtk` theme.
+- New business screens should be sharp, compact, and professional.
+- Use `rounded-none` for new business panels, settings rows, menus, and tables unless an existing component contract requires otherwise.
+- Avoid childish, decorative, rounded card-heavy layouts.
+- HTMX: server-rendered partial updates.
+- Alpine.js: local UI state only.
+- Custom JavaScript: complex workflows where safer.
+- Django/PostgreSQL: real business state.
 
 ## Debian Production
 
@@ -3609,6 +3625,23 @@ Dockerfile text eol=lf
 *.cmd text eol=crlf
 *.ps1 text eol=crlf
 *.py text eol=lf
+```
+
+## `.github/agents/codex.agent.md`
+
+Size: 570 B
+
+```markdown
+---
+name: codex
+description: Describe what this custom agent does and when to use it.
+argument-hint: The inputs this agent expects, e.g., "a task to implement" or "a question to answer".
+# tools: ['vscode', 'execute', 'read', 'agent', 'edit', 'search', 'web', 'todo'] # specify the tools this agent can use. If not set, all enabled tools are allowed.
+---
+
+<!-- Tip: Use /create-agent in chat to generate content with agent assistance -->
+
+Define what this custom agent does, including its behavior, capabilities, and any specific instructions for its operation.
 ```
 
 ## `.github/workflows/ci.yml`
@@ -4934,14 +4967,36 @@ Notes:
 
 ## `codex-prompt-demos/README.md`
 
-Size: 10.2 KB
+Size: 6.9 KB
 
 ````markdown
 # Codex Prompt Demos
 
 Copy one prompt, replace the placeholders, and use it in Codex.
 
-Use short prompts. Keep each Codex session limited to one app, one workflow, and one safe change.
+Keep each Codex session limited to one app, one workflow, and one safe change.
+
+## Required reading for normal tasks
+
+```text
+Read only:
+- AGENTS.md
+- coding-standards.md
+- frontend.md if UI/templates/CSS/JS/HTMX/Alpine are involved
+- apps/<app>/AGENTS.md
+- exact files needed for this workflow
+```
+
+Do not read:
+
+```text
+- the whole repository
+- all codex-context files
+- unrelated apps
+- unrelated tests
+- migration history unless schema is involved
+- Docker/deployment files unless deployment is the task
+```
 
 ## Daily Safe Task
 
@@ -4955,26 +5010,26 @@ Target app:
 
 Read only:
 - AGENTS.md
+- coding-standards.md
 - frontend.md if frontend is involved
 - apps/<app>/AGENTS.md
 - exact files needed for this workflow
-
-Do not read:
-- the whole repository
-- all codex-context files
-- unrelated apps
-- unrelated tests
-- migration history
-- Docker/deployment files
 
 Before editing, report:
 - files you need to inspect
 - why each file is needed
 - whether this is app-local or cross-app
 
-Implement the smallest safe change and stop.
+Rules:
+- Implement the smallest safe change.
+- Reuse existing forms, selectors, services, templates, partials, tables, action buttons, and message patterns.
+- Do not create a new abstraction unless the pattern is already repeated and stable.
+- Stop if another app, schema migration, or broad rewrite becomes necessary.
 
-Stop if another app, schema migration, or broad rewrite becomes necessary.
+Checks:
+- focused check for the changed app/workflow
+- ./install.sh check if backend behavior changed
+- git diff --check
 ```
 
 ## Investigation Only
@@ -4990,6 +5045,7 @@ Target app:
 
 Read only:
 - AGENTS.md
+- coding-standards.md
 - frontend.md if frontend is involved
 - apps/<app>/AGENTS.md
 - exact files directly related to this workflow
@@ -4997,6 +5053,7 @@ Read only:
 Output:
 - recommended approach
 - files that would need editing
+- existing patterns to reuse
 - HTMX vs Alpine vs custom JS decision, if frontend is involved
 - risks
 - focused test commands
@@ -5020,6 +5077,7 @@ Target page:
 
 Read only:
 - AGENTS.md
+- coding-standards.md
 - frontend.md
 - apps/<app>/AGENTS.md
 - <template path>
@@ -5028,6 +5086,11 @@ Read only:
 
 Rules:
 - Use Django templates, Tailwind, and daisyUI.
+- Use shared `tuvtk` semantic tokens.
+- Keep the page sharp, compact, professional, and enterprise-grade.
+- Use `rounded-none` for new business panels, settings rows, menus, and tables.
+- Avoid childish rounded card-heavy layouts.
+- Reuse existing form, table, action-button, empty-state, and message/toast patterns.
 - Use HTMX only if server-rendered partial updates are needed.
 - Use Alpine only for local UI state.
 - Do not introduce a SPA pattern.
@@ -5057,6 +5120,7 @@ Workflow:
 
 Read only:
 - AGENTS.md
+- coding-standards.md
 - frontend.md
 - apps/<app>/AGENTS.md
 - the view file for this workflow
@@ -5101,6 +5165,7 @@ Target template:
 
 Read only:
 - AGENTS.md
+- coding-standards.md
 - frontend.md
 - apps/<app>/AGENTS.md
 - <template path>
@@ -5130,234 +5195,42 @@ Checks:
 Report manual browser checks needed.
 ```
 
-## Media Library Demo
+## UI Consistency Cleanup
 
 ```text
-Work only on Media Library upload/list/delete UX.
+Clean up UI consistency only.
 
 Target app:
-- apps/media_library
+- apps/<app>
+
+Target page or workflow:
+- <path/workflow>
 
 Read only:
 - AGENTS.md
+- coding-standards.md
 - frontend.md
-- apps/media_library/AGENTS.md
-- apps/media_library/views.py
-- apps/media_library/urls.py
-- apps/media_library/forms.py
-- apps/media_library/templates/media_library/library.html
-- apps/media_library/tests.py
+- apps/<app>/AGENTS.md
+- exact templates/includes/static files for this page
 
-Goal:
-Add HTMX partial refresh for upload and delete so the form, messages, and asset grid update without a full page reload.
+Goals:
+- remove childish rounded card-heavy layout
+- use sharp bordered sections
+- unify forms, tables, action buttons, and messages
+- reuse existing partials where practical
+- keep behavior unchanged
 
-Use Alpine only for:
-- selected upload filename
-- local loading state
-
-Preserve:
-- normal full-page fallback
-- JSON API endpoints
-- private asset serving
-- ownership checks
-- POST + CSRF
-
-Do not touch:
-- apps/diplome
-- apps/tasks
-- apps/planificator
-- apps/flota
-- Docker/deployment files
-- generated context
+Do not:
+- change models
+- change services/selectors unless a template contract requires it
+- touch unrelated pages
+- add a frontend framework
+- introduce app-local colors
 
 Checks:
-- ./install.sh test apps.media_library
 - ./install.sh check
+- app test only if rendered behavior changed
 - git diff --check
-
-Stop after this workflow.
-```
-
-## Tasks List Demo
-
-```text
-Work only on Tasks list pages, not Kanban drag-and-drop.
-
-Target app:
-- apps/tasks
-
-Read only:
-- AGENTS.md
-- frontend.md
-- apps/tasks/AGENTS.md
-- apps/tasks/views.py
-- apps/tasks/urls.py
-- apps/tasks/forms.py
-- apps/tasks/templates/tasks/hub.html
-- apps/tasks/templates/tasks/board_list.html
-- apps/tasks/templates/tasks/board_settings.html
-- apps/tasks/templates/tasks/includes/messages.html
-- apps/tasks/templates/tasks/includes/form_fields.html
-- apps/tasks/tests.py
-
-Goal:
-Identify and implement small HTMX improvements for non-Kanban task list/settings workflows.
-
-Use HTMX for:
-- filters
-- local list refreshes
-- form sections that can return server-rendered partials
-
-Use Alpine for:
-- confirmation state
-- local dialog/disclosure state
-- loading indicators
-
-Do not touch:
-- board_kanban.html
-- drag-and-drop logic
-- BoardStateView JSON polling unless strictly required
-- unrelated apps
-
-Preserve:
-- native form fallback
-- permissions
-- POST + CSRF
-- existing task movement behavior
-
-Checks:
-- ./install.sh test apps.tasks
-- ./install.sh check
-- git diff --check
-
-Stop before Kanban work.
-```
-
-## Planificator Investigation Demo
-
-```text
-Investigate Planificator generator/history only. Do not edit files.
-
-Target app:
-- apps/planificator
-
-Read only:
-- AGENTS.md
-- frontend.md
-- apps/planificator/AGENTS.md
-- apps/planificator/views.py
-- apps/planificator/forms.py
-- apps/planificator/templates/planificator/generator_perioade.html
-- apps/planificator/templates/planificator/includes/upload.html
-- apps/planificator/templates/planificator/includes/settings.html
-- apps/planificator/templates/planificator/includes/result_table.html
-- apps/planificator/templates/planificator/includes/actions.html
-- apps/planificator/templates/planificator/includes/messages.html
-- apps/planificator/templates/planificator/istoric.html
-- apps/planificator/static/planificator/generator.js
-- apps/planificator/tests.py
-- apps/planificator/tests_scheduler.py
-
-Output only:
-- HTMX targets
-- Alpine targets
-- custom JavaScript to preserve
-- risks around exports/downloads
-- exact implementation plan
-- focused tests
-
-Do not inspect:
-- XML converter
-- Word converter
-- course updater
-- diplome
-- tasks
-- flota
-- media_library
-
-Do not implement.
-```
-
-## Planificator Implementation Demo
-
-```text
-Implement only the Planificator generator/history improvements approved in the previous investigation.
-
-Target app:
-- apps/planificator
-
-Read only the files listed in the approved investigation.
-
-Use HTMX for:
-- server-rendered form/message/result sections where safe
-- history list/detail partial refreshes only if native fallback remains clean
-
-Use Alpine for:
-- month selection UI
-- holiday row UI
-- upload filename state
-- local step/disclosure state
-
-Preserve:
-- schedule export behavior
-- file download behavior
-- server-side validation
-- horizontal scrolling result tables
-- existing permissions
-
-Do not touch:
-- XML converter
-- Word converter
-- course updater
-- unrelated apps
-
-Checks:
-- ./install.sh test apps.planificator.tests
-- ./install.sh test apps.planificator.tests_scheduler
-- ./install.sh check
-- git diff --check
-
-Stop after this workflow.
-```
-
-## Diplome Investigation Demo
-
-```text
-Investigate ordinary Diplome pages only. Do not edit files.
-
-Target app:
-- apps/diplome
-
-Read only:
-- AGENTS.md
-- frontend.md
-- apps/diplome/AGENTS.md
-- apps/diplome/views.py
-- apps/diplome/urls.py
-- apps/diplome/forms.py
-- apps/diplome/templates/diplome/template_list.html
-- apps/diplome/templates/diplome/template_form.html
-- apps/diplome/templates/diplome/history_index.html
-- apps/diplome/templates/diplome/batch_detail.html
-- apps/diplome/templates/diplome/participant_list.html
-- apps/diplome/templates/diplome/participant_list_detail.html
-- relevant diplome tests only
-
-Output:
-- which pages can safely use HTMX
-- which UI state can use Alpine
-- what must remain custom JavaScript
-- what must not be touched
-- risks around downloads/PDF/history snapshots
-- exact next implementation prompt
-
-Do not inspect:
-- template_editor.js
-- template_renderer.js
-- template_editor.html
-unless you find a direct dependency and explain why.
-
-Do not implement.
 ```
 
 ## Bug Fix
@@ -5373,20 +5246,20 @@ Target app:
 
 Read only:
 - AGENTS.md
+- coding-standards.md
 - apps/<app>/AGENTS.md
+- frontend.md if UI is involved
 - exact files needed to reproduce or fix the bug
-
-Do not read:
-- unrelated apps
-- generated context unless file paths are unknown
-- migration history unless schema is involved
 
 Before editing:
 - identify likely cause
 - list files to inspect
 - say whether this is frontend, backend, or template-only
 
-Implement the smallest safe fix.
+Rules:
+- Implement the smallest safe fix.
+- Reuse existing patterns.
+- Do not weaken tests to make the failure disappear.
 
 Checks:
 - focused test for the changed app/file
@@ -5403,6 +5276,7 @@ Update documentation only.
 
 Read only:
 - AGENTS.md
+- coding-standards.md
 - README.md
 - frontend.md
 - the exact docs mentioned below
@@ -5445,6 +5319,192 @@ git commit -m "Your commit message"
 ```
 ````
 
+## `coding-standards.md`
+
+Size: 5.9 KB
+
+```markdown
+# Coding Standards
+
+Shared coding standards for the Platforma TUVTK Django project.
+
+Use this file together with `AGENTS.md`, `frontend.md`, and the target app `AGENTS.md`.
+
+## Core principles
+
+- Keep changes small, explicit, and reviewable.
+- Reuse existing project patterns before creating new ones.
+- Do not duplicate forms, tables, action buttons, messages, validation, selectors, services, or template fragments.
+- Do not create generic frameworks too early.
+- Extract reuse only when the same stable pattern appears in more than one place.
+- Keep business rules server-side.
+- Keep UI behavior progressive and usable after refresh.
+
+## Django structure
+
+Use this default split:
+
+- `views.py`: HTTP orchestration, request method handling, response choice.
+- `forms.py`: request/form validation, cleaned data, field-level errors.
+- `services.py`: writes, transactions, lifecycle changes, imports, exports, side effects.
+- `selectors.py`: permission-filtered reads and query construction.
+- `validators.py`: reusable validation and shared invariants.
+- `models.py`: data shape, constraints, simple model helpers.
+- `urls.py`: namespaced routes.
+- `templates/<app>/`: page and partial templates owned by the app.
+- `tests*.py`: workflow-level contracts and regressions.
+
+Views should stay thin. If a view starts coordinating persistence, permissions, and multiple model changes, move that workflow into a service.
+
+## Reuse rules
+
+Before adding a new pattern, inspect the target app for:
+
+- an existing form class;
+- an existing selector query;
+- an existing service method;
+- an existing partial template;
+- an existing table wrapper;
+- an existing action button cluster;
+- an existing messages/toast area;
+- an existing empty state;
+- an existing test pattern.
+
+Reuse locally first. Promote to `core/` or `theme/` only when at least two apps need the same stable pattern.
+
+Do not create cross-app abstractions from a single app requirement.
+
+## Forms
+
+- Use Django forms for validation.
+- Keep labels, help text, required state, and errors consistent with existing app forms.
+- Prefer shared form partials when a field layout repeats.
+- Do not validate ownership or permissions only in the browser.
+- Use POST with CSRF for every state change.
+- Preserve full-page fallback when HTMX is added.
+
+Recommended form layout:
+
+- short section title;
+- one-line explanation when needed;
+- compact fields;
+- inline field errors;
+- one primary action;
+- secondary/cancel action visually quieter;
+- non-field errors above the action row.
+
+## Tables and lists
+
+Use `docs/frontend/table-patterns.md` for detailed table guidance.
+
+Default table/list rules:
+
+- Keep columns explicit in the app template.
+- Extract only repeated wrappers, rows, empty states, pagination, filters, or action clusters.
+- Keep tables horizontally usable on narrow screens.
+- Keep headers readable and sticky only when the table is tall or horizontally complex.
+- Keep row actions visually consistent across apps.
+- Do not hide permission-sensitive actions only with CSS or JavaScript.
+
+## Action buttons
+
+Use consistent action hierarchy:
+
+- Primary create/save/confirm action: `btn btn-primary`.
+- Secondary navigation/cancel action: `btn btn-outline` or a low-emphasis link button.
+- Destructive action: `btn btn-error` or a clearly marked destructive icon button.
+- Table row actions: compact buttons with consistent size, label, icon, and title.
+- Disabled actions: use real disabled state where possible and explain why nearby.
+
+Do not invent a new button style for one page.
+
+If an icon-only button is used, it must have an accessible label or title.
+
+## Messages and toasts
+
+- Use one consistent page message/toast area per workflow.
+- Server messages remain authoritative.
+- HTMX responses that change state should refresh the relevant messages area.
+- Keep success, warning, error, and info styling mapped to semantic daisyUI tokens.
+- Do not create app-local color classes for messages.
+- Error copy should say what failed and what the user can do next.
+
+## Template partials
+
+Use partials for repeated UI with stable contracts:
+
+- form sections;
+- filter bars;
+- table wrappers;
+- table rows;
+- empty states;
+- pagination;
+- action button groups;
+- message areas;
+- modal bodies.
+
+Keep app-specific business columns and page-specific copy inside the owning app.
+
+Do not turn partials into a large generic UI framework.
+
+## HTMX usage
+
+Good HTMX targets:
+
+- form validation results;
+- filter refreshes;
+- search;
+- pagination;
+- table/list regions;
+- archive/restore/delete refreshes;
+- messages/toast regions;
+- small server-rendered state changes.
+
+Avoid HTMX for:
+
+- downloads unless intentionally designed and tested;
+- drag-and-drop ownership;
+- canvas/editor state;
+- large JSON workflows;
+- replacing permissions or validation.
+
+## Alpine usage
+
+Use Alpine only for local browser state:
+
+- toggles;
+- dialogs;
+- disclosures;
+- selected rows/cards;
+- loading flags;
+- upload filename labels;
+- narrow-screen filter panels.
+
+Do not use Alpine for database state, permissions, validation, or workflow decisions.
+
+## Tests
+
+- Add or update tests when behavior changes.
+- Prefer focused app tests during iteration.
+- Run the smallest relevant test first.
+- Run broader checks only when the change crosses app boundaries.
+- Do not weaken tests to match a bug.
+- If a UI-only documentation/style instruction changes no code, `git diff --check` is enough.
+
+## Review checklist
+
+Before reporting completion, verify:
+
+- no unrelated files changed;
+- no duplicated existing pattern was added;
+- forms still validate server-side;
+- selectors still enforce visibility;
+- services still own writes;
+- templates reuse existing includes where useful;
+- buttons, tables, forms, and messages follow shared styling;
+- focused checks were run or clearly skipped with a reason.
+```
+
 ## `core/__init__.py`
 
 Size: 0 B
@@ -5471,6 +5531,67 @@ class UserProfileAdmin(admin.ModelAdmin):
     def has_avatar(self, profile):
         return bool(profile.avatar)
 ```
+
+## `core/AGENTS.md`
+
+Size: 1.7 KB
+
+````markdown
+# Core Instructions
+
+## Scope
+
+`core/` owns shared shell files:
+
+- base layouts;
+- shared includes;
+- sidebar and navigation;
+- context helpers;
+- global messages.
+
+Do not put domain workflow logic in `core/`.
+
+## Read before editing
+
+- Root `AGENTS.md`.
+- `coding-standards.md`.
+- `frontend.md` for UI/template work.
+- This file.
+- Only the shared files needed for the requested change.
+
+## Boundaries
+
+- `core/` may provide shared shell, navigation, layout, messages, and reusable includes.
+- Domain apps own their views, forms, selectors, services, tests, and domain templates.
+- Do not move app-specific business behavior into `core/`.
+- Do not add cross-app abstractions until at least two apps need the same stable pattern.
+
+## UI standards
+
+- Shared layouts must preserve the professional enterprise look defined in `frontend.md`.
+- Keep navigation compact, sharp, and operational.
+- Use shared semantic tokens only.
+- Do not add app-local colors to shared shell files.
+- Preserve visible focus states and keyboard access.
+- Keep messages/toasts consistent and reusable.
+- Do not make shared layout changes to fix one app unless the pattern is truly global.
+
+## Coding standards
+
+- Keep context helpers small and predictable.
+- Avoid heavy database work in shared template context.
+- Keep navigation definitions explicit and permission-aware.
+- Preserve existing route names and active-state contracts unless a coordinated navigation change is requested.
+
+## Focused checks
+
+```powershell
+python manage.py test core
+python manage.py check
+```
+
+Run broader app tests only when a shared shell change affects rendered contracts in those apps.
+````
 
 ## `core/apps.py`
 
@@ -6323,12 +6444,14 @@ exec gunicorn platforma_tuvtk.wsgi:application \
 
 ## `docs/frontend/table-patterns.md`
 
-Size: 4.0 KB
+Size: 5.8 KB
 
 ````markdown
 # Frontend Table Patterns
 
 Guidance for Django templates, HTMX, Alpine.js, Tailwind, and daisyUI table/list screens.
+
+Use this together with `frontend.md` and `coding-standards.md`.
 
 ## Preferred default
 
@@ -6341,7 +6464,8 @@ For internal operations, tables must stay:
 - debuggable;
 - safe with permissions;
 - usable after refresh;
-- friendly to browser memory.
+- friendly to browser memory;
+- consistent with the rest of the app.
 
 ## Template structure
 
@@ -6349,9 +6473,11 @@ A good list page usually has:
 
 ```text
 templates/<app>/<model>_list.html
+templates/<app>/partials/<model>_filters.html
 templates/<app>/partials/<model>_table.html
 templates/<app>/partials/<model>_rows.html
 templates/<app>/partials/<model>_empty.html
+templates/<app>/partials/<model>_messages.html
 ```
 
 Use partials for repeated page sections, but do not make a generic table engine too early.
@@ -6361,13 +6487,51 @@ Different tables may have different columns. That is normal.
 Extract common pieces only when they are truly shared:
 
 - table wrapper;
+- filter bar;
 - empty state;
 - pagination controls;
 - loading indicator;
 - bulk action toolbar;
-- row action button style.
+- row action button group;
+- message/toast region.
 
 Keep business columns explicit in the app template.
+
+## Visual style
+
+- Use sharp, bordered, operational tables.
+- Prefer `rounded-none` for new table wrappers and action regions.
+- Prefer borders and compact spacing over shadows and decorative cards.
+- Keep row height consistent.
+- Keep action columns aligned and predictable.
+- Keep empty/loading/error states inside or directly above the table region.
+
+## Filters and search
+
+Filters should be compact and easy to reset.
+
+Recommended structure:
+
+- search field first;
+- high-value filters next;
+- reset/clear action last;
+- advanced filters hidden behind a disclosure only when needed;
+- applied state visible after refresh.
+
+HTMX filters should preserve the same server-side query logic as full-page requests.
+
+## Row actions
+
+Use consistent action hierarchy:
+
+- view/open: normal compact action;
+- edit/change: secondary compact action;
+- archive/restore/delete: clearly marked destructive or recovery action;
+- icon-only actions require an accessible label or title.
+
+Do not hide unavailable actions only with CSS.
+
+If an action is disabled, the reason should be obvious from nearby copy, title text, or state messaging.
 
 ## HTMX table refresh
 
@@ -6378,7 +6542,8 @@ Good for:
 - sorting;
 - pagination;
 - local list refresh after create/edit/delete;
-- row archive/restore.
+- row archive/restore;
+- message area refresh.
 
 Pattern:
 
@@ -6405,6 +6570,8 @@ def list_view(request):
         return render(request, "app/partials/table.html", context)
     return render(request, "app/list.html", context)
 ```
+
+The partial should include the affected messages/empty state when the action changes what the user sees.
 
 ## Fixed-height lazy rows
 
@@ -6492,14 +6659,17 @@ Target page:
 - <template path>
 
 Goal:
-[describe: HTMX filter refresh / fixed-height lazy rows / selected row UI]
+[describe: HTMX filter refresh / fixed-height lazy rows / selected row UI / action column cleanup]
 
 Rules:
+- Read AGENTS.md, coding-standards.md, frontend.md, and apps/<app>/AGENTS.md.
 - Keep Django as source of truth.
 - Use HTMX only for server-rendered partial updates.
 - Use Alpine only for local UI state.
 - Preserve full-page fallback where practical.
 - Preserve permissions and filters.
+- Reuse existing table, message, empty-state, and action-button patterns.
+- Keep the visual style sharp, compact, and professional.
 - Do not touch unrelated apps.
 - Return a minimal diff.
 ```
@@ -6507,23 +6677,23 @@ Rules:
 
 ## `frontend.md`
 
-Size: 3.2 KB
+Size: 7.0 KB
 
 ```markdown
 # Frontend Rules
 
+Frontend standards for Django templates, Tailwind CSS, daisyUI, HTMX, Alpine.js, and scoped custom JavaScript.
+
+The application stays server-rendered. Do not turn it into a SPA.
+
 ## Stack
 
-- Django templates
-- Tailwind CSS
-- daisyUI
-- HTMX
-- Alpine.js
-- scoped custom JavaScript when needed
-
-The application stays server-rendered.
-
-Do not turn it into a SPA.
+- Django templates.
+- Tailwind CSS.
+- daisyUI.
+- HTMX.
+- Alpine.js.
+- Scoped custom JavaScript when safer than forcing HTMX/Alpine.
 
 Do not add React, Vue, Svelte, Angular, Inertia, Next.js, Nuxt, or another frontend framework unless explicitly requested.
 
@@ -6533,19 +6703,139 @@ Do not add React, Vue, Svelte, Angular, Inertia, Next.js, Nuxt, or another front
 - Django forms validate requests.
 - Django services perform writes.
 - PostgreSQL stores business state.
-- JavaScript may improve interaction only.
+- JavaScript improves interaction only.
 
 Do not move validation, authorization, routing, ownership checks, or persistence into JavaScript.
 
+## Brand and theme
+
+Use the `tuvtk` daisyUI theme.
+
+Current brand tokens are defined in `theme/static_src/src/styles.css`:
+
+- primary blue: `#164194`.
+- secondary red: `#d41131`.
+- accent grey-green: `#7c8f9e`.
+- page/panel background: white.
+- muted panel background: `#f7f9fb`.
+- default border: `#cfd7df`.
+
+Use semantic utilities and CSS variables:
+
+- `base-*`.
+- `base-content`.
+- `primary`.
+- `secondary`.
+- `accent`.
+- `info`.
+- `success`.
+- `warning`.
+- `error`.
+- `text-muted`.
+
+Do not add literal colors or app-local color systems.
+
+Literal colors belong only in global token definitions, brand assets, or user-authored document/canvas data.
+
+## Visual style
+
+Target look:
+
+- professional;
+- enterprise-grade;
+- compact;
+- calm;
+- operational;
+- clear hierarchy;
+- no decorative clutter.
+
+Avoid:
+
+- childish card-heavy layouts;
+- oversized rounded cards;
+- pastel dashboard blocks;
+- decorative gradients;
+- random shadows;
+- app-local colors;
+- inconsistent button shapes;
+- large empty spacing on internal tools.
+
+Use sharp business UI by default:
+
+- prefer `rounded-none` for new business panels, tables, settings rows, menus, and action areas;
+- prefer borders over shadows;
+- prefer compact sections over large cards;
+- keep spacing tight but readable;
+- use rounded exceptions only for avatars, status dots, badges, or legacy elements already styled that way.
+
+## Layout principles
+
+Standard page shape:
+
+- page title;
+- short description only if useful;
+- primary action near the title;
+- filters/search in a compact section;
+- main table/list/form region;
+- messages/toasts in one predictable place;
+- empty state close to the affected region.
+
+Settings pages should use:
+
+- section heading;
+- short explanation;
+- structured rows;
+- setting name on the left;
+- setting purpose under the name;
+- control on the right;
+- obvious disabled/error/destructive states.
+
+Do not make every setting a separate card.
+
 ## Tailwind and daisyUI
 
-- Use Tailwind for layout.
-- Use daisyUI for components.
-- Use the `tuvtk` daisyUI theme.
-- Use semantic utilities: `base-*`, `base-content`, `primary`, `secondary`, `accent`, `info`, `success`, `warning`, `error`, `text-muted`.
-- Do not add literal colors or app-local color systems.
-- Literal colors belong only in global token definitions, brand assets, or user-authored document/canvas data.
+- Use Tailwind for layout and spacing.
+- Use daisyUI for standard components.
+- Prefer existing classes and includes before adding new CSS.
 - Add Tailwind `@source` entries only when a new app template/static path needs class scanning.
+- Keep component size consistent across pages.
+- Do not create one-off utility piles when an include or component pattern already exists.
+
+## Common component standards
+
+### Forms
+
+- Keep forms compact and readable.
+- Use server-rendered errors.
+- Put non-field errors above the action row.
+- Use one clear primary submit button.
+- Put cancel/back/secondary actions beside it with lower emphasis.
+- Keep destructive actions separated or clearly marked.
+
+### Tables and lists
+
+- Prefer tables for operational comparison and management.
+- Keep headers readable.
+- Keep action columns consistent.
+- Keep wide tables horizontally scrollable.
+- Use `docs/frontend/table-patterns.md` for detailed table/list work.
+
+### Action buttons
+
+- Primary action: `btn btn-primary`.
+- Secondary action: `btn btn-outline` or low-emphasis link/button.
+- Destructive action: `btn btn-error` or clearly marked icon button.
+- Compact row actions should use the same size across the page.
+- Icon-only buttons require an accessible label or title.
+- Disabled buttons must use a real disabled state where possible.
+
+### Messages and toasts
+
+- Use one message area per workflow.
+- Map state to semantic tokens: success, info, warning, error.
+- HTMX updates that change state should refresh the message region.
+- Avoid app-local alert colors.
+- Error messages should explain the next useful action.
 
 ## HTMX
 
@@ -6627,11 +6917,31 @@ Shared JavaScript belongs in `theme/` or `core/` only when it is truly global.
 - Preserve native links/forms where practical.
 - Preserve keyboard access, visible focus, and native scrolling.
 
+## Kanban and drag/drop interfaces
+
+- Dragging must have an obvious active state.
+- Drop targets must be visually clear.
+- Moved/reordered stages must show immediate feedback.
+- Destructive actions should use a bin/trash icon only with an accessible label.
+- Replacement actions must explain what will be replaced and what stays unchanged.
+- Do not hide critical ordering state in subtle card movement only.
+
 ## Global assets
 
 HTMX and Alpine are loaded once from the base layout.
 
 Apps may add scoped behavior, but must not duplicate global library loading.
+
+## Visual verification
+
+For UI work, report:
+
+- before/after browser check if available;
+- disabled states checked;
+- empty states checked;
+- error states checked;
+- narrow-screen behavior checked;
+- manual checks still needed.
 ```
 
 ## `generate_codex_context.bat`
@@ -9779,6 +10089,59 @@ Size: 0 B
 
 ```python
 ```
+
+## `theme/AGENTS.md`
+
+Size: 1.3 KB
+
+````markdown
+# Theme Instructions
+
+## Scope
+
+`theme/` owns global frontend assets:
+
+- Tailwind source configuration;
+- daisyUI `tuvtk` theme tokens;
+- global CSS layers;
+- shared JavaScript only when truly global;
+- compiled asset inputs.
+
+Do not put app-specific business behavior in `theme/`.
+
+## Read before editing
+
+- Root `AGENTS.md`.
+- `coding-standards.md`.
+- `frontend.md`.
+- This file.
+- Only the exact theme files needed for the requested change.
+
+## Theme contracts
+
+- Keep the `tuvtk` daisyUI theme as the only application theme unless explicitly requested.
+- Use brand tokens from `theme/static_src/src/styles.css`.
+- Do not introduce app-local color systems.
+- Prefer sharp operational UI.
+- New business panels, settings rows, menus, and tables should use `rounded-none` unless an existing component contract requires otherwise.
+- Use borders over shadows.
+- Keep global CSS minimal.
+- Add Tailwind `@source` entries only for real template/static paths.
+
+## JavaScript contracts
+
+- HTMX and Alpine are loaded globally from the base layout.
+- Do not duplicate global library loading in apps.
+- Shared JavaScript belongs here only when more than one app uses the same stable behavior.
+- App-specific JavaScript stays in the owning app.
+
+## Focused checks
+
+```powershell
+python manage.py tailwind build
+python manage.py check
+```
+````
 
 ## `theme/apps.py`
 

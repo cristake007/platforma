@@ -2,7 +2,7 @@
 
 ## `apps/diplome/tests_bulk_generation.py`
 
-Size: 16.9 KB
+Size: 20.1 KB
 
 Redacted secret-like assignments: 2
 
@@ -374,6 +374,82 @@ class BulkDiplomaGenerationTests(TestCase):
         self.assertContains(detail, 'aria-label="Descarcă diploma PDF"')
         self.assertContains(detail, "text-success hover:bg-success/10")
         self.assertNotContains(detail, ">Descarcă PDF</a>")
+
+    def test_history_htmx_returns_partial_panel(self):
+        owned_batch = create_generation_batch(
+            self.user,
+            self.participant_list.pk,
+            self.template.pk,
+        )
+        foreign_batch = create_generation_batch(
+            self.other_user,
+            self.foreign_list.pk,
+            self.foreign_template.pk,
+        )
+
+        response = self.client.get(
+            reverse("diplome:history_index"),
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "diplome/includes/history_panel.html")
+        self.assertContains(response, 'id="history-panel"')
+        self.assertContains(response, owned_batch.participant_list_display_name)
+        self.assertNotContains(response, foreign_batch.participant_list_display_name)
+        self.assertNotContains(response, "<title>")
+
+    def test_pending_batch_resume_from_history_htmx_refreshes_history_panel(self):
+        batch = create_generation_batch(
+            self.user,
+            self.participant_list.pk,
+            self.template.pk,
+        )
+
+        response = self.client.post(
+            reverse("diplome:batch_resume", kwargs={"batch_id": batch.pk}),
+            HTTP_HX_REQUEST="true",
+            HTTP_HX_TARGET="history-panel",
+        )
+
+        batch.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "diplome/includes/history_panel.html")
+        self.assertEqual(batch.status, DiplomaGenerationBatch.Status.COMPLETED)
+        self.assertContains(response, "Lot finalizat")
+        self.assertContains(response, batch.participant_list_display_name)
+        self.assertContains(response, batch.get_status_display())
+        self.assertNotContains(response, "<title>")
+
+    def test_batch_detail_htmx_and_resume_refresh_detail_panel(self):
+        batch = create_generation_batch(
+            self.user,
+            self.participant_list.pk,
+            self.template.pk,
+        )
+        detail_url = reverse("diplome:batch_detail", kwargs={"batch_id": batch.pk})
+
+        detail = self.client.get(detail_url, HTTP_HX_REQUEST="true")
+        self.assertEqual(detail.status_code, 200)
+        self.assertTemplateUsed(detail, "diplome/includes/batch_detail_panel.html")
+        self.assertContains(detail, 'id="batch-detail-panel"')
+        self.assertContains(detail, "Reia generarea")
+        self.assertNotContains(detail, "<title>")
+
+        response = self.client.post(
+            reverse("diplome:batch_resume", kwargs={"batch_id": batch.pk}),
+            HTTP_HX_REQUEST="true",
+            HTTP_HX_TARGET="batch-detail-panel",
+        )
+
+        batch.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "diplome/includes/batch_detail_panel.html")
+        self.assertEqual(batch.status, DiplomaGenerationBatch.Status.COMPLETED)
+        self.assertContains(response, "Lot finalizat")
+        self.assertContains(response, batch.get_status_display())
+        self.assertNotContains(response, "Reia generarea")
+        self.assertContains(response, reverse("diplome:batch_zip_download", kwargs={"batch_id": batch.pk}))
 
     def test_pending_batch_can_be_resumed(self):
         batch = create_generation_batch(

@@ -2,7 +2,7 @@
 
 ## `apps/tasks/templates/tasks/includes/board_settings_content.html`
 
-Size: 12.7 KB
+Size: 17.1 KB
 
 ```html
 <section id="board-settings-content" class="space-y-6">
@@ -71,23 +71,120 @@ Size: 12.7 KB
         </section>
     </div>
 
-    <section class="border border-base-300 bg-base-100 p-5">
-        <div class="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-                <h2 class="font-semibold">Etape Kanban</h2>
-                <p class="mt-1 text-xs text-muted">P&#259;streaz&#259; cel pu&#539;in o etap&#259; activ&#259; &#537;i una final&#259;.</p>
+    <section class="border border-base-300 bg-base-100">
+        <div class="border-b border-base-300 px-5 py-4">
+            <div class="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                    <h2 class="font-semibold">Etape Kanban</h2>
+                    <p class="mt-1 text-xs text-muted">Configureaz&#259; ordinea etapelor f&#259;r&#259; s&#259; schimbi task-urile direct.</p>
+                </div>
+                <p class="max-w-2xl text-xs text-muted">
+                    Etapele finale marcheaz&#259; task-urile ca finalizate. Etapele &#537;terse trebuie s&#259; mute task-urile existente
+                    &#238;ntr-o alt&#259; etap&#259; din acela&#537;i board.
+                </p>
             </div>
-            <p class="max-w-xl text-xs text-muted">
-                Etapele finale marcheaz&#259; task-urile ca finalizate. La &#537;tergerea unei etape, task-urile existente trebuie mutate
-                &#238;ntr-o alt&#259; etap&#259; din acela&#537;i board.
-            </p>
         </div>
 
-        <form method="post" action="{% url 'tasks:stage_create' board.pk %}" class="mt-5 border border-dashed border-base-300 bg-base-200/30 p-4" hx-post="{% url 'tasks:stage_create' board.pk %}" hx-target="#board-settings-content" hx-swap="outerHTML">
+        <div class="overflow-x-auto">
+            <div class="min-w-[960px]">
+                <div class="grid grid-cols-[4.5rem_1fr_9rem_9rem_8rem_8rem] items-center gap-3 border-b border-base-300 bg-base-200/50 px-5 py-2 text-xs font-semibold uppercase text-muted">
+                    <span>Pozi&#539;ie</span>
+                    <span>Etap&#259;</span>
+                    <span>Ton semantic</span>
+                    <span>Tip</span>
+                    <span>Mutare</span>
+                    <span class="text-right">Ac&#539;iuni</span>
+                </div>
+                <div class="divide-y divide-base-300">
+                    {% for row in stage_rows %}
+                        <article class="bg-base-100" x-data="{ edit: {% if row.form.errors %}true{% else %}false{% endif %} }" @keydown.escape.window="edit = false">
+                            <div class="grid grid-cols-[4.5rem_1fr_9rem_9rem_8rem_8rem] items-center gap-3 px-5 py-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="inline-flex size-8 items-center justify-center border border-base-300 bg-base-200 text-sm font-semibold tabular-nums text-base-content">{{ forloop.counter }}</span>
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="truncate text-sm font-semibold text-base-content">{{ row.stage.name }}</p>
+                                </div>
+                                <div>
+                                    <span class="badge badge-outline badge-sm {% if row.stage.tone == 'success' %}badge-success{% elif row.stage.tone == 'error' %}badge-error{% elif row.stage.tone == 'warning' %}badge-warning{% elif row.stage.tone == 'info' %}badge-info{% endif %}">{{ row.stage.get_tone_display }}</span>
+                                </div>
+                                <div>
+                                    {% if row.stage.is_terminal %}
+                                        <span class="badge badge-success badge-outline badge-sm">Etap&#259; final&#259;</span>
+                                    {% else %}
+                                        <span class="badge badge-ghost badge-sm">Activ&#259;</span>
+                                    {% endif %}
+                                </div>
+                                <form method="post" action="{% url 'tasks:stage_position' row.stage.pk %}" class="join" hx-post="{% url 'tasks:stage_position' row.stage.pk %}" hx-target="#board-settings-content" hx-swap="outerHTML">
+                                    {% csrf_token %}
+                                    <button name="direction" value="up" class="btn btn-ghost btn-xs join-item" aria-label="Mut&#259; etapa &#238;n sus" title="Mut&#259; etapa &#238;n sus">&uarr;</button>
+                                    <button name="direction" value="down" class="btn btn-ghost btn-xs join-item" aria-label="Mut&#259; etapa &#238;n jos" title="Mut&#259; etapa &#238;n jos">&darr;</button>
+                                </form>
+                                <div class="flex justify-end gap-1">
+                                    <button type="button" class="btn btn-square btn-ghost btn-xs text-primary hover:bg-primary/10" aria-label="Editeaz&#259; etapa" title="Editeaz&#259; etapa" @click="edit = !edit">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m16.862 3.487 3.651 3.651M4.5 19.5l4.228-.845a2 2 0 0 0 1.024-.547L20.513 7.347a1.75 1.75 0 0 0 0-2.474l-1.386-1.386a1.75 1.75 0 0 0-2.474 0L5.892 14.248a2 2 0 0 0-.547 1.024L4.5 19.5Z" />
+                                        </svg>
+                                    </button>
+                                    <button type="button" class="btn btn-square btn-ghost btn-xs text-error hover:bg-error/10" aria-label="&#536;terge etapa" title="&#536;terge etapa" x-on:click="$refs.deleteStageDialog.showModal()">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6.75 7.5h10.5m-8.5 0V18a1.5 1.5 0 0 0 1.5 1.5h3.5a1.5 1.5 0 0 0 1.5-1.5V7.5m-5.25 0V5.75A1.25 1.25 0 0 1 11.25 4.5h1.5A1.25 1.25 0 0 1 14 5.75V7.5" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <form method="post" action="{% url 'tasks:stage_update' row.stage.pk %}" class="border-t border-base-300 bg-base-200/20 px-5 py-4" hx-post="{% url 'tasks:stage_update' row.stage.pk %}" hx-target="#board-settings-content" hx-swap="outerHTML" x-show="edit" {% if not row.form.errors %}style="display: none;"{% endif %}>
+                                {% csrf_token %}
+                                <div class="grid items-end gap-3 md:grid-cols-[1.4fr_1fr_auto_auto]">
+                                    <fieldset class="fieldset">
+                                        <label class="fieldset-legend" for="{{ row.form.name.id_for_label }}">Nume</label>
+                                        {{ row.form.name }}
+                                        {% if row.form.name.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ row.form.name.errors|join:", " }}</p>{% endif %}
+                                    </fieldset>
+                                    <fieldset class="fieldset">
+                                        <label class="fieldset-legend" for="{{ row.form.tone.id_for_label }}">Ton semantic</label>
+                                        {{ row.form.tone }}
+                                        {% if row.form.tone.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ row.form.tone.errors|join:", " }}</p>{% endif %}
+                                    </fieldset>
+                                    <label class="flex h-8 items-center gap-2 text-sm">{{ row.form.is_terminal }} Etap&#259; final&#259;</label>
+                                    <button class="btn btn-outline btn-sm">Salveaz&#259;</button>
+                                </div>
+                            </form>
+                            <dialog x-ref="deleteStageDialog" class="modal" aria-labelledby="delete-stage-{{ row.stage.pk }}-title" {% if row.delete_form.replacement_stage.errors %}open{% endif %}>
+                                <div class="modal-box max-w-md rounded-box border border-error/40 bg-base-100 shadow-xl">
+                                    <form method="dialog">
+                                        <button class="btn btn-ghost btn-sm btn-circle absolute right-3 top-3" aria-label="&#206;nchide">x</button>
+                                    </form>
+                                    <form method="post" action="{% url 'tasks:stage_delete' row.stage.pk %}" class="space-y-4" hx-post="{% url 'tasks:stage_delete' row.stage.pk %}" hx-target="#board-settings-content" hx-swap="outerHTML">
+                                        {% csrf_token %}
+                                        <div>
+                                            <h3 id="delete-stage-{{ row.stage.pk }}-title" class="text-base font-semibold text-error">&#536;terge etapa {{ row.stage.name }}</h3>
+                                            <p class="mt-2 text-sm text-muted">Task-urile din aceast&#259; etap&#259; vor fi mutate &#238;n etapa aleas&#259; mai jos.</p>
+                                        </div>
+                                        <fieldset class="fieldset">
+                                            <label class="fieldset-legend" for="{{ row.delete_form.replacement_stage.id_for_label }}">Mut&#259; task-urile &#238;n</label>
+                                            {{ row.delete_form.replacement_stage }}
+                                            {% if row.delete_form.replacement_stage.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ row.delete_form.replacement_stage.errors|join:", " }}</p>{% endif %}
+                                        </fieldset>
+                                        <div class="modal-action">
+                                            <button type="button" class="btn btn-ghost btn-sm" x-on:click="$refs.deleteStageDialog.close()">Anuleaz&#259;</button>
+                                            <button class="btn btn-error btn-sm">&#536;terge etapa</button>
+                                        </div>
+                                    </form>
+                                </div>
+                                <form method="dialog" class="modal-backdrop"><button>&#206;nchide</button></form>
+                            </dialog>
+                        </article>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <form method="post" action="{% url 'tasks:stage_create' board.pk %}" class="m-5 border border-dashed border-base-300 bg-base-200/30 p-3" hx-post="{% url 'tasks:stage_create' board.pk %}" hx-target="#board-settings-content" hx-swap="outerHTML">
             {% csrf_token %}
             <div class="grid items-end gap-3 md:grid-cols-[1.4fr_1fr_auto_auto]">
                 <fieldset class="fieldset">
-                    <label class="fieldset-legend" for="{{ stage_form.name.id_for_label }}">Etap&#259; nou&#259;</label>
+                    <label class="fieldset-legend" for="{{ stage_form.name.id_for_label }}">Adaug&#259; etap&#259;</label>
                     {{ stage_form.name }}
                     {% if stage_form.name.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ stage_form.name.errors|join:", " }}</p>{% endif %}
                 </fieldset>
@@ -97,65 +194,9 @@ Size: 12.7 KB
                     {% if stage_form.tone.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ stage_form.tone.errors|join:", " }}</p>{% endif %}
                 </fieldset>
                 <label class="flex h-8 items-center gap-2 text-sm">{{ stage_form.is_terminal }} Etap&#259; final&#259;</label>
-                <button class="btn btn-primary btn-sm">Adaug&#259; etap&#259;</button>
+                <button class="btn btn-outline btn-sm">Adaug&#259;</button>
             </div>
         </form>
-
-        <div class="mt-5 space-y-3">
-            {% for row in stage_rows %}
-                <article class="border border-base-300 bg-base-100 p-4">
-                    <div class="flex flex-col gap-1 border-b border-base-300 pb-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                            <h3 class="text-sm font-semibold text-base-content">{{ row.stage.name }}</h3>
-                            <p class="text-xs text-muted">Pozi&#539;ia {{ row.stage.position|add:1 }}{% if row.stage.is_terminal %} &middot; etap&#259; final&#259;{% endif %}</p>
-                        </div>
-                        <span class="badge badge-outline badge-sm">{{ row.stage.get_tone_display }}</span>
-                    </div>
-
-                    <form method="post" action="{% url 'tasks:stage_update' row.stage.pk %}" class="mt-4" hx-post="{% url 'tasks:stage_update' row.stage.pk %}" hx-target="#board-settings-content" hx-swap="outerHTML">
-                        {% csrf_token %}
-                        <div class="grid items-end gap-3 md:grid-cols-[1.4fr_1fr_auto_auto]">
-                            <fieldset class="fieldset">
-                                <label class="fieldset-legend" for="{{ row.form.name.id_for_label }}">Nume</label>
-                                {{ row.form.name }}
-                                {% if row.form.name.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ row.form.name.errors|join:", " }}</p>{% endif %}
-                            </fieldset>
-                            <fieldset class="fieldset">
-                                <label class="fieldset-legend" for="{{ row.form.tone.id_for_label }}">Ton semantic</label>
-                                {{ row.form.tone }}
-                                {% if row.form.tone.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ row.form.tone.errors|join:", " }}</p>{% endif %}
-                            </fieldset>
-                            <label class="flex h-8 items-center gap-2 text-sm">{{ row.form.is_terminal }} Etap&#259; final&#259;</label>
-                            <button class="btn btn-outline btn-sm">Salveaz&#259;</button>
-                        </div>
-                    </form>
-
-                    <div class="mt-4 grid gap-3 border-t border-base-300 pt-3 lg:grid-cols-[auto_1fr]">
-                        <div>
-                            <p class="mb-2 text-xs font-medium text-base-content">Mutare</p>
-                            <form method="post" action="{% url 'tasks:stage_position' row.stage.pk %}" class="join" hx-post="{% url 'tasks:stage_position' row.stage.pk %}" hx-target="#board-settings-content" hx-swap="outerHTML">
-                                {% csrf_token %}
-                                <button name="direction" value="up" class="btn btn-ghost btn-xs join-item" aria-label="Mut&#259; etapa &#238;n sus">&uarr;</button>
-                                <button name="direction" value="down" class="btn btn-ghost btn-xs join-item" aria-label="Mut&#259; etapa &#238;n jos">&darr;</button>
-                            </form>
-                        </div>
-                        <details class="border-l-0 border-base-300 lg:border-l lg:pl-4" {% if row.delete_form.replacement_stage.errors %}open{% endif %}>
-                            <summary class="btn btn-outline btn-error btn-xs">Preg&#259;te&#537;te &#537;tergerea</summary>
-                            <form method="post" action="{% url 'tasks:stage_delete' row.stage.pk %}" class="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end" hx-post="{% url 'tasks:stage_delete' row.stage.pk %}" hx-target="#board-settings-content" hx-swap="outerHTML">
-                                {% csrf_token %}
-                                <fieldset class="fieldset min-w-64 flex-1">
-                                    <label class="fieldset-legend" for="{{ row.delete_form.replacement_stage.id_for_label }}">Mut&#259; task-urile &#238;n</label>
-                                    {{ row.delete_form.replacement_stage }}
-                                    <p class="label whitespace-normal text-xs text-muted">Aceast&#259; alegere se aplic&#259; tuturor task-urilor din etapa &#537;tears&#259;.</p>
-                                    {% if row.delete_form.replacement_stage.errors %}<p class="label whitespace-normal text-xs text-error" role="alert">{{ row.delete_form.replacement_stage.errors|join:", " }}</p>{% endif %}
-                                </fieldset>
-                                <button class="btn btn-error btn-sm">&#536;terge etapa</button>
-                            </form>
-                        </details>
-                    </div>
-                </article>
-            {% endfor %}
-        </div>
     </section>
 
     {% if archived_tasks %}
