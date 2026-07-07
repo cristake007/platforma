@@ -30,6 +30,9 @@
             enctype="multipart/form-data"
             class="card card-border border-base-300 bg-base-100 shadow-none"
             data-download-filename="formatted_courses.xml"
+            hx-boost="false"
+            x-data="{ fileName: 'Niciun fișier selectat' }"
+            x-on:xml-reset-upload.window="fileName = 'Niciun fișier selectat'"
             novalidate
         >
             {% csrf_token %}
@@ -45,10 +48,10 @@
 
                 <fieldset class="fieldset min-w-0 rounded-field border border-base-300 bg-base-200 p-3">
                     <label class="fieldset-legend" for="{{ form.input_file.id_for_label }}">{{ form.input_file.label }}</label>
-                    {{ form.input_file }}
+                    <div x-ref="xmlInput" x-on:change="fileName = $event.target.files?.[0]?.name || 'Niciun fișier selectat'">{{ form.input_file }}</div>
                     <div class="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
-                        <button id="xml-file-select" type="button" class="btn btn-outline btn-primary btn-sm shrink-0">Alege CSV/XLSX</button>
-                        <span id="xml-file-name" class="min-w-0 truncate text-sm text-muted">Niciun fișier selectat</span>
+                        <button id="xml-file-select" type="button" class="btn btn-outline btn-primary btn-sm shrink-0" x-on:click="$refs.xmlInput.querySelector('input').click()">Alege CSV/XLSX</button>
+                        <span id="xml-file-name" class="min-w-0 truncate text-sm" x-bind:class="{ 'text-muted': fileName === 'Niciun fișier selectat' }" x-text="fileName">Niciun fișier selectat</span>
                     </div>
                     <p class="label block whitespace-normal wrap-break-word text-xs leading-5 text-muted">
                         Sunt acceptate CSV și XLSX. Coloanele lunare pot folosi denumiri în română, engleză sau formatul Luna 1–Luna 12.

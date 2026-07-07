@@ -1902,7 +1902,7 @@ Size: 10.1 KB
 
 ## `apps/planificator/static/planificator/word_converter.js`
 
-Size: 13.4 KB
+Size: 12.6 KB
 
 ```javascript
 (() => {
@@ -1914,10 +1914,6 @@ Size: 13.4 KB
     const elements = {
         wordFile: document.getElementById('id_word_file'),
         scheduleFile: document.getElementById('id_schedule_file'),
-        wordFileSelect: document.getElementById('word-file-select'),
-        scheduleFileSelect: document.getElementById('schedule-file-select'),
-        wordFileName: document.getElementById('word-file-name'),
-        scheduleFileName: document.getElementById('schedule-file-name'),
         wordFileError: document.getElementById('word-file-error'),
         scheduleFileError: document.getElementById('schedule-file-error'),
         error: document.getElementById('word-converter-error'),
@@ -1980,11 +1976,6 @@ Size: 13.4 KB
         elements.tableBody.replaceChildren();
         setHidden(elements.preview, true);
         clearMessages();
-    }
-
-    function updateFileName(control, target) {
-        target.textContent = control.files[0]?.name || 'Niciun fișier selectat';
-        target.classList.toggle('text-muted', !control.files.length);
     }
 
     function compactOptionLabel(title, maximumLength = 42) {
@@ -2205,14 +2196,10 @@ Size: 13.4 KB
         }
     });
 
-    elements.wordFileSelect.addEventListener('click', () => elements.wordFile.click());
-    elements.scheduleFileSelect.addEventListener('click', () => elements.scheduleFile.click());
     elements.wordFile.addEventListener('change', () => {
-        updateFileName(elements.wordFile, elements.wordFileName);
         resetPreview();
     });
     elements.scheduleFile.addEventListener('change', () => {
-        updateFileName(elements.scheduleFile, elements.scheduleFileName);
         resetPreview();
     });
 })();
@@ -2220,7 +2207,7 @@ Size: 13.4 KB
 
 ## `apps/planificator/static/planificator/xml_formatter.js`
 
-Size: 4.3 KB
+Size: 3.8 KB
 
 ```javascript
 (() => {
@@ -2230,8 +2217,6 @@ Size: 4.3 KB
     }
 
     const fileInput = document.getElementById('id_input_file');
-    const fileSelect = document.getElementById('xml-file-select');
-    const fileName = document.getElementById('xml-file-name');
     const fileError = document.getElementById('xml-file-error');
     const postIdInput = document.getElementById('id_start_post_id');
     const postIdError = document.getElementById('xml-post-id-error');
@@ -2285,12 +2270,7 @@ Size: 4.3 KB
         URL.revokeObjectURL(url);
     }
 
-    fileSelect.addEventListener('click', () => fileInput.click());
-
     fileInput.addEventListener('change', () => {
-        const selected = fileInput.files[0];
-        fileName.textContent = selected?.name || 'Niciun fișier selectat';
-        fileName.classList.toggle('text-muted', !selected);
         setFieldError('');
         clearMessages();
     });
@@ -2332,8 +2312,7 @@ Size: 4.3 KB
             successAlert.textContent = 'Fișierul XML a fost generat.';
             setHidden(successAlert, false);
             form.reset();
-            fileName.textContent = 'Niciun fișier selectat';
-            fileName.classList.add('text-muted');
+            window.dispatchEvent(new CustomEvent('xml-reset-upload'));
         } catch (error) {
             errorAlert.textContent = error.message;
             setHidden(errorAlert, false);
@@ -2621,13 +2600,14 @@ Size: 2.3 KB
 
 ## `apps/planificator/templates/planificator/includes/history_list.html`
 
-Size: 7.6 KB
+Size: 12.4 KB
 
 ```html
 <section
     id="history-list"
     class="card generator-step-card bg-base-100 shadow-none"
     aria-labelledby="history-list-title"
+    x-data="{ historyTab: 'xlsx' }"
 >
     <header class="generator-card-header flex flex-col gap-3 bg-base-200 px-4 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-5">
         <div>
@@ -2651,6 +2631,16 @@ Size: 7.6 KB
     </div>
 
     {% if generations %}
+        <div class="tabs tabs-border border-t border-base-300 px-4 pt-3" role="tablist" aria-label="Tip export istoric">
+            <button type="button" class="tab" x-bind:class="{ 'tab-active': historyTab === 'xlsx' }" x-on:click="historyTab = 'xlsx'" role="tab" x-bind:aria-selected="historyTab === 'xlsx'">
+                Programe XLSX
+            </button>
+            <button type="button" class="tab" x-bind:class="{ 'tab-active': historyTab === 'xml' }" x-on:click="historyTab = 'xml'" role="tab" x-bind:aria-selected="historyTab === 'xml'">
+                Fișiere XML
+            </button>
+        </div>
+
+        <div x-show="historyTab === 'xlsx'">
         <div class="divide-y divide-base-300 md:hidden">
             {% for generation in generations %}
                 <article class="space-y-3 p-4">
@@ -2719,6 +2709,69 @@ Size: 7.6 KB
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+        </div>
+
+        <div x-show="historyTab === 'xml'">
+            <div class="divide-y divide-base-300 md:hidden">
+                {% for generation in generations %}
+                    <article class="space-y-3 p-4">
+                        <div>
+                            <a href="{% url 'planificator:istoric_detail' generation.pk %}" class="link link-primary font-semibold">{{ generation.source_file_name }}</a>
+                            <span class="mt-0.5 block font-mono text-[11px] text-muted">XML · SHA-256 {{ generation.source_file_digest|slice:":12" }}</span>
+                        </div>
+                        <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                            <div><dt class="text-xs text-muted">An</dt><dd class="font-semibold">{{ generation.year }}</dd></div>
+                            <div><dt class="text-xs text-muted">Evenimente</dt><dd class="font-semibold">{{ generation.generated_entry_count }}</dd></div>
+                            <div><dt class="text-xs text-muted">Generat</dt><dd>{{ generation.created_at|date:"d.m.Y H:i" }}</dd></div>
+                            <div><dt class="text-xs text-muted">Expiră</dt><dd>{{ generation.expires_at|date:"d.m.Y H:i" }}</dd></div>
+                        </dl>
+                        <form method="post" action="{% url 'planificator:generator_perioade_export_xml' %}" hx-boost="false">
+                            {% csrf_token %}
+                            <input type="hidden" name="generation_id" value="{{ generation.pk }}">
+                            <button type="submit" class="btn btn-outline btn-secondary btn-sm">Descarcă XML</button>
+                        </form>
+                    </article>
+                {% endfor %}
+            </div>
+
+            <div class="hidden overflow-x-auto md:block">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th scope="col">Fișier XML</th>
+                            <th scope="col">An</th>
+                            <th scope="col">Evenimente</th>
+                            <th scope="col">Generat</th>
+                            <th scope="col">Expiră</th>
+                            <th scope="col" class="text-right">Acțiuni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for generation in generations %}
+                            <tr>
+                                <th scope="row" class="min-w-48">
+                                    <a href="{% url 'planificator:istoric_detail' generation.pk %}" class="link link-primary font-semibold">program_cursuri_{{ generation.year }}.xml</a>
+                                    <span class="mt-0.5 block font-mono text-[11px] font-normal text-muted">Sursă {{ generation.source_file_digest|slice:":12" }}</span>
+                                </th>
+                                <td>{{ generation.year }}</td>
+                                <td>{{ generation.generated_entry_count }}</td>
+                                <td class="whitespace-nowrap">{{ generation.created_at|date:"d.m.Y H:i" }}</td>
+                                <td class="whitespace-nowrap">{{ generation.expires_at|date:"d.m.Y H:i" }}</td>
+                                <td>
+                                    <div class="flex justify-end gap-2">
+                                        <form method="post" action="{% url 'planificator:generator_perioade_export_xml' %}" hx-boost="false">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="generation_id" value="{{ generation.pk }}">
+                                            <button type="submit" class="btn btn-outline btn-secondary btn-sm">Descarcă XML</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     {% else %}
         <div class="px-4 py-12 text-center sm:px-6">
@@ -3013,7 +3066,7 @@ Size: 1.1 KB
 
 ## `apps/planificator/templates/planificator/word_converter.html`
 
-Size: 7.9 KB
+Size: 8.6 KB
 
 ```html
 {% extends "layouts/base.html" %}
@@ -3049,6 +3102,8 @@ Size: 7.9 KB
             data-preview-url="{% url 'planificator:word_match_preview' %}"
             data-generate-url="{% url 'planificator:word_match_generate' %}"
             data-download-filename="planificare_cursuri_actualizata.docx"
+            hx-boost="false"
+            x-data="{ wordFileName: 'Niciun fișier selectat', scheduleFileName: 'Niciun fișier selectat' }"
             novalidate
         >
             {% csrf_token %}
@@ -3065,20 +3120,20 @@ Size: 7.9 KB
                 <div class="grid gap-4 md:grid-cols-2">
                     <fieldset class="fieldset min-w-0 rounded-field border border-base-300 bg-base-200 p-3">
                         <label class="fieldset-legend" for="{{ form.word_file.id_for_label }}">{{ form.word_file.label }}</label>
-                        {{ form.word_file }}
+                        <div x-ref="wordInput" x-on:change="wordFileName = $event.target.files?.[0]?.name || 'Niciun fișier selectat'">{{ form.word_file }}</div>
                         <div class="flex min-w-0 items-center gap-2">
-                            <button id="word-file-select" type="button" class="btn btn-outline btn-primary btn-sm shrink-0">Alege DOCX</button>
-                            <span id="word-file-name" class="min-w-0 truncate text-sm text-muted">Niciun fișier selectat</span>
+                            <button id="word-file-select" type="button" class="btn btn-outline btn-primary btn-sm shrink-0" x-on:click="$refs.wordInput.querySelector('input').click()">Alege DOCX</button>
+                            <span id="word-file-name" class="min-w-0 truncate text-sm" x-bind:class="{ 'text-muted': wordFileName === 'Niciun fișier selectat' }" x-text="wordFileName">Niciun fișier selectat</span>
                         </div>
                         <p class="label block whitespace-normal break-words text-xs leading-5 text-muted">Format acceptat: DOCX.</p>
                         <p id="word-file-error" class="label hidden text-error" role="alert"></p>
                     </fieldset>
                     <fieldset class="fieldset min-w-0 rounded-field border border-base-300 bg-base-200 p-3">
                         <label class="fieldset-legend" for="{{ form.schedule_file.id_for_label }}">{{ form.schedule_file.label }}</label>
-                        {{ form.schedule_file }}
+                        <div x-ref="scheduleInput" x-on:change="scheduleFileName = $event.target.files?.[0]?.name || 'Niciun fișier selectat'">{{ form.schedule_file }}</div>
                         <div class="flex min-w-0 items-center gap-2">
-                            <button id="schedule-file-select" type="button" class="btn btn-outline btn-primary btn-sm shrink-0">Alege CSV/XLSX</button>
-                            <span id="schedule-file-name" class="min-w-0 truncate text-sm text-muted">Niciun fișier selectat</span>
+                            <button id="schedule-file-select" type="button" class="btn btn-outline btn-primary btn-sm shrink-0" x-on:click="$refs.scheduleInput.querySelector('input').click()">Alege CSV/XLSX</button>
+                            <span id="schedule-file-name" class="min-w-0 truncate text-sm" x-bind:class="{ 'text-muted': scheduleFileName === 'Niciun fișier selectat' }" x-text="scheduleFileName">Niciun fișier selectat</span>
                         </div>
                         <p class="label block whitespace-normal break-words text-xs leading-5 text-muted">Formate acceptate: CSV sau XLSX, cu Title și coloane lunare.</p>
                         <p id="schedule-file-error" class="label hidden text-error" role="alert"></p>
@@ -3148,7 +3203,7 @@ Size: 7.9 KB
 
 ## `apps/planificator/templates/planificator/xml_formatter.html`
 
-Size: 4.9 KB
+Size: 5.3 KB
 
 ```html
 {% extends "layouts/base.html" %}
@@ -3183,6 +3238,9 @@ Size: 4.9 KB
             enctype="multipart/form-data"
             class="card card-border border-base-300 bg-base-100 shadow-none"
             data-download-filename="formatted_courses.xml"
+            hx-boost="false"
+            x-data="{ fileName: 'Niciun fișier selectat' }"
+            x-on:xml-reset-upload.window="fileName = 'Niciun fișier selectat'"
             novalidate
         >
             {% csrf_token %}
@@ -3198,10 +3256,10 @@ Size: 4.9 KB
 
                 <fieldset class="fieldset min-w-0 rounded-field border border-base-300 bg-base-200 p-3">
                     <label class="fieldset-legend" for="{{ form.input_file.id_for_label }}">{{ form.input_file.label }}</label>
-                    {{ form.input_file }}
+                    <div x-ref="xmlInput" x-on:change="fileName = $event.target.files?.[0]?.name || 'Niciun fișier selectat'">{{ form.input_file }}</div>
                     <div class="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
-                        <button id="xml-file-select" type="button" class="btn btn-outline btn-primary btn-sm shrink-0">Alege CSV/XLSX</button>
-                        <span id="xml-file-name" class="min-w-0 truncate text-sm text-muted">Niciun fișier selectat</span>
+                        <button id="xml-file-select" type="button" class="btn btn-outline btn-primary btn-sm shrink-0" x-on:click="$refs.xmlInput.querySelector('input').click()">Alege CSV/XLSX</button>
+                        <span id="xml-file-name" class="min-w-0 truncate text-sm" x-bind:class="{ 'text-muted': fileName === 'Niciun fișier selectat' }" x-text="fileName">Niciun fișier selectat</span>
                     </div>
                     <p class="label block whitespace-normal wrap-break-word text-xs leading-5 text-muted">
                         Sunt acceptate CSV și XLSX. Coloanele lunare pot folosi denumiri în română, engleză sau formatul Luna 1–Luna 12.
@@ -3243,10 +3301,11 @@ Size: 4.9 KB
 
 ## `apps/planificator/tests.py`
 
-Size: 26.2 KB
+Size: 27.5 KB
 
 ```python
 import io
+import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone as datetime_timezone
 from unittest.mock import patch
 
@@ -3535,8 +3594,11 @@ class PlanificatorViewTests(TestCase):
         self.assertNotContains(response, "foreign.csv")
         self.assertContains(response, f'name="generation_id" value="{owned.pk}"')
         self.assertContains(response, reverse("planificator:generator_perioade_export"))
+        self.assertContains(response, reverse("planificator:generator_perioade_export_xml"))
         self.assertContains(response, reverse("planificator:istoric_detail", kwargs={"generation_id": owned.pk}))
         self.assertContains(response, "Descarcă XLSX")
+        self.assertContains(response, "Fișiere XML")
+        self.assertContains(response, "Descarcă XML")
 
     def test_htmx_history_returns_list_partial(self):
         owned = generation_for(self.user)
@@ -3551,6 +3613,7 @@ class PlanificatorViewTests(TestCase):
         self.assertContains(response, "owned.csv")
         self.assertContains(response, 'hx-get="?page=1"')
         self.assertContains(response, reverse("planificator:generator_perioade_export"))
+        self.assertContains(response, reverse("planificator:generator_perioade_export_xml"))
         self.assertNotContains(response, "<html")
 
     def test_history_displays_generation_time_in_bucharest(self):
@@ -3563,7 +3626,7 @@ class PlanificatorViewTests(TestCase):
         response = self.client.get(reverse("planificator:istoric"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "03.07.2026 11:07", count=2)
+        self.assertContains(response, "03.07.2026 11:07", count=4)
 
     def test_history_has_empty_state(self):
         response = self.client.get(reverse("planificator:istoric"))
@@ -3627,6 +3690,21 @@ class PlanificatorViewTests(TestCase):
         self.assertIn('filename="program_cursuri_2026.xlsx"', response["Content-Disposition"])
         self.assertIn("Program", load_workbook(io.BytesIO(response.content)).sheetnames)
 
+    def test_history_xml_export_download_uses_owned_generation(self):
+        generation = generation_for(self.user)
+        response = self.client.post(
+            reverse("planificator:generator_perioade_export_xml"),
+            {"generation_id": generation.pk},
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/xml")
+        self.assertIn('filename="program_cursuri_2026.xml"', response["Content-Disposition"])
+        root = ET.fromstring(response.content)
+        self.assertEqual(root.findtext("item/title"), "Course A")
+        self.assertEqual(root.findtext("item/meta/mec_read_more"), "https://example.com/course-a")
+
     def test_other_users_and_expired_generations_are_not_exportable(self):
         other = get_user_model().objects.create_user(username="other", password="x")
         other.user_permissions.add(self.permission)
@@ -3635,6 +3713,10 @@ class PlanificatorViewTests(TestCase):
         for generation in (foreign, expired):
             response = self.client.post(
                 reverse("planificator:generator_perioade_export"), {"generation_id": generation.pk}
+            )
+            self.assertEqual(response.status_code, 404)
+            response = self.client.post(
+                reverse("planificator:generator_perioade_export_xml"), {"generation_id": generation.pk}
             )
             self.assertEqual(response.status_code, 404)
 
@@ -4135,7 +4217,7 @@ class ScheduleGenerationTests(SimpleTestCase):
 
 ## `apps/planificator/tests_word_converter.py`
 
-Size: 14.1 KB
+Size: 14.4 KB
 
 ```python
 import base64
@@ -4354,6 +4436,8 @@ class WordConverterViewTests(TestCase):
         self.assertContains(response, "Convertor Word")
         self.assertNotContains(response, "Generator perioade")
         self.assertContains(response, 'name="csrfmiddlewaretoken"')
+        self.assertContains(response, 'hx-boost="false"')
+        self.assertContains(response, "x-data=")
 
     def test_anonymous_missing_permission_and_superuser_boundaries(self):
         self.client.logout()
@@ -4384,9 +4468,11 @@ class WordConverterViewTests(TestCase):
         preview = self.client.post(
             reverse("planificator:word_match_preview"),
             {"word_file": word_upload(), "schedule_file": schedule_upload()},
+            HTTP_HX_REQUEST="true",
         )
 
         self.assertEqual(preview.status_code, 200)
+        self.assertEqual(preview["Content-Type"], "application/json")
         preview_payload = preview.json()
         self.assertTrue(preview_payload["success"])
         self.assertEqual(preview_payload["matched_count"], 1)
@@ -4402,6 +4488,7 @@ class WordConverterViewTests(TestCase):
                 }
             ),
             content_type="application/json",
+            HTTP_HX_REQUEST="true",
         )
 
         self.assertEqual(generated.status_code, 200)
@@ -4410,6 +4497,7 @@ class WordConverterViewTests(TestCase):
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
         self.assertIn("planificare_cursuri_actualizata.docx", generated["Content-Disposition"])
+        self.assertIn("attachment;", generated["Content-Disposition"])
         self.assertEqual(generated["X-Matched-Course-Rows"], "1")
         self.assertEqual(generated["X-Skipped-Course-Rows"], "0")
         document = Document(io.BytesIO(generated.content))
@@ -4505,7 +4593,7 @@ class WordConverterViewTests(TestCase):
 
 ## `apps/planificator/tests_xml_export.py`
 
-Size: 8.4 KB
+Size: 9.3 KB
 
 Redacted secret-like assignments: 1
 
@@ -4614,6 +4702,8 @@ class XmlExportViewTests(TestCase):
         self.assertContains(response, reverse("planificator:xml_formatter"))
         self.assertContains(response, 'class="transition-none active font-semibold"')
         self.assertContains(response, 'aria-current="page"')
+        self.assertContains(response, 'hx-boost="false"')
+        self.assertContains(response, "x-data=")
 
     def test_export_uses_submitted_start_id_and_legacy_xml_download_contract(self):
         AppSetting.objects.create(
@@ -4641,6 +4731,24 @@ class XmlExportViewTests(TestCase):
         root = ET.fromstring(response.content)
         self.assertEqual(root.findtext("item/ID"), "32000")
         self.assertEqual(root.findtext("item/meta/mec_read_more"), "/course-a")
+
+    def test_htmx_marked_export_still_returns_xml_attachment(self):
+        upload = SimpleUploadedFile(
+            "program.csv",
+            b"Title,Permalink,January\nCourse A,/course-a,5.01.2026\n",
+            content_type="text/csv",
+        )
+
+        response = self.client.post(
+            reverse("planificator:xml_export"),
+            {"input_file": upload, "start_post_id": 32000},
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/xml")
+        self.assertIn("attachment;", response["Content-Disposition"])
+        self.assertNotIn("text/html", response["Content-Type"])
 
     def test_export_accepts_current_romanian_schedule_workbook(self):
         workbook = create_excel_export(
@@ -4684,8 +4792,10 @@ class XmlExportViewTests(TestCase):
         response = self.client.post(
             reverse("planificator:xml_export"),
             {"input_file": missing_columns, "start_post_id": 20000},
+            HTTP_HX_REQUEST="true",
         )
         self.assertEqual(response.status_code, 400)
+        self.assertEqual(response["Content-Type"], "application/json")
         self.assertEqual(response.json()["error"], "Missing required columns: Permalink")
 
         invalid_date = SimpleUploadedFile(
@@ -4720,7 +4830,7 @@ class XmlExportViewTests(TestCase):
 
 ## `apps/planificator/urls.py`
 
-Size: 2.3 KB
+Size: 2.4 KB
 
 ```python
 from django.urls import path
@@ -4738,6 +4848,7 @@ from .views import (
     ScheduleHistoryView,
     ScheduleResultView,
     ScheduleSampleCsvView,
+    ScheduleXmlExportView,
     WordConverterView,
     WordMatchGenerateView,
     WordMatchPreviewView,
@@ -4756,6 +4867,7 @@ urlpatterns = [
     ),
     path('generator-perioade/model-csv/', ScheduleSampleCsvView.as_view(), name='generator_perioade_sample_csv'),
     path('generator-perioade/export/', ScheduleExportView.as_view(), name='generator_perioade_export'),
+    path('generator-perioade/export-xml/', ScheduleXmlExportView.as_view(), name='generator_perioade_export_xml'),
     path('actualizeaza-cursuri/', CourseRefreshView.as_view(), name='actualizeaza_cursuri'),
     path('actualizeaza-cursuri/preview/', CourseRefreshPreviewView.as_view(), name='actualizeaza_cursuri_preview'),
     path('actualizeaza-cursuri/connect/', CourseRefreshConnectView.as_view(), name='actualizeaza_cursuri_connect'),
@@ -4962,7 +5074,7 @@ def validate_public_http_url(value: str) -> str:
 
 ## `apps/planificator/views.py`
 
-Size: 33.9 KB
+Size: 35.4 KB
 
 ```python
 import base64
@@ -5830,6 +5942,40 @@ class ScheduleExportView(PlanificatorPermissionMixin, View):
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
         response["Content-Disposition"] = f'attachment; filename="program_cursuri_{generation.year}.xlsx"'
+        return response
+
+
+class ScheduleXmlExportView(PlanificatorPermissionMixin, View):
+    def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        form = ScheduleExportForm(request.POST)
+        if not form.is_valid():
+            return JsonResponse({"success": False, "error": "Identificator de export invalid."}, status=400)
+        generation = get_owned_generation(
+            generation_id=form.cleaned_data["generation_id"],
+            user=request.user,
+        )
+        schedule = [
+            {
+                "course_name": row.get("Title", ""),
+                "date_range": row.get("date_range", ""),
+                "permalink": row.get("Permalink", ""),
+            }
+            for row in generation.schedule
+        ]
+        try:
+            xml_text = create_xml_export(
+                schedule,
+                generation.year,
+                start_post_id=get_settings(
+                    "schedule_generator",
+                    request.user,
+                ).get("xml_start_post_id") or 20000,
+            )
+        except Exception:
+            logger.exception("Unexpected schedule XML export failure", extra={"generation_id": str(generation.pk)})
+            return JsonResponse({"success": False, "error": "Exportul XML nu a putut fi creat."}, status=400)
+        response = HttpResponse(xml_text.encode("utf-8"), content_type="application/xml")
+        response["Content-Disposition"] = f'attachment; filename="program_cursuri_{generation.year}.xml"'
         return response
 ```
 

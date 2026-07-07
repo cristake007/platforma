@@ -2,6 +2,7 @@
     id="history-list"
     class="card generator-step-card bg-base-100 shadow-none"
     aria-labelledby="history-list-title"
+    x-data="{ historyTab: 'xlsx' }"
 >
     <header class="generator-card-header flex flex-col gap-3 bg-base-200 px-4 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-5">
         <div>
@@ -25,6 +26,16 @@
     </div>
 
     {% if generations %}
+        <div class="tabs tabs-border border-t border-base-300 px-4 pt-3" role="tablist" aria-label="Tip export istoric">
+            <button type="button" class="tab" x-bind:class="{ 'tab-active': historyTab === 'xlsx' }" x-on:click="historyTab = 'xlsx'" role="tab" x-bind:aria-selected="historyTab === 'xlsx'">
+                Programe XLSX
+            </button>
+            <button type="button" class="tab" x-bind:class="{ 'tab-active': historyTab === 'xml' }" x-on:click="historyTab = 'xml'" role="tab" x-bind:aria-selected="historyTab === 'xml'">
+                Fișiere XML
+            </button>
+        </div>
+
+        <div x-show="historyTab === 'xlsx'">
         <div class="divide-y divide-base-300 md:hidden">
             {% for generation in generations %}
                 <article class="space-y-3 p-4">
@@ -93,6 +104,69 @@
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+        </div>
+
+        <div x-show="historyTab === 'xml'">
+            <div class="divide-y divide-base-300 md:hidden">
+                {% for generation in generations %}
+                    <article class="space-y-3 p-4">
+                        <div>
+                            <a href="{% url 'planificator:istoric_detail' generation.pk %}" class="link link-primary font-semibold">{{ generation.source_file_name }}</a>
+                            <span class="mt-0.5 block font-mono text-[11px] text-muted">XML · SHA-256 {{ generation.source_file_digest|slice:":12" }}</span>
+                        </div>
+                        <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                            <div><dt class="text-xs text-muted">An</dt><dd class="font-semibold">{{ generation.year }}</dd></div>
+                            <div><dt class="text-xs text-muted">Evenimente</dt><dd class="font-semibold">{{ generation.generated_entry_count }}</dd></div>
+                            <div><dt class="text-xs text-muted">Generat</dt><dd>{{ generation.created_at|date:"d.m.Y H:i" }}</dd></div>
+                            <div><dt class="text-xs text-muted">Expiră</dt><dd>{{ generation.expires_at|date:"d.m.Y H:i" }}</dd></div>
+                        </dl>
+                        <form method="post" action="{% url 'planificator:generator_perioade_export_xml' %}" hx-boost="false">
+                            {% csrf_token %}
+                            <input type="hidden" name="generation_id" value="{{ generation.pk }}">
+                            <button type="submit" class="btn btn-outline btn-secondary btn-sm">Descarcă XML</button>
+                        </form>
+                    </article>
+                {% endfor %}
+            </div>
+
+            <div class="hidden overflow-x-auto md:block">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th scope="col">Fișier XML</th>
+                            <th scope="col">An</th>
+                            <th scope="col">Evenimente</th>
+                            <th scope="col">Generat</th>
+                            <th scope="col">Expiră</th>
+                            <th scope="col" class="text-right">Acțiuni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for generation in generations %}
+                            <tr>
+                                <th scope="row" class="min-w-48">
+                                    <a href="{% url 'planificator:istoric_detail' generation.pk %}" class="link link-primary font-semibold">program_cursuri_{{ generation.year }}.xml</a>
+                                    <span class="mt-0.5 block font-mono text-[11px] font-normal text-muted">Sursă {{ generation.source_file_digest|slice:":12" }}</span>
+                                </th>
+                                <td>{{ generation.year }}</td>
+                                <td>{{ generation.generated_entry_count }}</td>
+                                <td class="whitespace-nowrap">{{ generation.created_at|date:"d.m.Y H:i" }}</td>
+                                <td class="whitespace-nowrap">{{ generation.expires_at|date:"d.m.Y H:i" }}</td>
+                                <td>
+                                    <div class="flex justify-end gap-2">
+                                        <form method="post" action="{% url 'planificator:generator_perioade_export_xml' %}" hx-boost="false">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="generation_id" value="{{ generation.pk }}">
+                                            <button type="submit" class="btn btn-outline btn-secondary btn-sm">Descarcă XML</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     {% else %}
         <div class="px-4 py-12 text-center sm:px-6">

@@ -2,10 +2,11 @@
 
 ## `apps/planificator/tests.py`
 
-Size: 26.2 KB
+Size: 27.5 KB
 
 ```python
 import io
+import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone as datetime_timezone
 from unittest.mock import patch
 
@@ -294,8 +295,11 @@ class PlanificatorViewTests(TestCase):
         self.assertNotContains(response, "foreign.csv")
         self.assertContains(response, f'name="generation_id" value="{owned.pk}"')
         self.assertContains(response, reverse("planificator:generator_perioade_export"))
+        self.assertContains(response, reverse("planificator:generator_perioade_export_xml"))
         self.assertContains(response, reverse("planificator:istoric_detail", kwargs={"generation_id": owned.pk}))
         self.assertContains(response, "Descarcă XLSX")
+        self.assertContains(response, "Fișiere XML")
+        self.assertContains(response, "Descarcă XML")
 
     def test_htmx_history_returns_list_partial(self):
         owned = generation_for(self.user)
@@ -310,6 +314,7 @@ class PlanificatorViewTests(TestCase):
         self.assertContains(response, "owned.csv")
         self.assertContains(response, 'hx-get="?page=1"')
         self.assertContains(response, reverse("planificator:generator_perioade_export"))
+        self.assertContains(response, reverse("planificator:generator_perioade_export_xml"))
         self.assertNotContains(response, "<html")
 
     def test_history_displays_generation_time_in_bucharest(self):
@@ -322,7 +327,7 @@ class PlanificatorViewTests(TestCase):
         response = self.client.get(reverse("planificator:istoric"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "03.07.2026 11:07", count=2)
+        self.assertContains(response, "03.07.2026 11:07", count=4)
 
     def test_history_has_empty_state(self):
         response = self.client.get(reverse("planificator:istoric"))
@@ -386,6 +391,21 @@ class PlanificatorViewTests(TestCase):
         self.assertIn('filename="program_cursuri_2026.xlsx"', response["Content-Disposition"])
         self.assertIn("Program", load_workbook(io.BytesIO(response.content)).sheetnames)
 
+    def test_history_xml_export_download_uses_owned_generation(self):
+        generation = generation_for(self.user)
+        response = self.client.post(
+            reverse("planificator:generator_perioade_export_xml"),
+            {"generation_id": generation.pk},
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/xml")
+        self.assertIn('filename="program_cursuri_2026.xml"', response["Content-Disposition"])
+        root = ET.fromstring(response.content)
+        self.assertEqual(root.findtext("item/title"), "Course A")
+        self.assertEqual(root.findtext("item/meta/mec_read_more"), "https://example.com/course-a")
+
     def test_other_users_and_expired_generations_are_not_exportable(self):
         other = get_user_model().objects.create_user(username="other", password="x")
         other.user_permissions.add(self.permission)
@@ -394,6 +414,10 @@ class PlanificatorViewTests(TestCase):
         for generation in (foreign, expired):
             response = self.client.post(
                 reverse("planificator:generator_perioade_export"), {"generation_id": generation.pk}
+            )
+            self.assertEqual(response.status_code, 404)
+            response = self.client.post(
+                reverse("planificator:generator_perioade_export_xml"), {"generation_id": generation.pk}
             )
             self.assertEqual(response.status_code, 404)
 

@@ -2,7 +2,7 @@
 
 ## `apps/planificator/static/planificator/word_converter.js`
 
-Size: 13.4 KB
+Size: 12.6 KB
 
 ```javascript
 (() => {
@@ -14,10 +14,6 @@ Size: 13.4 KB
     const elements = {
         wordFile: document.getElementById('id_word_file'),
         scheduleFile: document.getElementById('id_schedule_file'),
-        wordFileSelect: document.getElementById('word-file-select'),
-        scheduleFileSelect: document.getElementById('schedule-file-select'),
-        wordFileName: document.getElementById('word-file-name'),
-        scheduleFileName: document.getElementById('schedule-file-name'),
         wordFileError: document.getElementById('word-file-error'),
         scheduleFileError: document.getElementById('schedule-file-error'),
         error: document.getElementById('word-converter-error'),
@@ -80,11 +76,6 @@ Size: 13.4 KB
         elements.tableBody.replaceChildren();
         setHidden(elements.preview, true);
         clearMessages();
-    }
-
-    function updateFileName(control, target) {
-        target.textContent = control.files[0]?.name || 'Niciun fișier selectat';
-        target.classList.toggle('text-muted', !control.files.length);
     }
 
     function compactOptionLabel(title, maximumLength = 42) {
@@ -305,14 +296,10 @@ Size: 13.4 KB
         }
     });
 
-    elements.wordFileSelect.addEventListener('click', () => elements.wordFile.click());
-    elements.scheduleFileSelect.addEventListener('click', () => elements.scheduleFile.click());
     elements.wordFile.addEventListener('change', () => {
-        updateFileName(elements.wordFile, elements.wordFileName);
         resetPreview();
     });
     elements.scheduleFile.addEventListener('change', () => {
-        updateFileName(elements.scheduleFile, elements.scheduleFileName);
         resetPreview();
     });
 })();

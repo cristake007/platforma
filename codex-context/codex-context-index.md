@@ -1,12 +1,12 @@
 # Platforma TUVTK Codex context
 
-Generated: 2026-07-07T08:56:13+00:00
+Generated: 2026-07-07T10:37:46+00:00
 Project root: `C:\Users\Cristi Popa\Desktop\tuvtk`
 Context directory: `C:\Users\Cristi Popa\Desktop\tuvtk\codex-context`
 Included files: 257
 Skipped files: 34
 Pruned directories: 34
-Total included bytes: 1532301 (1496.4 KB)
+Total included bytes: 1541190 (1505.1 KB)
 Files with redacted assignments: 13
 Tests included: yes
 Django migrations: excluded by default

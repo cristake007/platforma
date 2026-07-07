@@ -2,7 +2,7 @@
 
 ## `apps/planificator/views.py`
 
-Size: 33.9 KB
+Size: 35.4 KB
 
 ```python
 import base64
@@ -870,5 +870,39 @@ class ScheduleExportView(PlanificatorPermissionMixin, View):
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
         response["Content-Disposition"] = f'attachment; filename="program_cursuri_{generation.year}.xlsx"'
+        return response
+
+
+class ScheduleXmlExportView(PlanificatorPermissionMixin, View):
+    def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        form = ScheduleExportForm(request.POST)
+        if not form.is_valid():
+            return JsonResponse({"success": False, "error": "Identificator de export invalid."}, status=400)
+        generation = get_owned_generation(
+            generation_id=form.cleaned_data["generation_id"],
+            user=request.user,
+        )
+        schedule = [
+            {
+                "course_name": row.get("Title", ""),
+                "date_range": row.get("date_range", ""),
+                "permalink": row.get("Permalink", ""),
+            }
+            for row in generation.schedule
+        ]
+        try:
+            xml_text = create_xml_export(
+                schedule,
+                generation.year,
+                start_post_id=get_settings(
+                    "schedule_generator",
+                    request.user,
+                ).get("xml_start_post_id") or 20000,
+            )
+        except Exception:
+            logger.exception("Unexpected schedule XML export failure", extra={"generation_id": str(generation.pk)})
+            return JsonResponse({"success": False, "error": "Exportul XML nu a putut fi creat."}, status=400)
+        response = HttpResponse(xml_text.encode("utf-8"), content_type="application/xml")
+        response["Content-Disposition"] = f'attachment; filename="program_cursuri_{generation.year}.xml"'
         return response
 ```

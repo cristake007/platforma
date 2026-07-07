@@ -2,7 +2,7 @@
 
 ## `apps/planificator/urls.py`
 
-Size: 2.3 KB
+Size: 2.4 KB
 
 ```python
 from django.urls import path
@@ -20,6 +20,7 @@ from .views import (
     ScheduleHistoryView,
     ScheduleResultView,
     ScheduleSampleCsvView,
+    ScheduleXmlExportView,
     WordConverterView,
     WordMatchGenerateView,
     WordMatchPreviewView,
@@ -38,6 +39,7 @@ urlpatterns = [
     ),
     path('generator-perioade/model-csv/', ScheduleSampleCsvView.as_view(), name='generator_perioade_sample_csv'),
     path('generator-perioade/export/', ScheduleExportView.as_view(), name='generator_perioade_export'),
+    path('generator-perioade/export-xml/', ScheduleXmlExportView.as_view(), name='generator_perioade_export_xml'),
     path('actualizeaza-cursuri/', CourseRefreshView.as_view(), name='actualizeaza_cursuri'),
     path('actualizeaza-cursuri/preview/', CourseRefreshPreviewView.as_view(), name='actualizeaza_cursuri_preview'),
     path('actualizeaza-cursuri/connect/', CourseRefreshConnectView.as_view(), name='actualizeaza_cursuri_connect'),

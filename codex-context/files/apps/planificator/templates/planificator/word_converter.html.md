@@ -2,7 +2,7 @@
 
 ## `apps/planificator/templates/planificator/word_converter.html`
 
-Size: 7.9 KB
+Size: 8.6 KB
 
 ```html
 {% extends "layouts/base.html" %}
@@ -38,6 +38,8 @@ Size: 7.9 KB
             data-preview-url="{% url 'planificator:word_match_preview' %}"
             data-generate-url="{% url 'planificator:word_match_generate' %}"
             data-download-filename="planificare_cursuri_actualizata.docx"
+            hx-boost="false"
+            x-data="{ wordFileName: 'Niciun fișier selectat', scheduleFileName: 'Niciun fișier selectat' }"
             novalidate
         >
             {% csrf_token %}
@@ -54,20 +56,20 @@ Size: 7.9 KB
                 <div class="grid gap-4 md:grid-cols-2">
                     <fieldset class="fieldset min-w-0 rounded-field border border-base-300 bg-base-200 p-3">
                         <label class="fieldset-legend" for="{{ form.word_file.id_for_label }}">{{ form.word_file.label }}</label>
-                        {{ form.word_file }}
+                        <div x-ref="wordInput" x-on:change="wordFileName = $event.target.files?.[0]?.name || 'Niciun fișier selectat'">{{ form.word_file }}</div>
                         <div class="flex min-w-0 items-center gap-2">
-                            <button id="word-file-select" type="button" class="btn btn-outline btn-primary btn-sm shrink-0">Alege DOCX</button>
-                            <span id="word-file-name" class="min-w-0 truncate text-sm text-muted">Niciun fișier selectat</span>
+                            <button id="word-file-select" type="button" class="btn btn-outline btn-primary btn-sm shrink-0" x-on:click="$refs.wordInput.querySelector('input').click()">Alege DOCX</button>
+                            <span id="word-file-name" class="min-w-0 truncate text-sm" x-bind:class="{ 'text-muted': wordFileName === 'Niciun fișier selectat' }" x-text="wordFileName">Niciun fișier selectat</span>
                         </div>
                         <p class="label block whitespace-normal break-words text-xs leading-5 text-muted">Format acceptat: DOCX.</p>
                         <p id="word-file-error" class="label hidden text-error" role="alert"></p>
                     </fieldset>
                     <fieldset class="fieldset min-w-0 rounded-field border border-base-300 bg-base-200 p-3">
                         <label class="fieldset-legend" for="{{ form.schedule_file.id_for_label }}">{{ form.schedule_file.label }}</label>
-                        {{ form.schedule_file }}
+                        <div x-ref="scheduleInput" x-on:change="scheduleFileName = $event.target.files?.[0]?.name || 'Niciun fișier selectat'">{{ form.schedule_file }}</div>
                         <div class="flex min-w-0 items-center gap-2">
-                            <button id="schedule-file-select" type="button" class="btn btn-outline btn-primary btn-sm shrink-0">Alege CSV/XLSX</button>
-                            <span id="schedule-file-name" class="min-w-0 truncate text-sm text-muted">Niciun fișier selectat</span>
+                            <button id="schedule-file-select" type="button" class="btn btn-outline btn-primary btn-sm shrink-0" x-on:click="$refs.scheduleInput.querySelector('input').click()">Alege CSV/XLSX</button>
+                            <span id="schedule-file-name" class="min-w-0 truncate text-sm" x-bind:class="{ 'text-muted': scheduleFileName === 'Niciun fișier selectat' }" x-text="scheduleFileName">Niciun fișier selectat</span>
                         </div>
                         <p class="label block whitespace-normal break-words text-xs leading-5 text-muted">Formate acceptate: CSV sau XLSX, cu Title și coloane lunare.</p>
                         <p id="schedule-file-error" class="label hidden text-error" role="alert"></p>

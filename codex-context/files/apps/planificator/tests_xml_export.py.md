@@ -2,7 +2,7 @@
 
 ## `apps/planificator/tests_xml_export.py`
 
-Size: 8.4 KB
+Size: 9.3 KB
 
 Redacted secret-like assignments: 1
 
@@ -111,6 +111,8 @@ class XmlExportViewTests(TestCase):
         self.assertContains(response, reverse("planificator:xml_formatter"))
         self.assertContains(response, 'class="transition-none active font-semibold"')
         self.assertContains(response, 'aria-current="page"')
+        self.assertContains(response, 'hx-boost="false"')
+        self.assertContains(response, "x-data=")
 
     def test_export_uses_submitted_start_id_and_legacy_xml_download_contract(self):
         AppSetting.objects.create(
@@ -138,6 +140,24 @@ class XmlExportViewTests(TestCase):
         root = ET.fromstring(response.content)
         self.assertEqual(root.findtext("item/ID"), "32000")
         self.assertEqual(root.findtext("item/meta/mec_read_more"), "/course-a")
+
+    def test_htmx_marked_export_still_returns_xml_attachment(self):
+        upload = SimpleUploadedFile(
+            "program.csv",
+            b"Title,Permalink,January\nCourse A,/course-a,5.01.2026\n",
+            content_type="text/csv",
+        )
+
+        response = self.client.post(
+            reverse("planificator:xml_export"),
+            {"input_file": upload, "start_post_id": 32000},
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/xml")
+        self.assertIn("attachment;", response["Content-Disposition"])
+        self.assertNotIn("text/html", response["Content-Type"])
 
     def test_export_accepts_current_romanian_schedule_workbook(self):
         workbook = create_excel_export(
@@ -181,8 +201,10 @@ class XmlExportViewTests(TestCase):
         response = self.client.post(
             reverse("planificator:xml_export"),
             {"input_file": missing_columns, "start_post_id": 20000},
+            HTTP_HX_REQUEST="true",
         )
         self.assertEqual(response.status_code, 400)
+        self.assertEqual(response["Content-Type"], "application/json")
         self.assertEqual(response.json()["error"], "Missing required columns: Permalink")
 
         invalid_date = SimpleUploadedFile(

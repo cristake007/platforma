@@ -214,6 +214,8 @@ class WordConverterViewTests(TestCase):
         self.assertContains(response, "Convertor Word")
         self.assertNotContains(response, "Generator perioade")
         self.assertContains(response, 'name="csrfmiddlewaretoken"')
+        self.assertContains(response, 'hx-boost="false"')
+        self.assertContains(response, "x-data=")
 
     def test_anonymous_missing_permission_and_superuser_boundaries(self):
         self.client.logout()
@@ -244,9 +246,11 @@ class WordConverterViewTests(TestCase):
         preview = self.client.post(
             reverse("planificator:word_match_preview"),
             {"word_file": word_upload(), "schedule_file": schedule_upload()},
+            HTTP_HX_REQUEST="true",
         )
 
         self.assertEqual(preview.status_code, 200)
+        self.assertEqual(preview["Content-Type"], "application/json")
         preview_payload = preview.json()
         self.assertTrue(preview_payload["success"])
         self.assertEqual(preview_payload["matched_count"], 1)
@@ -262,6 +266,7 @@ class WordConverterViewTests(TestCase):
                 }
             ),
             content_type="application/json",
+            HTTP_HX_REQUEST="true",
         )
 
         self.assertEqual(generated.status_code, 200)
@@ -270,6 +275,7 @@ class WordConverterViewTests(TestCase):
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
         self.assertIn("planificare_cursuri_actualizata.docx", generated["Content-Disposition"])
+        self.assertIn("attachment;", generated["Content-Disposition"])
         self.assertEqual(generated["X-Matched-Course-Rows"], "1")
         self.assertEqual(generated["X-Skipped-Course-Rows"], "0")
         document = Document(io.BytesIO(generated.content))

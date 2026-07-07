@@ -2,7 +2,7 @@
 
 ## `apps/planificator/static/planificator/xml_formatter.js`
 
-Size: 4.3 KB
+Size: 3.8 KB
 
 ```javascript
 (() => {
@@ -12,8 +12,6 @@ Size: 4.3 KB
     }
 
     const fileInput = document.getElementById('id_input_file');
-    const fileSelect = document.getElementById('xml-file-select');
-    const fileName = document.getElementById('xml-file-name');
     const fileError = document.getElementById('xml-file-error');
     const postIdInput = document.getElementById('id_start_post_id');
     const postIdError = document.getElementById('xml-post-id-error');
@@ -67,12 +65,7 @@ Size: 4.3 KB
         URL.revokeObjectURL(url);
     }
 
-    fileSelect.addEventListener('click', () => fileInput.click());
-
     fileInput.addEventListener('change', () => {
-        const selected = fileInput.files[0];
-        fileName.textContent = selected?.name || 'Niciun fișier selectat';
-        fileName.classList.toggle('text-muted', !selected);
         setFieldError('');
         clearMessages();
     });
@@ -114,8 +107,7 @@ Size: 4.3 KB
             successAlert.textContent = 'Fișierul XML a fost generat.';
             setHidden(successAlert, false);
             form.reset();
-            fileName.textContent = 'Niciun fișier selectat';
-            fileName.classList.add('text-muted');
+            window.dispatchEvent(new CustomEvent('xml-reset-upload'));
         } catch (error) {
             errorAlert.textContent = error.message;
             setHidden(errorAlert, false);
