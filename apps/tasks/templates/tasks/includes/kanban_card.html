@@ -1,0 +1,56 @@
+<article class="group border border-base-300 bg-base-100 p-3 transition-colors focus-within:border-primary focus-within:outline focus-within:outline-2 focus-within:outline-primary {% if task.can_move %}cursor-grab hover:border-primary{% endif %} {% if task.priority == 'high' %}border-l-4 border-l-error{% elif task.priority == 'medium' %}border-l-4 border-l-warning{% else %}border-l-4 border-l-success{% endif %}" data-task-card data-task-id="{{ task.pk }}" data-task-version="{{ task.version }}" data-move-url="{% url 'tasks:task_move' task.pk %}" {% if task.can_move %}draggable="true" tabindex="0"{% endif %}>
+    <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0">
+            <div class="flex items-start gap-2">
+                {% if task.can_move %}<span class="mt-0.5 cursor-grab text-muted group-hover:text-primary" aria-hidden="true" data-card-grip>::</span>{% endif %}
+                <h3 class="text-sm font-semibold leading-5 text-base-content">{{ task.title }}</h3>
+            </div>
+        </div>
+        {% if task.origin_url %}<a href="{{ task.origin_url }}" class="shrink-0 text-primary hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" title="{{ task.origin_label|default:'Deschide sursa' }}">&#8599;</a>{% endif %}
+    </div>
+    {% if task.description %}<p class="mt-1 line-clamp-2 text-xs leading-5 text-muted">{{ task.description }}</p>{% endif %}
+    <div class="mt-3 flex items-center gap-2 border-t border-base-300 pt-2 text-xs">
+        <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-base-200 font-bold text-base-content">{{ task.assignee.username|slice:':2'|upper }}</span>
+        <span class="min-w-0 truncate font-medium text-base-content">{{ task.assignee.get_full_name|default:task.assignee.username }}</span>
+    </div>
+    <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
+        <span class="badge badge-xs border-base-300 bg-base-100 font-semibold {% if task.priority == 'high' %}text-error{% elif task.priority == 'medium' %}text-warning{% else %}text-success{% endif %}">&#9873; {{ task.get_priority_display }}</span>
+        {% include "tasks/includes/timer.html" %}
+    </div>
+    <div class="mt-3 flex items-center justify-between gap-2 border-t border-base-300 pt-2">
+        <div class="flex items-center gap-1">
+            {% if task.can_edit %}
+                <a href="{% url 'tasks:task_edit' task.pk %}" class="btn btn-ghost btn-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">Editeaz&#259;</a>
+                {% url 'tasks:task_archive' task.pk as task_archive_url %}
+                <form method="post" action="{{ task_archive_url }}{% if kanban_query %}?{{ kanban_query }}{% endif %}" hx-post="{{ task_archive_url }}{% if kanban_query %}?{{ kanban_query }}{% endif %}" hx-target="#kanban-board-region" hx-swap="outerHTML">
+                    {% csrf_token %}
+                    <input type="hidden" name="_kanban" value="1">
+                    <input type="hidden" name="archived" value="1">
+                    <input type="hidden" name="next" value="{{ kanban_path }}">
+                    <button class="btn btn-outline btn-error btn-xs btn-square focus-visible:outline focus-visible:outline-2 focus-visible:outline-error" type="submit" aria-label="Arhivează task-ul {{ task.title }}" title="Arhivează task-ul" data-archive-action>
+                        <svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 6h18"></path>
+                            <path d="M8 6V4h8v2"></path>
+                            <path d="M19 6l-1 14H6L5 6"></path>
+                            <path d="M10 11v6"></path>
+                            <path d="M14 11v6"></path>
+                        </svg>
+                    </button>
+                </form>
+            {% else %}
+                <span></span>
+            {% endif %}
+        </div>
+        {% if task.can_move %}
+            <form method="post" action="{% url 'tasks:task_move' task.pk %}" class="flex items-center gap-1" data-stage-fallback-form>
+                {% csrf_token %}
+                <input type="hidden" name="target_index" value="99999">
+                <input type="hidden" name="expected_version" value="{{ task.version }}">
+                <label class="sr-only" for="stage-{{ task.pk }}">Mută în etapa</label>
+                <select id="stage-{{ task.pk }}" name="stage" class="select select-bordered select-xs max-w-28 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" onchange="this.form.submit()">
+                    {% for target in stages %}<option value="{{ target.pk }}"{% if target.pk == task.stage_id %} selected{% endif %}>{{ target.name }}</option>{% endfor %}
+                </select>
+            </form>
+        {% endif %}
+    </div>
+</article>

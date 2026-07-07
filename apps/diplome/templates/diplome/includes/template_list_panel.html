@@ -1,0 +1,115 @@
+<div id="template-list-panel" class="space-y-4">
+    {% include "diplome/includes/messages.html" %}
+
+    <form
+        method="get"
+        action="{% url 'diplome:template_list' %}"
+        class="flex flex-col gap-3 border border-base-300 bg-base-100 p-4 sm:flex-row sm:items-end"
+        hx-get="{% url 'diplome:template_list' %}"
+        hx-target="#template-list-panel"
+        hx-swap="outerHTML show:top"
+        hx-push-url="true"
+        hx-indicator="#template-list-loading"
+        hx-trigger="submit, change delay:250ms"
+        hx-sync="this:replace"
+        hx-disabled-elt="find select, find button"
+    >
+        <label class="form-control">
+            <span class="label-text mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Categorie</span>
+            {{ filter_form.category }}
+        </label>
+        <div class="flex items-center gap-2">
+            <button type="submit" class="btn btn-primary btn-sm">Filtrează</button>
+            {% if selected_category %}
+                <a
+                    href="{% url 'diplome:template_list' %}"
+                    class="btn btn-ghost btn-sm"
+                    hx-get="{% url 'diplome:template_list' %}"
+                    hx-target="#template-list-panel"
+                    hx-swap="outerHTML show:top"
+                    hx-push-url="true"
+                    hx-indicator="#template-list-loading"
+                >Șterge filtrul</a>
+            {% endif %}
+        </div>
+    </form>
+
+    <div class="relative overflow-hidden border border-base-300 bg-base-100" aria-live="polite">
+        <div
+            id="template-list-loading"
+            class="htmx-indicator absolute inset-0 z-10 flex items-center justify-center bg-base-100/80"
+            role="status"
+        >
+            <span class="inline-flex items-center gap-3 border border-base-300 bg-base-100 px-4 py-3 text-sm font-medium text-base-content shadow-sm">
+                <span class="loading loading-spinner loading-md text-primary" aria-hidden="true"></span>
+                Se actualizează template-urile
+            </span>
+        </div>
+        {% if templates %}
+            <div class="overflow-x-auto">
+                <table class="table table-sm">
+                    <thead class="bg-base-200 text-xs uppercase tracking-wide text-muted">
+                        <tr>
+                            <th>Nume</th>
+                            <th>Categorie</th>
+                            <th>Format</th>
+                            <th>Stare</th>
+                            <th>Actualizat</th>
+                            <th class="text-right">Acțiuni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for diploma_template in templates %}
+                            <tr>
+                                <td>
+                                    <p class="font-semibold text-base-content">{{ diploma_template.name }}</p>
+                                    {% if diploma_template.description %}<p class="mt-0.5 max-w-xl text-xs text-muted">{{ diploma_template.description }}</p>{% endif %}
+                                </td>
+                                <td><span class="badge badge-outline badge-sm">{{ diploma_template.category }}</span></td>
+                                <td>{{ diploma_template.page_size }} · {{ diploma_template.get_orientation_display }}</td>
+                                <td>{% if diploma_template.is_active %}<span class="text-success">Activ</span>{% else %}<span class="text-muted">Inactiv</span>{% endif %}</td>
+                                <td>{{ diploma_template.updated_at|date:"d.m.Y H:i" }}</td>
+                                <td>
+                                    <div class="flex justify-end gap-2">
+                                        <a href="{% url 'diplome:template_editor' diploma_template.pk %}" class="btn btn-outline btn-primary btn-xs">Editează</a>
+                                        <a href="{% url 'diplome:template_preview' diploma_template.pk %}" class="btn btn-ghost btn-xs" target="_blank" rel="noopener">Preview</a>
+                                        <form
+                                            method="post"
+                                            action="{% url 'diplome:template_delete' diploma_template.pk %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+                                            hx-post="{% url 'diplome:template_delete' diploma_template.pk %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+                                            hx-target="#template-list-panel"
+                                            hx-swap="outerHTML show:top"
+                                            hx-confirm="Ștergi acest template?"
+                                        >
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-ghost btn-xs text-error">Șterge</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="px-6 py-14 text-center">
+                {% if selected_category %}
+                    <h2 class="text-lg font-semibold text-base-content">Niciun template în categoria „{{ selected_category }}”</h2>
+                    <p class="mt-2 text-sm text-muted">Alege o altă categorie sau elimină filtrul curent.</p>
+                    <a
+                        href="{% url 'diplome:template_list' %}"
+                        class="btn btn-outline btn-primary btn-sm mt-5"
+                        hx-get="{% url 'diplome:template_list' %}"
+                        hx-target="#template-list-panel"
+                        hx-swap="outerHTML show:top"
+                        hx-push-url="true"
+                    >Afișează toate template-urile</a>
+                {% else %}
+                    <h2 class="text-lg font-semibold text-base-content">Nu există template-uri</h2>
+                    <p class="mt-2 text-sm text-muted">Creează primul template și configurează-l în editorul vizual.</p>
+                    <a href="{% url 'diplome:template_create' %}" class="btn btn-primary btn-sm mt-5">Creează primul template</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>

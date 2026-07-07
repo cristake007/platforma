@@ -1,0 +1,55 @@
+<div id="participant-list-detail-panel" class="space-y-4">
+    {% include "diplome/includes/messages.html" %}
+
+    <div class="relative overflow-x-auto border border-base-300 bg-base-100" aria-live="polite">
+        <div
+            id="participant-detail-loading"
+            class="htmx-indicator absolute inset-0 z-10 flex items-center justify-center bg-base-100/80"
+            role="status"
+        >
+            <span class="inline-flex items-center gap-3 border border-base-300 bg-base-100 px-4 py-3 text-sm font-medium text-base-content shadow-sm">
+                <span class="loading loading-spinner loading-md text-primary" aria-hidden="true"></span>
+                Se actualizează participanții
+            </span>
+        </div>
+        <table class="table table-sm">
+            <thead class="bg-base-200 text-xs uppercase tracking-wide text-muted"><tr><th>#</th><th>Nume complet</th><th>Data nașterii</th><th>Locul nașterii</th><th>Număr certificat</th></tr></thead>
+            <tbody>
+                {% for participant in participants %}
+                    <tr><td>{{ page_obj.start_index|add:forloop.counter0 }}</td><td class="font-medium">{{ participant.full_name }}</td><td>{{ participant.date_of_birth|date:"d.m.Y" }}</td><td>{{ participant.place_of_birth }}</td><td>{{ participant.certificate_number }}</td></tr>
+                {% empty %}
+                    <tr><td colspan="5" class="py-8 text-center text-muted">Lista nu conține participanți.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if is_paginated %}
+        <nav class="flex items-center justify-between text-sm" aria-label="Paginare participanți">
+            <span class="text-muted">Pagina {{ page_obj.number }} din {{ page_obj.paginator.num_pages }}</span>
+            <div class="join">
+                {% if page_obj.has_previous %}
+                    <a
+                        href="?page={{ page_obj.previous_page_number }}"
+                        class="btn btn-sm join-item"
+                        hx-get="?page={{ page_obj.previous_page_number }}"
+                        hx-target="#participant-list-detail-panel"
+                        hx-swap="outerHTML show:top"
+                        hx-push-url="true"
+                        hx-indicator="#participant-detail-loading"
+                    >Anterior</a>
+                {% endif %}
+                {% if page_obj.has_next %}
+                    <a
+                        href="?page={{ page_obj.next_page_number }}"
+                        class="btn btn-sm join-item"
+                        hx-get="?page={{ page_obj.next_page_number }}"
+                        hx-target="#participant-list-detail-panel"
+                        hx-swap="outerHTML show:top"
+                        hx-push-url="true"
+                        hx-indicator="#participant-detail-loading"
+                    >Următor</a>
+                {% endif %}
+            </div>
+        </nav>
+    {% endif %}
+</div>

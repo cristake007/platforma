@@ -1,0 +1,23 @@
+# Source snapshot
+
+## `apps/tasks/templates/tasks/includes/task_create_dialog_body.html`
+
+Size: 1.1 KB
+
+```html
+<div id="task-create-dialog-body">
+    <form method="dialog"><button class="btn btn-ghost btn-sm btn-circle absolute right-3 top-3" aria-label="Închide">×</button></form>
+    <h2 class="text-xl font-bold text-base-content">Task nou</h2>
+    <p class="mt-1 text-sm text-muted">Adaugă un task în {{ board.name }}.</p>
+    {% url 'tasks:task_create' board.pk as task_create_url %}
+    <form method="post" action="{{ task_create_url }}{% if kanban_query %}?{{ kanban_query }}{% endif %}" class="mt-5 space-y-4" hx-post="{{ task_create_url }}{% if kanban_query %}?{{ kanban_query }}{% endif %}" hx-target="#task-create-dialog-body" hx-swap="outerHTML">
+        {% csrf_token %}
+        <input type="hidden" name="_kanban" value="1">
+        <div class="grid gap-x-4 sm:grid-cols-2">{% include "tasks/includes/form_fields.html" with form=task_form %}</div>
+        <div class="flex justify-end gap-2">
+            <button type="button" class="btn btn-ghost btn-sm" data-close-task-dialog>Anulează</button>
+            <button class="btn btn-primary btn-sm">Creează task</button>
+        </div>
+    </form>
+</div>
+```
