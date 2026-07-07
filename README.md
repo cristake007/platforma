@@ -89,38 +89,31 @@ Windows equivalents:
 
 `test` defaults to low verbosity.
 
-## Coding and Agent Rules
+## Codex Entry
 
-Read these first for coding-agent work:
+For coding-agent work, open only:
 
 ```text
 AGENTS.md
-coding-standards.md
-frontend.md
-apps/<app>/AGENTS.md
 ```
 
-Guidance split:
+`AGENTS.md` is the canonical router for:
 
-- `AGENTS.md`: context budget, routing, safety, verification, and completion report.
-- `coding-standards.md`: Django structure, reuse rules, forms, services, selectors, templates, buttons, tables, and messages.
-- `frontend.md`: Tailwind/daisyUI, brand tokens, sharp enterprise UI, HTMX, Alpine, custom JavaScript, and visual checks.
-- `apps/<app>/AGENTS.md`: app-specific ownership, contracts, focused files, and tests.
+- `coding-standards.md`
+- `frontend.md`
+- `core/AGENTS.md`
+- `apps/<app>/AGENTS.md`
+- focused source files and tests
 
-Prompt examples live in:
+Do not open by default:
 
-```text
-codex-prompt-demos/README.md
-```
+- `codex-context/**`
+- `codex-prompt-demos/**`
+- implementation plans
+- unrelated apps
+- unrelated tests
 
-Use generated context only for discovery:
-
-```text
-codex-context/apps/<app>.md
-codex-file-map.txt
-```
-
-Do not load the whole generated context for normal work.
+Use generated context only when the exact source path is unknown.
 
 ## Frontend Rules
 
