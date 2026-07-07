@@ -1,4 +1,5 @@
 from datetime import timedelta
+from pathlib import Path
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -196,6 +197,25 @@ class TasksAppTests(TestCase):
         )
         self.assertIsNone(task.completed_at)
 
+    def test_move_json_reports_completed_state_for_timer_updates(self):
+        response = self.client.post(
+            reverse("tasks:task_move", args=[self.task.pk]),
+            {"stage": self.done.pk, "target_index": 0, "expected_version": self.task.version},
+            HTTP_ACCEPT="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertIsNotNone(payload["task"]["completedAt"])
+
+        self.task.refresh_from_db()
+        response = self.client.post(
+            reverse("tasks:task_move", args=[self.task.pk]),
+            {"stage": self.doing.pk, "target_index": 0, "expected_version": self.task.version},
+            HTTP_ACCEPT="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.json()["task"]["completedAt"])
+
     def test_manual_order_is_persisted(self):
         second = create_task(
             actor=self.owner,
@@ -356,6 +376,120 @@ class TasksAppTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertContains(response, 'id="task-form-panel"', status_code=400)
         self.assertNotContains(response, "Task nou", status_code=400)
+
+    def test_kanban_task_create_htmx_success_refreshes_board_and_messages(self):
+        due_at = timezone.localtime(timezone.now() + timedelta(days=1)).strftime("%Y-%m-%dT%H:%M")
+        title = "Task creat din Kanban HTMX"
+        response = self.client.post(
+            reverse("tasks:task_create", args=[self.board.pk]),
+            {
+                "_kanban": "1",
+                "title": title,
+                "description": "",
+                "assignee": self.assignee.pk,
+                "stage": self.todo.pk,
+                "priority": Task.Priority.MEDIUM,
+                "start_at": "",
+                "due_at": due_at,
+            },
+            HTTP_HX_REQUEST="true",
+            HTTP_HX_TARGET="task-create-dialog-body",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["HX-Trigger"], "taskKanban:taskCreated")
+        self.assertTrue(Task.objects.filter(board=self.board, title=title).exists())
+        self.assertContains(response, 'id="task-create-dialog-body"')
+        self.assertContains(response, 'id="task-messages" hx-swap-oob="true"')
+        self.assertContains(response, 'id="kanban-board-region"')
+        self.assertContains(response, 'hx-swap-oob="true"')
+        self.assertContains(response, title)
+        self.assertContains(response, "Task-ul a fost creat.")
+        self.assertContains(response, "data-stage-column")
+        self.assertContains(response, "data-stage-id")
+        self.assertContains(response, "data-task-card")
+        self.assertContains(response, "data-task-id")
+        self.assertContains(response, "data-task-version")
+        self.assertContains(response, "data-move-url")
+        self.assertContains(response, 'draggable="true"')
+        self.assertContains(response, "data-stage-fallback-form")
+        self.assertContains(response, "data-task-timer")
+        self.assertNotContains(response, "<html")
+
+    def test_kanban_task_create_htmx_invalid_stays_inside_dialog_body(self):
+        response = self.client.post(
+            reverse("tasks:task_create", args=[self.board.pk]),
+            {
+                "_kanban": "1",
+                "title": "",
+                "description": "",
+                "assignee": self.assignee.pk,
+                "stage": self.todo.pk,
+                "priority": Task.Priority.MEDIUM,
+                "start_at": "",
+                "due_at": "",
+            },
+            HTTP_HX_REQUEST="true",
+            HTTP_HX_TARGET="task-create-dialog-body",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertContains(response, 'id="task-create-dialog-body"', status_code=400)
+        self.assertContains(response, 'role="alert"', status_code=400)
+        self.assertNotContains(response, 'id="kanban-board-region"', status_code=400)
+        self.assertNotContains(response, "<html", status_code=400)
+
+    def test_kanban_task_archive_htmx_refreshes_board_and_messages(self):
+        response = self.client.post(
+            reverse("tasks:task_archive", args=[self.task.pk]),
+            {
+                "_kanban": "1",
+                "archived": "1",
+                "next": reverse("tasks:board_kanban", args=[self.board.pk]),
+            },
+            HTTP_HX_REQUEST="true",
+            HTTP_HX_TARGET="kanban-board-region",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.task.refresh_from_db()
+        self.assertIsNotNone(self.task.archived_at)
+        self.assertContains(response, 'id="kanban-board-region"')
+        self.assertContains(response, 'id="task-messages" hx-swap-oob="true"')
+        self.assertContains(response, "Task arhivat.")
+        self.assertContains(response, "data-stage-column")
+        self.assertNotContains(response, self.task.title)
+        self.assertNotContains(response, "<html")
+
+    def test_task_archive_native_fallback_redirects_to_kanban(self):
+        response = self.client.post(
+            reverse("tasks:task_archive", args=[self.task.pk]),
+            {"archived": "1", "next": reverse("tasks:board_kanban", args=[self.board.pk])},
+        )
+        self.assertRedirects(response, reverse("tasks:board_kanban", args=[self.board.pk]))
+        self.task.refresh_from_db()
+        self.assertIsNotNone(self.task.archived_at)
+
+    def test_task_archive_permission_is_unchanged_for_non_editor(self):
+        self.client.force_login(self.assignee)
+        response = self.client.post(
+            reverse("tasks:task_archive", args=[self.task.pk]),
+            {"_kanban": "1", "archived": "1"},
+            HTTP_HX_REQUEST="true",
+            HTTP_HX_TARGET="kanban-board-region",
+        )
+        self.assertEqual(response.status_code, 404)
+        self.task.refresh_from_db()
+        self.assertIsNone(self.task.archived_at)
+
+    def test_tasks_js_reinitializes_kanban_after_htmx_refreshes(self):
+        script = (Path(__file__).resolve().parent / "static" / "tasks" / "tasks.js").read_text(encoding="utf-8")
+        self.assertIn("htmx:afterSwap", script)
+        self.assertIn("htmx:oobAfterSwap", script)
+        self.assertIn("initDragDrop", script)
+        self.assertIn("querySelectorAll(\"[data-task-timer]\")", script)
+        self.assertIn("updateMovedCardTimer(card, payload.task)", script)
+        self.assertIn("timer.dataset.completedAt = taskPayload.completedAt", script)
+        self.assertIn("delete timer.dataset.completedAt", script)
+        self.assertIn("knownSignature = null", script)
+        self.assertIn("setInterval(pollState, 30000)", script)
 
     def test_stage_create_htmx_refreshes_settings_section(self):
         response = self.client.post(

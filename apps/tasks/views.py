@@ -67,6 +67,10 @@ def _htmx_redirect(url: str) -> HttpResponse:
     return response
 
 
+def _is_kanban_htmx(request) -> bool:
+    return _is_htmx(request) and request.POST.get("_kanban") == "1"
+
+
 def _decorate_tasks(tasks, user):
     for task in tasks:
         task.can_edit = user_can_edit_task(user=user, task=task)
@@ -181,7 +185,15 @@ def _board_context(*, request, board, task_form=None):
         "state_url": reverse("tasks:board_state", kwargs={"board_id": board.pk}),
         "priority_choices": Task.Priority.choices,
         "filters": request.GET,
+        "kanban_query": request.META.get("QUERY_STRING", ""),
+        "kanban_path": request.get_full_path(),
     }
+
+
+def _render_kanban_partial(request, board, *, template_name, task_form=None, status=200, **context_overrides):
+    context = _board_context(request=request, board=board, task_form=task_form)
+    context.update(context_overrides)
+    return render(request, template_name, context, status=status)
 
 
 class BoardKanbanView(LoginRequiredMixin, View):
@@ -225,9 +237,27 @@ class TaskCreateView(LoginRequiredMixin, View):
                 form.add_error(None, _error_text(exc))
             else:
                 messages.success(request, "Task-ul a fost creat.")
+                if _is_kanban_htmx(request):
+                    response = _render_kanban_partial(
+                        request,
+                        board,
+                        template_name="tasks/includes/kanban_create_response.html",
+                        kanban_board_oob=True,
+                        messages_oob=True,
+                    )
+                    response["HX-Trigger"] = "taskKanban:taskCreated"
+                    return response
                 if _is_htmx(request):
                     return _htmx_redirect(reverse("tasks:board_kanban", kwargs={"board_id": board.pk}))
                 return redirect("tasks:board_kanban", board_id=board.pk)
+        if _is_kanban_htmx(request):
+            return _render_kanban_partial(
+                request,
+                board,
+                template_name="tasks/includes/task_create_dialog_body.html",
+                task_form=form,
+                status=400,
+            )
         template_name = self.partial_template_name if _is_htmx(request) else self.template_name
         return render(request, template_name, {"board": board, "form": form}, status=400)
 
@@ -310,6 +340,13 @@ class TaskArchiveView(LoginRequiredMixin, View):
             raise Http404(_error_text(exc)) from exc
         messages.success(request, "Task arhivat." if archived else "Task restaurat.")
         if _is_htmx(request):
+            if request.POST.get("_kanban") == "1":
+                return _render_kanban_partial(
+                    request,
+                    task.board,
+                    template_name="tasks/includes/kanban_board_response.html",
+                    messages_oob=True,
+                )
             next_url = request.POST.get("next") or reverse("tasks:board_kanban", kwargs={"board_id": task.board_id})
             settings_url = reverse("tasks:board_settings", kwargs={"board_id": task.board_id})
             if next_url == settings_url:
