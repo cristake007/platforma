@@ -1,5 +1,11 @@
 # Flota - Phased Implementation Plan
 
+## Low-Priority Planning Artifact
+
+- Read this file only for roadmap work, phased migration, or historical implementation status.
+- Do not read it for normal bug fixes, UI cleanups, tests, or app-local implementation changes.
+- For implementation work, start with `apps/flota/AGENTS.md` and the exact workflow files.
+
 ## Phase 1 - Scaffold and Instructions
 
 - Create the Django app package, namespaced URLs, templates, static files, migrations, tests, admin registration, and app instructions.
@@ -37,4 +43,3 @@
 ## Deferred Scope
 
 - Notifications, email, scheduled jobs, recurring intervals, document attachments, fuel tracking, expense reporting, and permanent deletion.
-
