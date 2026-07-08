@@ -63,8 +63,8 @@ define('planificari:views/planificari-word-matcher/record/detail', ['views/recor
                     scheduleRowIndex: Number(select.value)
                 }));
 
-            if (matches.length === 0) {
-                Espo.Ui.warning(this.translate('wordReviewRequiresSelection', 'messages', 'PlanificariWordMatcher'));
+            if (selects.length === 0 || matches.length !== selects.length) {
+                Espo.Ui.warning(this.translate('wordReviewRequiresAllRows', 'messages', 'PlanificariWordMatcher'));
 
                 return;
             }
@@ -97,6 +97,14 @@ define('planificari:views/planificari-word-matcher/record/detail', ['views/recor
         }
 
         actionDownloadWord() {
+            const container = this.element.querySelector('[data-name="word-conversion-preview"]');
+
+            if (container) {
+                this.actionGenerateReviewedWord();
+
+                return;
+            }
+
             if (this.model.get('wordConvertedFileId')) {
                 window.open('?entryPoint=download&id=' + encodeURIComponent(this.model.get('wordConvertedFileId')), '_blank');
 
@@ -128,11 +136,12 @@ define('planificari:views/planificari-word-matcher/record/detail', ['views/recor
                 return;
             }
 
-            const enabled = !!this.model.get('wordConvertedFileId') || canGenerate;
+            const hasPreview = !!this.element.querySelector('[data-name="word-conversion-preview"]');
+            const enabled = canGenerate || (!!this.model.get('wordConvertedFileId') && !hasPreview);
 
             button.disabled = !enabled;
             button.classList.toggle('disabled', !enabled);
-            button.title = enabled ? '' : this.translate('wordReviewRequiresSelection', 'messages', 'PlanificariWordMatcher');
+            button.title = enabled ? '' : this.translate('wordReviewRequiresAllRows', 'messages', 'PlanificariWordMatcher');
         }
 
         renderWordConversionPreview(result) {
@@ -343,6 +352,7 @@ define('planificari:views/planificari-word-matcher/record/detail', ['views/recor
         updateWordPreviewCompletionState(container) {
             const selects = Array.from(container.querySelectorAll('select[data-word-row-index]'));
             const selected = selects.filter(select => select.value !== '').length;
+            const complete = selects.length > 0 && selected === selects.length;
             const summary = container.querySelector('[data-role="word-preview-summary"]');
 
             if (summary) {
@@ -351,7 +361,7 @@ define('planificari:views/planificari-word-matcher/record/detail', ['views/recor
                     .replace('{total}', String(selects.length));
             }
 
-            this.updateDownloadWordButtonState(selected > 0);
+            this.updateDownloadWordButtonState(complete);
         }
 
         getWordConvertErrorMessage(xhr) {
