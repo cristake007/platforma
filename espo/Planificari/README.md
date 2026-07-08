@@ -20,7 +20,7 @@ To build an installable ZIP from this directory:
 
 ```bash
 cd /opt/crm.cursurituv.ro/extensions/Planificari
-zip -r ../planificari-perioade-cursuri-1.0.41.zip manifest.json files scripts
+zip -r ../planificari-perioade-cursuri-1.0.42.zip manifest.json files scripts
 ```
 
 After installing or changing module metadata, rebuild EspoCRM cache.
