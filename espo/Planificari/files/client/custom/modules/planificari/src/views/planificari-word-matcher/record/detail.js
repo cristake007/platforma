@@ -192,6 +192,22 @@ define('planificari:views/planificari-word-matcher/record/detail', ['views/recor
                 });
             });
 
+            Array.from(container.querySelectorAll('[data-generated-row-index]')).forEach(button => {
+                button.addEventListener('click', () => {
+                    const select = container.querySelector(
+                        'select[data-word-row-index="' + button.dataset.wordRowIndex + '"]'
+                    );
+
+                    if (!select) {
+                        return;
+                    }
+
+                    select.value = button.dataset.generatedRowIndex;
+                    this.updateWordPreviewSelectState(select, scheduleOptions);
+                    this.updateWordPreviewCompletionState(container);
+                });
+            });
+
             Array.from(container.querySelectorAll('select[data-word-row-index]')).forEach(select => {
                 const selectedRowIndex = select.dataset.selectedRowIndex;
 
@@ -246,6 +262,8 @@ define('planificari:views/planificari-word-matcher/record/detail', ['views/recor
         }
 
         composeWordPreviewRow(row, scheduleOptions) {
+            const generatedOption = row.generatedOption || null;
+            const rowScheduleOptions = generatedOption ? scheduleOptions.concat([generatedOption]) : scheduleOptions;
             const candidateButtons = (row.candidates || []).map(candidate => [
                 '<button type="button" class="btn btn-default btn-xs" style="display: block; width: 100%; height: auto; min-height: 24px; margin-bottom: 6px; padding: 4px 8px; white-space: normal; text-align: left; line-height: 1.35;"',
                 ' data-word-row-index="' + this.escapeHtml(row.wordRowIndex) + '"',
@@ -253,6 +271,16 @@ define('planificari:views/planificari-word-matcher/record/detail', ['views/recor
                 this.escapeHtml(candidate.title) + ' (' + this.escapeHtml(candidate.score) + ')',
                 '</button>'
             ].join('')).join('');
+            const generatedButton = generatedOption ? [
+                '<button type="button" class="btn ' + (generatedOption.generationMode === 'primary' ? 'btn-warning' : 'btn-info') + ' btn-xs" style="display: block; width: 100%; height: auto; min-height: 28px; margin-bottom: 6px; padding: 5px 8px; white-space: normal; text-align: left; line-height: 1.35; font-weight: 600;"',
+                ' data-word-row-index="' + this.escapeHtml(row.wordRowIndex) + '"',
+                ' data-generated-row-index="' + this.escapeHtml(generatedOption.rowIndex) + '">',
+                this.escapeHtml(generatedOption.title),
+                '</button>'
+            ].join('') : '';
+            const suggestionContent = [generatedButton, candidateButtons]
+                .filter(value => value !== '')
+                .join('') || this.escapeHtml(this.translate('noSuggestions', 'messages', 'PlanificariWordMatcher'));
 
             return [
                 '<tr style="height: auto;">',
@@ -261,14 +289,16 @@ define('planificari:views/planificari-word-matcher/record/detail', ['views/recor
                 '<td style="min-width: 320px; vertical-align: top;">',
                 '<select class="form-control input-sm" data-word-row-index="' + this.escapeHtml(row.wordRowIndex) + '" data-selected-row-index="' + this.escapeHtml(row.selectedRowIndex ?? '') + '">',
                 '<option value="">' + this.escapeHtml(this.translate('leaveUnchanged', 'labels', 'PlanificariWordMatcher')) + '</option>',
-                scheduleOptions.map(option => {
-                    const exact = this.isExactCandidate(row, option.rowIndex);
+                rowScheduleOptions.map(option => {
+                    const generated = option.generated === true;
+                    const exact = !generated && this.isExactCandidate(row, option.rowIndex);
                     const selected = exact && String(option.rowIndex) === String(row.selectedRowIndex);
 
                     return [
                     '<option value="' + this.escapeHtml(option.rowIndex) + '"' +
                     ' data-dates="' + this.escapeHtml(JSON.stringify(option.dates || [])) + '"' +
                     ' data-exact="' + (exact ? '1' : '0') + '"' +
+                    ' data-generated="' + (generated ? '1' : '0') + '"' +
                     (selected ? ' selected' : '') + '>',
                     this.escapeHtml(option.title),
                     '</option>'
@@ -276,7 +306,7 @@ define('planificari:views/planificari-word-matcher/record/detail', ['views/recor
                 }).join(''),
                 '</select>',
                 '</td>',
-                '<td style="min-width: 260px; white-space: normal; vertical-align: top;">' + (candidateButtons || this.escapeHtml(this.translate('noSuggestions', 'messages', 'PlanificariWordMatcher'))) + '</td>',
+                '<td style="min-width: 260px; white-space: normal; vertical-align: top;">' + suggestionContent + '</td>',
                 '<td data-role="word-preview-dates" style="min-width: 160px; vertical-align: top;"></td>',
                 '</tr>'
             ].join('');
