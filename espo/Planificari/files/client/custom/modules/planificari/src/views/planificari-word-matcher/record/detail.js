@@ -55,7 +55,7 @@ define('planificari:views/planificari-word-matcher/record/detail', ['views/recor
                 return;
             }
 
-            const selects = Array.from(container.querySelectorAll('[data-word-row-index]'));
+            const selects = Array.from(container.querySelectorAll('select[data-word-row-index]'));
             const matches = selects
                 .filter(select => select.value !== '')
                 .map(select => ({
@@ -179,7 +179,7 @@ define('planificari:views/planificari-word-matcher/record/detail', ['views/recor
             Array.from(container.querySelectorAll('[data-candidate-row-index]')).forEach(button => {
                 button.addEventListener('click', () => {
                     const select = container.querySelector(
-                        '[data-word-row-index="' + button.dataset.wordRowIndex + '"]'
+                        'select[data-word-row-index="' + button.dataset.wordRowIndex + '"]'
                     );
 
                     if (!select) {
@@ -192,7 +192,7 @@ define('planificari:views/planificari-word-matcher/record/detail', ['views/recor
                 });
             });
 
-            Array.from(container.querySelectorAll('[data-word-row-index]')).forEach(select => {
+            Array.from(container.querySelectorAll('select[data-word-row-index]')).forEach(select => {
                 const selectedRowIndex = select.dataset.selectedRowIndex;
 
                 if (selectedRowIndex !== '') {
@@ -341,7 +341,7 @@ define('planificari:views/planificari-word-matcher/record/detail', ['views/recor
         }
 
         updateWordPreviewCompletionState(container) {
-            const selects = Array.from(container.querySelectorAll('[data-word-row-index]'));
+            const selects = Array.from(container.querySelectorAll('select[data-word-row-index]'));
             const selected = selects.filter(select => select.value !== '').length;
             const summary = container.querySelector('[data-role="word-preview-summary"]');
 
