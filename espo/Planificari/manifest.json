@@ -1,6 +1,6 @@
 {
     "name": "Planificari perioade cursuri",
-    "version": "1.0.42",
+    "version": "1.0.43",
     "acceptableVersions": [
         ">=10.0.0"
     ],
