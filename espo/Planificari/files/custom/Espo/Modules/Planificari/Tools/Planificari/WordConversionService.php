@@ -364,10 +364,6 @@ class WordConversionService
             }
 
             if ($matches !== null) {
-                if (count($matches) !== count($wordRows)) {
-                    throw new BadRequest('Atribuie toate randurile inainte de generarea documentului Word.');
-                }
-
                 foreach ($matches as $wordIndex => $scheduleIndex) {
                     if ($wordIndex >= count($wordRows)) {
                         throw new BadRequest('O selectie indica un rand Word inexistent.');
@@ -694,7 +690,7 @@ class WordConversionService
 
         $best = $scored[0];
 
-        if (!empty($best['exact']) || (float) $best['score'] === 100.0) {
+        if (!empty($best['exact'])) {
             return $best['entry'];
         }
 
@@ -725,6 +721,10 @@ class WordConversionService
     {
         if (!is_array($value)) {
             throw new BadRequest('Selectiile pentru conversia Word trebuie trimise ca lista.');
+        }
+
+        if (count($value) === 0) {
+            throw new BadRequest('Selecteaza cel putin un rand inainte de generarea documentului Word.');
         }
 
         if (count($value) > self::MAX_SCHEDULE_ROWS) {
