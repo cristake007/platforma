@@ -56,17 +56,18 @@ define('planificari:views/planificari-word-matcher/record/detail', ['views/recor
             }
 
             const selects = Array.from(container.querySelectorAll('[data-word-row-index]'));
+            const matches = selects
+                .filter(select => select.value !== '')
+                .map(select => ({
+                    wordRowIndex: Number(select.dataset.wordRowIndex),
+                    scheduleRowIndex: Number(select.value)
+                }));
 
-            if (selects.some(select => select.value === '')) {
-                Espo.Ui.warning(this.translate('wordReviewRequiresAllRows', 'messages', 'PlanificariWordMatcher'));
+            if (matches.length === 0) {
+                Espo.Ui.warning(this.translate('wordReviewRequiresSelection', 'messages', 'PlanificariWordMatcher'));
 
                 return;
             }
-
-            const matches = selects.map(select => ({
-                wordRowIndex: Number(select.dataset.wordRowIndex),
-                scheduleRowIndex: Number(select.value)
-            }));
 
             Espo.Ui.notify('Converting...');
 
@@ -120,18 +121,18 @@ define('planificari:views/planificari-word-matcher/record/detail', ['views/recor
             button.title = disabled ? this.translate('wordConvertUnavailable', 'messages', 'PlanificariWordMatcher') : '';
         }
 
-        updateDownloadWordButtonState(complete) {
+        updateDownloadWordButtonState(canGenerate) {
             const button = this.element.querySelector('[data-action="downloadWord"]');
 
             if (!button) {
                 return;
             }
 
-            const enabled = !!this.model.get('wordConvertedFileId') || complete;
+            const enabled = !!this.model.get('wordConvertedFileId') || canGenerate;
 
             button.disabled = !enabled;
             button.classList.toggle('disabled', !enabled);
-            button.title = enabled ? '' : this.translate('wordReviewRequiresAllRows', 'messages', 'PlanificariWordMatcher');
+            button.title = enabled ? '' : this.translate('wordReviewRequiresSelection', 'messages', 'PlanificariWordMatcher');
         }
 
         renderWordConversionPreview(result) {
@@ -192,8 +193,14 @@ define('planificari:views/planificari-word-matcher/record/detail', ['views/recor
             });
 
             Array.from(container.querySelectorAll('[data-word-row-index]')).forEach(select => {
-                if (select.dataset.selectedRowIndex !== '') {
-                    select.value = select.dataset.selectedRowIndex;
+                const selectedRowIndex = select.dataset.selectedRowIndex;
+
+                if (selectedRowIndex !== '') {
+                    const exactOption = Array.from(select.options).find(option =>
+                        option.value === selectedRowIndex && option.dataset.exact === '1'
+                    );
+
+                    select.value = exactOption ? selectedRowIndex : '';
                 }
 
                 select.addEventListener('change', () => {
@@ -255,8 +262,8 @@ define('planificari:views/planificari-word-matcher/record/detail', ['views/recor
                 '<select class="form-control input-sm" data-word-row-index="' + this.escapeHtml(row.wordRowIndex) + '" data-selected-row-index="' + this.escapeHtml(row.selectedRowIndex ?? '') + '">',
                 '<option value="">' + this.escapeHtml(this.translate('leaveUnchanged', 'labels', 'PlanificariWordMatcher')) + '</option>',
                 scheduleOptions.map(option => {
-                    const selected = String(option.rowIndex) === String(row.selectedRowIndex);
                     const exact = this.isExactCandidate(row, option.rowIndex);
+                    const selected = exact && String(option.rowIndex) === String(row.selectedRowIndex);
 
                     return [
                     '<option value="' + this.escapeHtml(option.rowIndex) + '"' +
@@ -315,8 +322,7 @@ define('planificari:views/planificari-word-matcher/record/detail', ['views/recor
             }
 
             return (row.candidates || []).some(candidate =>
-                Number(candidate.rowIndex) === Number(selectedValue) &&
-                (candidate.exact || Number(candidate.score) === 100)
+                Number(candidate.rowIndex) === Number(selectedValue) && candidate.exact === true
             );
         }
 
@@ -337,7 +343,6 @@ define('planificari:views/planificari-word-matcher/record/detail', ['views/recor
         updateWordPreviewCompletionState(container) {
             const selects = Array.from(container.querySelectorAll('[data-word-row-index]'));
             const selected = selects.filter(select => select.value !== '').length;
-            const complete = selects.length > 0 && selected === selects.length;
             const summary = container.querySelector('[data-role="word-preview-summary"]');
 
             if (summary) {
@@ -346,7 +351,7 @@ define('planificari:views/planificari-word-matcher/record/detail', ['views/recor
                     .replace('{total}', String(selects.length));
             }
 
-            this.updateDownloadWordButtonState(complete);
+            this.updateDownloadWordButtonState(selected > 0);
         }
 
         getWordConvertErrorMessage(xhr) {
@@ -356,18 +361,48 @@ define('planificari:views/planificari-word-matcher/record/detail', ['views/recor
                 return fallback;
             }
 
-            if (xhr.responseJSON && xhr.responseJSON.message) {
-                return xhr.responseJSON.message;
+            if (typeof xhr === 'string') {
+                return xhr || fallback;
             }
 
-            if (xhr.responseText && xhr.responseText.charAt(0) === '{') {
-                try {
-                    const data = JSON.parse(xhr.responseText);
+            if (xhr.message && typeof xhr.message === 'string') {
+                return xhr.message;
+            }
 
-                    if (data.message) {
-                        return data.message;
-                    }
-                } catch (e) {}
+            if (xhr.error && typeof xhr.error.message === 'string') {
+                return xhr.error.message;
+            }
+
+            if (xhr.data && typeof xhr.data.message === 'string') {
+                return xhr.data.message;
+            }
+
+            if (xhr.responseJSON) {
+                if (xhr.responseJSON.message) {
+                    return xhr.responseJSON.message;
+                }
+
+                if (xhr.responseJSON.error && typeof xhr.responseJSON.error === 'string') {
+                    return xhr.responseJSON.error;
+                }
+            }
+
+            if (xhr.responseText) {
+                const responseText = String(xhr.responseText).trim();
+
+                if (responseText.charAt(0) === '{') {
+                    try {
+                        const data = JSON.parse(responseText);
+
+                        if (data.message) {
+                            return data.message;
+                        }
+
+                        if (data.error && typeof data.error === 'string') {
+                            return data.error;
+                        }
+                    } catch (e) {}
+                }
             }
 
             if (typeof xhr.getResponseHeader === 'function') {
