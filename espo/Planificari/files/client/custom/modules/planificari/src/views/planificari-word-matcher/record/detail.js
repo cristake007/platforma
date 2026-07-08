@@ -99,15 +99,7 @@ define('planificari:views/planificari-word-matcher/record/detail', ['views/recor
         actionDownloadWord() {
             const container = this.element.querySelector('[data-name="word-conversion-preview"]');
 
-            if (container) {
-                this.actionGenerateReviewedWord();
-
-                return;
-            }
-
-            if (this.model.get('wordConvertedFileId')) {
-                window.open('?entryPoint=download&id=' + encodeURIComponent(this.model.get('wordConvertedFileId')), '_blank');
-
+            if (!container) {
                 return;
             }
 
@@ -136,8 +128,7 @@ define('planificari:views/planificari-word-matcher/record/detail', ['views/recor
                 return;
             }
 
-            const hasPreview = !!this.element.querySelector('[data-name="word-conversion-preview"]');
-            const enabled = canGenerate || (!!this.model.get('wordConvertedFileId') && !hasPreview);
+            const enabled = canGenerate;
 
             button.disabled = !enabled;
             button.classList.toggle('disabled', !enabled);
